@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  bitwatch:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bitwatch
+    restart: unless-stopped
+    ports:
+      - "3117:3117"
+    volumes:
+      - ./server/data:/app/server/data
+    environment:
+      - NODE_ENV=production
+    networks:
+      - bitwatch-network
+
+networks:
+  bitwatch-network:
+    driver: bridge 

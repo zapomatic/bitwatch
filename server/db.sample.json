@@ -1,0 +1,35 @@
+{
+  "collections": {
+    "Satoshi": {
+      "addresses": [
+        {
+          "name": "Genesis",
+          "address": "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
+          "expect": {
+            "chain_in": 5296838115,
+            "chain_out": 0,
+            "mempool_in": 0,
+            "mempool_out": 0
+          }
+        },
+        {
+          "address": "1HLoD9E4SDFFPDiYfNYnkBLQ85Y51J3Zb1",
+          "name": "satoshi",
+          "expect": {
+            "chain_in": 5007878871,
+            "chain_out": 0,
+            "mempool_in": 0,
+            "mempool_out": 0
+          }
+        }
+      ]
+    }
+  },
+  "interval": 600000,
+  "api": "https://mempool.space",
+  "apiParallelLimit": 5,
+  "telegram": {
+    "chatId": "",
+    "token": ""
+  }
+}

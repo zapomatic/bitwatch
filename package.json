@@ -1,0 +1,31 @@
+{
+  "name": "bitwatch",
+  "version": "0.1.0",
+  "description": "Bitcoin address monitor, using mempool.space api",
+  "main": "server/index.js",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "setup": "npm i -g nodemon concurrently && npm i && cd client && npm i",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev:server": "nodemon --config nodemon.json server/index.js",
+    "dev:client": "cd client && npm start",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "start": "node server/index.js"
+  },
+  "author": "zap-o-matic",
+  "license": "ISC",
+  "dependencies": {
+    "@mempool/mempool.js": "^3.0.0",
+    "async": "^3.2.5",
+    "express": "^4.19.2",
+    "node-telegram-bot-api": "^0.66.0",
+    "socket.io": "^4.7.5",
+    "uuid": "^10.0.0",
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@babel/eslint-parser": "^7.24.7",
+    "@babel/plugin-syntax-import-assertions": "^7.24.7"
+  }
+}
