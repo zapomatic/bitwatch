@@ -100,6 +100,102 @@ const updateTrackedAddresses = () => {
   }
 };
 
+const calculateAddressBalance = (transactions, address) => {
+  const inAmount = transactions.reduce((sum, tx) => {
+    return (
+      sum +
+      (tx.vout?.reduce((voutSum, output) => {
+        return (
+          voutSum + (output.scriptpubkey_address === address ? output.value : 0)
+        );
+      }, 0) || 0)
+    );
+  }, 0);
+
+  const outAmount = transactions.reduce((sum, tx) => {
+    return (
+      sum +
+      (tx.vin?.reduce((vinSum, input) => {
+        return (
+          vinSum +
+          (input.prevout?.scriptpubkey_address === address
+            ? input.prevout.value
+            : 0)
+        );
+      }, 0) || 0)
+    );
+  }, 0);
+
+  return { in: inAmount, out: outAmount };
+};
+
+const updateAddressBalance = (address, balance, io) => {
+  for (const collection of Object.values(memory.db.collections)) {
+    const addr = collection.addresses.find((a) => a.address === address);
+    if (addr) {
+      addr.actual = {
+        ...addr.actual,
+        ...balance,
+      };
+      // Emit update for this address
+      io.emit("updateState", { collections: memory.db.collections });
+      return true;
+    }
+  }
+  return false;
+};
+
+const processTransaction = (tx, io) => {
+  if (!tx || typeof tx !== "object") return;
+
+  // Check inputs and outputs for tracked addresses
+  const relevantAddresses = new Set();
+
+  // Check inputs
+  if (Array.isArray(tx.vin)) {
+    tx.vin.forEach((input) => {
+      if (
+        input?.prevout?.scriptpubkey_address &&
+        trackedAddresses.has(input.prevout.scriptpubkey_address)
+      ) {
+        relevantAddresses.add(input.prevout.scriptpubkey_address);
+      }
+    });
+  }
+
+  // Check outputs
+  if (Array.isArray(tx.vout)) {
+    tx.vout.forEach((output) => {
+      if (
+        output?.scriptpubkey_address &&
+        trackedAddresses.has(output.scriptpubkey_address)
+      ) {
+        relevantAddresses.add(output.scriptpubkey_address);
+      }
+    });
+  }
+
+  // If we found relevant addresses, update their balances
+  if (relevantAddresses.size > 0) {
+    console.log(
+      `🔔 Found transaction affecting ${relevantAddresses.size} tracked addresses`
+    );
+
+    // Update each affected address
+    for (const address of relevantAddresses) {
+      const mempoolBalance = calculateAddressBalance([tx], address);
+      updateAddressBalance(
+        address,
+        {
+          mempool_in: mempoolBalance.in,
+          mempool_out: mempoolBalance.out,
+        },
+        io
+      );
+    }
+  }
+};
+
 const setupWebSocket = (io) => {
   if (isConnecting) {
     console.log("⚠️ Already attempting to connect, skipping...");
@@ -173,7 +269,6 @@ const setupWebSocket = (io) => {
     ws.addEventListener("message", (event) => {
       try {
         const res = JSON.parse(event.data);
-        // Log just the message type instead of full payload
         const messageType = Object.keys(res)[0];
         console.log(
           `📥 Received websocket message: ${messageType} (state: ${getWebSocketState(
@@ -201,13 +296,39 @@ const setupWebSocket = (io) => {
 
         // Handle multi-address-transactions response after track-addresses
         if (res["multi-address-transactions"]) {
-          const { addresses, transactions } = res["multi-address-transactions"];
+          const addressData = res["multi-address-transactions"];
           console.log(
-            `✅ Successfully initiated tracking for ${addresses.length} addresses`
+            `✅ Processing transactions for ${
+              Object.keys(addressData).length
+            } addresses`
           );
-          if (transactions?.length > 0) {
-            console.log(
-              `📝 Found ${transactions.length} existing transactions for tracked addresses`
+
+          // Process each address's transactions
+          for (const [address, data] of Object.entries(addressData)) {
+            if (!data) continue;
+
+            // Calculate chain (confirmed) transactions
+            const chainBalance = calculateAddressBalance(
+              data.confirmed || [],
+              address
+            );
+
+            // Calculate mempool transactions
+            const mempoolBalance = calculateAddressBalance(
+              data.mempool || [],
+              address
+            );
+
+            // Update the address with both chain and mempool values
+            updateAddressBalance(
+              address,
+              {
+                chain_in: chainBalance.in,
+                chain_out: chainBalance.out,
+                mempool_in: mempoolBalance.in,
+                mempool_out: mempoolBalance.out,
+              },
+              io
             );
           }
           return;
@@ -222,37 +343,10 @@ const setupWebSocket = (io) => {
 
         // Handle mempool updates
         if (res.transactions) {
-          console.log(`📝 Found ${res.transactions.length} transactions`);
-          // Check if any of our tracked addresses are involved
-          const relevantTxs = res.transactions.filter((tx) => {
-            // Skip invalid transactions
-            if (!tx || typeof tx !== "object") return false;
-
-            // Check inputs
-            if (Array.isArray(tx.vin)) {
-              const hasRelevantInput = tx.vin.some((input) => {
-                if (!input || !input.prevout) return false;
-                return trackedAddresses.has(input.prevout.scriptpubkey_address);
-              });
-              if (hasRelevantInput) return true;
-            }
-
-            // Check outputs
-            if (Array.isArray(tx.vout)) {
-              const hasRelevantOutput = tx.vout.some((output) => {
-                if (!output) return false;
-                return trackedAddresses.has(output.scriptpubkey_address);
-              });
-              if (hasRelevantOutput) return true;
-            }
-
-            return false;
-          });
-
-          if (relevantTxs.length > 0) {
-            console.log(`🔔 Found ${relevantTxs.length} relevant transactions`);
-            io.emit("updateState", { collections: memory.db.collections });
-          }
+          console.log(
+            `📝 Processing ${res.transactions.length} new transactions`
+          );
+          res.transactions.forEach((tx) => processTransaction(tx, io));
           return;
         }
 
@@ -304,8 +398,6 @@ const handleDisconnect = (io) => {
     `🔄 Attempting to reconnect (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`
   );
 
-  // Store current tracked addresses before disconnecting
-  const currentTrackedAddresses = [...trackedAddresses];
   trackedAddresses.clear(); // Clear tracked addresses to force resubscription
 
   setTimeout(() => {

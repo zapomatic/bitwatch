@@ -77,14 +77,38 @@ const BalanceCell = ({ value, expect, displayBtc, error, pending }) => {
   }
 
   const diff = value - (expect || 0);
-  const hasDiff = diff !== 0;
+  const isVerified = diff === 0;
 
   return (
     <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      {isVerified ? (
+        <CheckIcon
+          sx={{
+            color: "var(--theme-success)",
+            fontSize: "1rem",
+            textShadow: "0 0 8px var(--theme-glow-success)",
+            "&:hover": {
+              textShadow: "0 0 12px var(--theme-glow-success)",
+            },
+          }}
+        />
+      ) : (
+        <WarningIcon
+          sx={{
+            color: "var(--theme-warning)",
+            fontSize: "1rem",
+            textShadow: "0 0 8px var(--theme-glow-warning)",
+            "&:hover": {
+              color: "var(--theme-danger)",
+              textShadow: "0 0 12px var(--theme-glow-danger)",
+            },
+          }}
+        />
+      )}
       <Typography className="crystal-text">
         {formatSatoshis(value, displayBtc)}
       </Typography>
-      {hasDiff && (
+      {!isVerified && (
         <Typography
           className="crystal-text"
           sx={{

@@ -21,7 +21,7 @@ COPY --from=client-builder /app/build ./client/build
 RUN npm install --production
 
 # Expose port
-EXPOSE 3987
+EXPOSE 3117
 
 # Start the server
 CMD ["node", "server/index.js"]

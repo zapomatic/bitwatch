@@ -26,7 +26,6 @@ const attemptCall = async (addr) => {
 
     const currentOpt = { ...options };
     currentOpt.path = `${options.path}/${addr}`;
-    const apiURL = `${memory.db.api}/api/address/${addr}`;
     console.log(`🌐 Fetching balance for ${addr}`);
     
     const req = (api.protocol === "https:" ? https : http).request(

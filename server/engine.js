@@ -37,6 +37,49 @@ const calculateCollectionTotals = (addresses) => {
   );
 };
 
+const updateAddressAndEmit = (addr, balance) => {
+  const collections = { ...memory.db.collections };
+  const collection = collections[addr.collection];
+  if (!collection) return;
+
+  const index = collection.addresses.findIndex(
+    (a) => a.address === addr.address
+  );
+  if (index === -1) return;
+
+  // Update the address with new balance
+  collection.addresses[index] = {
+    ...collection.addresses[index],
+    actual: balance.actual,
+    error: balance.error,
+    errorMessage: balance.errorMessage,
+    expect: collection.addresses[index].expect || {
+      chain_in: 0,
+      chain_out: 0,
+      mempool_in: 0,
+      mempool_out: 0,
+    },
+  };
+
+  // Check for changes and notify
+  const changes = detectChanges(
+    balance.actual,
+    collection.addresses[index].expect
+  );
+  if (changes) {
+    telegram.notifyBalanceChange(
+      addr.address,
+      changes,
+      addr.collection,
+      collection.addresses[index].name
+    );
+  }
+
+  // Update state and emit changes
+  memory.state = { collections };
+  socketIO.io.emit("updateState", { collections });
+};
+
 const engine = async () => {
   // Create a flat list of all addresses with their collection info
   const allAddresses = [];
@@ -51,95 +94,46 @@ const engine = async () => {
     });
   }
 
-  const jobs = allAddresses.map((addr) => {
-    return async () => {
+  console.log(
+    `🔄 Starting balance check for ${allAddresses.length} addresses (${memory.db.apiParallelLimit} concurrent)`
+  );
+
+  // Process addresses in parallel with a limit
+  await parallelLimit(
+    allAddresses.map((addr) => async () => {
       try {
         const balance = await getAddressBalance(addr.address);
         if (balance.error) {
           console.error(
             `❌ Failed to fetch balance for ${addr.address}: ${balance.message}`
           );
-          return {
-            ...addr,
+          updateAddressAndEmit(addr, {
             actual: null,
             error: true,
             errorMessage: balance.message,
-          };
+          });
+          return;
         }
-        return {
-          ...addr,
+        updateAddressAndEmit(addr, {
           actual: balance.actual,
           error: false,
           errorMessage: null,
-        };
+        });
       } catch (error) {
         console.error(
           `❌ Failed to fetch balance for ${addr.address}: ${error.message}`
         );
-        return {
-          ...addr,
+        updateAddressAndEmit(addr, {
           actual: null,
           error: true,
           errorMessage: error.message,
-        };
+        });
       }
-    };
-  });
-
-  console.log(
-    `🔄 Starting balance check for ${jobs.length} addresses (${memory.db.apiParallelLimit} concurrent)`
+    }),
+    memory.db.apiParallelLimit
   );
 
-  const results = await parallelLimit(jobs, memory.db.apiParallelLimit);
-  if (!results || !results.length) {
-    console.error(`❌ No results returned from balance check`);
-    return;
-  }
-
-  // Update addresses in collections with new balances
-  const collections = { ...memory.db.collections };
-  results.forEach((addr) => {
-    const collection = collections[addr.collection];
-    if (!collection) return;
-
-    const index = collection.addresses.findIndex(
-      (a) => a.address === addr.address
-    );
-    if (index === -1) return;
-
-    // Only update the actual value in memory, not in the database
-    collection.addresses[index] = {
-      ...collection.addresses[index],
-      actual: addr.actual,
-      error: addr.error,
-      errorMessage: addr.errorMessage,
-      expect: collection.addresses[index].expect || {
-        chain_in: 0,
-        chain_out: 0,
-        mempool_in: 0,
-        mempool_out: 0,
-      },
-    };
-
-    // Check for changes and notify
-    const changes = detectChanges(
-      addr.actual,
-      collection.addresses[index].expect
-    );
-    if (changes) {
-      telegram.notifyBalanceChange(
-        addr.address,
-        changes,
-        addr.collection,
-        collection.addresses[index].name
-      );
-    }
-  });
-
-  // Update state and emit changes
-  memory.state = { collections };
-  socketIO.io.emit("updateState", { collections });
-
+  // Schedule next update
   setTimeout(engine, memory.db.interval);
 };
 
