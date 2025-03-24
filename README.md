@@ -4,15 +4,6 @@
 
 ![Bitwatch](./client/public/app.png)
 
-## Addresses to Monitor
-
-Some universally interesting addresses to monitor are as follows and are included by default to show how it works:
-
-1. Satoshi Genesis Block Reward - `1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa` - This is the original bitcoin genesis block
-   reward address. The reward is technically unspendable, so we would never expect to see the base 50 BTC leave this
-   address. However, for some mysterious reason, there is constant inbound activity to this address. This makes it a good
-   test address for our monitoring tool as the mempool and onchain expectation is regularly invalidated.
-
 ## Features
 
 - Real-time monitoring of Bitcoin addresses
