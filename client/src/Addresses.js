@@ -104,11 +104,15 @@ const BalanceCell = ({ value, expect, displayBtc, error, pending }) => {
 const AddressCell = ({ address }) => {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = (e) => {
+  const handleCopy = async (e) => {
     e.stopPropagation();
-    navigator.clipboard.writeText(address);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    try {
+      await navigator.clipboard.writeText(address);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (err) {
+      console.error("Failed to copy address:", err);
+    }
   };
 
   return (
@@ -140,14 +144,10 @@ const AddressCell = ({ address }) => {
         {`${address.slice(0, 8)}...`}
       </Box>
       <Tooltip title={copied ? "Copied!" : "Copy full address"}>
-        <Button
+        <IconButton
           size="small"
           onClick={handleCopy}
           sx={{
-            minWidth: "32px",
-            width: "32px",
-            height: "24px",
-            padding: 0,
             color: "var(--theme-accent)",
             "&:hover": {
               color: "var(--theme-secondary)",
@@ -155,7 +155,7 @@ const AddressCell = ({ address }) => {
           }}
         >
           <ContentCopyIcon fontSize="small" />
-        </Button>
+        </IconButton>
       </Tooltip>
     </Box>
   );

@@ -3,7 +3,7 @@
     "Satoshi": {
       "addresses": [
         {
-          "name": "Genesis",
+          "name": "genesis",
           "address": "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
           "expect": {
             "chain_in": 5296838115,
@@ -14,7 +14,7 @@
         },
         {
           "address": "1HLoD9E4SDFFPDiYfNYnkBLQ85Y51J3Zb1",
-          "name": "satoshi",
+          "name": "early",
           "expect": {
             "chain_in": 5007878871,
             "chain_out": 0,

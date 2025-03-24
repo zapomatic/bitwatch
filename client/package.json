@@ -15,7 +15,7 @@
     "socket.io-client": "^4.7.5"
   },
   "scripts": {
-    "start": "PORT=3117 react-scripts start",
+    "start": "PORT=3118 react-scripts start",
     "build": "react-scripts build",
     "eject": "react-scripts eject"
   },

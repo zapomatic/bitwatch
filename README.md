@@ -51,8 +51,8 @@ npm run dev
    - Great for testing monitoring functionality
 2. **The Hal Finney Address** - `12cbQLTFMXRnSzktFkuoG3eHoMeFtpTu3S`
    - The first user-to-user transaction source address in Bitcoin, sent to Hal Finney
-3. **A Satoshi Reward Address** - `1HLoD9E4SDFFPDiYfNYnkBLQ85Y51J3Zb1`
-   - One of the early block reward payout addresses
+3. **Early Block Reward Address** - `1HLoD9E4SDFFPDiYfNYnkBLQ85Y51J3Zb1`
+   - One of the early block reward payout addresses (but the reward was moved)
 
 Of course, services like [Arkham](https://intel.arkm.com/explorer/entity/satoshi-nakamoto) have a full tracker for Satoshi's addresses, but we want to check our own addresses (and probably privately with our own node)
 
