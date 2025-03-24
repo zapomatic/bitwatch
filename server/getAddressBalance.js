@@ -4,6 +4,7 @@ import { retry } from "async";
 import pjson from "../package.json" with { type: "json" };
 import memory from "./memory.js";
 import * as url from "node:url";
+import logger from "./logger.js";
 
 const attemptCall = async (addr) => {
   return new Promise((resolve, reject) => {
@@ -26,7 +27,7 @@ const attemptCall = async (addr) => {
 
     const currentOpt = { ...options };
     currentOpt.path = `${options.path}/${addr}`;
-    console.log(`🌐 Fetching balance for ${addr}`);
+    logger.network(`Fetching balance for ${addr}`);
     
     const req = (api.protocol === "https:" ? https : http).request(
       currentOpt,
@@ -39,7 +40,7 @@ const attemptCall = async (addr) => {
         });
         res.on("end", function () {
           if (statusCode !== 200) {
-            console.error(`❌ API error for ${addr}: ${statusCode} ${body}`);
+            logger.error(`API error for ${addr}: ${statusCode} ${body}`);
             return reject({ error: true, message: `API error: ${statusCode} ${body}` });
           }
           try {
@@ -51,10 +52,10 @@ const attemptCall = async (addr) => {
               mempool_in: json.mempool_stats.funded_txo_sum || 0,
               mempool_out: json.mempool_stats.spent_txo_sum || 0,
             };
-            console.log(`✅ Balance fetched for ${addr}: ${JSON.stringify(json.actual)}`);
+            logger.success(`Balance fetched for ${addr}: chain_in=${json.actual.chain_in}, chain_out=${json.actual.chain_out}, mempool_in=${json.actual.mempool_in}, mempool_out=${json.actual.mempool_out}`);
             resolve(json);
           } catch (error) {
-            console.error(`❌ JSON parse error for ${addr}: ${error.message}`);
+            logger.error(`JSON parse error for ${addr}: ${error.message}`);
             reject({ error: true, message: `JSON parse error: ${error.message}` });
           }
         });
@@ -62,10 +63,10 @@ const attemptCall = async (addr) => {
     );
     req.on("error", (e) => {
       if(e.statusCode === 504) {
-        console.error(`⚠️ Server capacity exceeded for ${addr} - address will be ignored`);
+        logger.warning(`Server capacity exceeded for ${addr} - address will be ignored`);
         reject({ error: true, message: "Server capacity exceeded" });
       } else {
-        console.error(`❌ Network error for ${addr}: ${e.message}`);
+        logger.error(`Network error for ${addr}: ${e.message}`);
         reject({ error: true, message: `Network error: ${e.message}` });
       }
     });
@@ -86,7 +87,7 @@ const getAddressBalance = async (addr) => {
       async () => attemptCall(addr)
     );
   } catch (error) {
-    console.error(`❌ Failed to fetch balance for ${addr}: ${error.message}`);
+    logger.error(`Failed to fetch balance for ${addr}: ${error.message}`);
     return { error: true, message: error.message };
   }
 };

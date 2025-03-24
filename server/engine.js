@@ -3,6 +3,7 @@ import { parallelLimit } from "async";
 import socketIO from "./io.js";
 import memory from "./memory.js";
 import telegram from "./telegram.js";
+import logger from "./logger.js";
 
 const detectChanges = (actual, expected) => {
   if (!actual || !expected) return null;
@@ -94,8 +95,8 @@ const engine = async () => {
     });
   }
 
-  console.log(
-    `🔄 Starting balance check for ${allAddresses.length} addresses (${memory.db.apiParallelLimit} concurrent)`
+  logger.processing(
+    `Starting balance check for ${allAddresses.length} addresses (${memory.db.apiParallelLimit} concurrent)`
   );
 
   // Process addresses in parallel with a limit
@@ -104,8 +105,8 @@ const engine = async () => {
       try {
         const balance = await getAddressBalance(addr.address);
         if (balance.error) {
-          console.error(
-            `❌ Failed to fetch balance for ${addr.address}: ${balance.message}`
+          logger.error(
+            `Failed to fetch balance for ${addr.address}: ${balance.message}`
           );
           updateAddressAndEmit(addr, {
             actual: null,
@@ -120,8 +121,8 @@ const engine = async () => {
           errorMessage: null,
         });
       } catch (error) {
-        console.error(
-          `❌ Failed to fetch balance for ${addr.address}: ${error.message}`
+        logger.error(
+          `Failed to fetch balance for ${addr.address}: ${error.message}`
         );
         updateAddressAndEmit(addr, {
           actual: null,

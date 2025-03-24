@@ -5,6 +5,7 @@ import getAddressBalance from "./getAddressBalance.js";
 import telegram from "./telegram.js";
 import engine from "./engine.js";
 import fs from "fs";
+import logger from "./logger.js";
 // const { v4: uuidv4 } = require("uuid");
 
 const socketIO = {
@@ -30,13 +31,13 @@ const socketIO = {
     socketIO.io.on("connection", function (socket) {
       const socketID = socket.id;
       const ip = socket.handshake.address.replace("::ffff:", "");
-      console.log(`🔌 Socket connected from ${ip} (ID: ${socketID})`);
+      logger.websocket(`Socket connected from ${ip} (ID: ${socketID})`);
 
       // Send initial state on connection
       socket.emit("updateState", { collections: memory.db.collections });
 
       socket.on("client", async (data, cb) => {
-        console.log(`👤 Client connected (ID: ${socketID})`);
+        logger.info(`Client connected (ID: ${socketID})`);
         cb({
           version: pjson.version,
           collections: memory.db.collections,
@@ -44,7 +45,7 @@ const socketIO = {
       });
 
       socket.on("saveExpected", async (data, cb) => {
-        console.log(`💾 Saving expected state for ${data.collection}/${data.address}`);
+        logger.processing(`Saving expected state for ${data.collection}/${data.address}`);
         const collection = memory.db.collections[data.collection];
         if (!collection) return cb(`collection not found`);
         const record = collection.addresses.find((a) => a.address === data.address);
@@ -57,7 +58,7 @@ const socketIO = {
       });
 
       socket.on("add", async ({ collection, name, address }, cb) => {
-        console.log(`➕ Adding ${address} to collection ${collection}`);
+        logger.info(`Adding ${address} to collection ${collection}`);
         // Create collection if it doesn't exist
         if (!memory.db.collections[collection]) {
           memory.db.collections[collection] = { addresses: [] };
@@ -80,7 +81,7 @@ const socketIO = {
 
         try {
           const balance = await getAddressBalance(address);
-          console.log(`📊 Balance fetched for ${address}: ${JSON.stringify(balance.actual)}`);
+          logger.data(`Balance fetched for ${address}: chain_in=${balance.actual.chain_in}, chain_out=${balance.actual.chain_out}, mempool_in=${balance.actual.mempool_in}, mempool_out=${balance.actual.mempool_out}`);
           
           // Initialize the record with both expect and actual values
           const record = {
@@ -103,13 +104,13 @@ const socketIO = {
           socketIO.io.emit("updateState", { collections: memory.db.collections });
           cb({ status: "ok", record });
         } catch (error) {
-          console.error(`❌ Error adding address ${address}: ${error.message}`);
+          logger.error(`Error adding address ${address}: ${error.message}`);
           cb({ error: `Failed to add address: ${error.message}` });
         }
       });
 
       socket.on("delete", async ({ collection, address }, cb) => {
-        console.log(`🗑️ Deleting ${address} from collection ${collection}`);
+        logger.info(`Deleting ${address} from collection ${collection}`);
         const col = memory.db.collections[collection];
         if (!col) return cb({ error: `collection not found` });
         const index = col.addresses.findIndex((a) => a.address === address);
@@ -126,12 +127,12 @@ const socketIO = {
       });
 
       socket.on('getState', async(data, cb) => {
-        console.log(`📡 State requested by client ${socketID}`);
+        logger.info(`State requested by client ${socketID}`);
         cb({ collections: memory.db.collections });
       });
 
       socket.on('getConfig', async(data, cb) => {
-        console.log(`⚙️ Config requested by client ${socketID}`);
+        logger.info(`Config requested by client ${socketID}`);
         cb({ 
           interval: memory.db.interval, 
           apiParallelLimit: memory.db.apiParallelLimit, 
@@ -140,7 +141,7 @@ const socketIO = {
       });
 
       socket.on('saveConfig', async(data, cb)=>{
-        console.log(`💾 Saving configuration: ${JSON.stringify(data)}`);
+        logger.processing(`Saving configuration: ${JSON.stringify(data)}`);
         memory.db.interval = data.interval || memory.db.interval;
         memory.db.apiParallelLimit = data.apiParallelLimit || memory.db.apiParallelLimit;
         memory.db.api = data.api || memory.db.api;
@@ -149,25 +150,25 @@ const socketIO = {
       });
 
       socket.on('getIntegrations', async(data, cb) => {
-        console.log(`🔌 Integrations requested by client ${socketID}`);
+        logger.info(`Integrations requested by client ${socketID}`);
         cb({ telegram: memory.db.telegram || {} });
       });
 
       socket.on('saveIntegrations', async(data, cb) => {
-        console.log(`💾 Saving integrations configuration`);
+        logger.processing(`Saving integrations configuration`);
         try {
           memory.db.telegram = data.telegram;
           memory.saveDb();
           telegram.init(true); // Pass true to send test message when saving
           cb({ success: true, data });
         } catch (error) {
-          console.error(`❌ Error saving integrations: ${error.message}`);
+          logger.error(`Error saving integrations: ${error.message}`);
           cb({ success: false, error: error.message });
         }
       });
 
       socket.on('renameCollection', async({ oldName, newName }, cb) => {
-        console.log(`🔄 Renaming collection from ${oldName} to ${newName}`);
+        logger.info(`Renaming collection from ${oldName} to ${newName}`);
         if (!memory.db.collections[oldName]) {
           return cb({ error: `collection not found` });
         }
@@ -191,7 +192,7 @@ const socketIO = {
       });
 
       socket.on('refresh', async(data, cb) => {
-        console.log(`🔄 Manual refresh requested by client ${socketID}`);
+        logger.info(`Manual refresh requested by client ${socketID}`);
         engine(); // Trigger immediate refresh
         cb({ status: "ok" });
       });

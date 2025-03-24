@@ -1,5 +1,6 @@
 import TelegramBot from "node-telegram-bot-api";
 import memory from "./memory.js";
+import logger from "./logger.js";
 
 let bot = null;
 
@@ -10,7 +11,7 @@ const init = (sendTestMessage = false) => {
   }
 
   if (!memory.db.telegram?.token || !memory.db.telegram?.chatId) {
-    console.log(`⚠️ Telegram not configured - missing token or chat ID`);
+    logger.warning("Telegram not configured - missing token or chat ID");
     return;
   }
 
@@ -57,17 +58,17 @@ Current status: ${
         "✅ Bitwatch Telegram notifications configured successfully!\n\nYou will receive notifications here when address balances change."
       )
         .then(() => {
-          console.log(`✅ Telegram bot initialized and test message sent`);
+          logger.success("Telegram bot initialized and test message sent");
         })
         .catch((error) => {
-          console.error(`❌ Failed to send test message: ${error.message}`);
+          logger.error("Failed to send test message: " + error.message);
           bot = null; // Reset bot if test message fails
         });
     } else {
-      console.log(`✅ Telegram bot initialized`);
+      logger.success("Telegram bot initialized");
     }
   } catch (error) {
-    console.error(`❌ Failed to initialize Telegram bot: ${error.message}`);
+    logger.error("Failed to initialize Telegram bot: " + error.message);
     bot = null;
   }
 };
@@ -80,7 +81,7 @@ const sendMessage = async (message) => {
       parse_mode: "HTML",
     });
   } catch (error) {
-    console.error(`❌ Failed to send Telegram message: ${error.message}`);
+    logger.error("Failed to send Telegram message: " + error.message);
   }
 };
 
