@@ -21,6 +21,16 @@
             "mempool_in": 0,
             "mempool_out": 0
           }
+        },
+        {
+          "address": "12cbQLTFMXRnSzktFkuoG3eHoMeFtpTu3S",
+          "name": "first",
+          "expect": {
+            "chain_in": 44222430,
+            "chain_out": 0,
+            "mempool_in": 0,
+            "mempool_out": 0
+          }
         }
       ]
     }

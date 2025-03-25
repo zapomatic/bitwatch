@@ -145,9 +145,17 @@ function AppContent() {
             variant="h6"
             color="inherit"
             noWrap
-            sx={{ flexGrow: 1, marginTop: "3" }}
+            sx={{
+              flexGrow: 1,
+              marginTop: "3",
+              cursor: "pointer",
+              "&:hover": {
+                textShadow: "0 0 8px var(--theme-glow-secondary)",
+              },
+            }}
+            onClick={() => navigate("/")}
           >
-            itwatch {version}
+            Bitwatch {version}
           </Typography>
           <Box sx={{ display: "flex", gap: 1 }}>
             <IconButton

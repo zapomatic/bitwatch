@@ -236,12 +236,12 @@ const CollectionRow = ({
   displayBtc,
   onRenameCollection,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(autoShowAddForm);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState(collection.name);
   const [newAddress, setNewAddress] = useState(
     autoShowAddForm ? { name: "", address: "" } : null
   );
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [editedName, setEditedName] = useState(collection.name);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -249,13 +249,19 @@ const CollectionRow = ({
   const totals = calculateCollectionTotals(collection.addresses);
 
   const handleAddClick = () => {
+    setIsExpanded(true);
     setNewAddress({ name: "", address: "" });
   };
 
   const handleSubmitAddress = () => {
-    if (!newAddress.name || !newAddress.address) return;
-    onAddAddress(collection.name, newAddress.name, newAddress.address);
-    setNewAddress(null);
+    if (newAddress.name && newAddress.address) {
+      onAddAddress(
+        collection.name,
+        newAddress.name,
+        newAddress.address,
+        setNewAddress
+      );
+    }
   };
 
   const handleRenameCollection = () => {
@@ -434,16 +440,16 @@ const CollectionRow = ({
                       </TableCell>
                       <TableCell className="crystal-table-cell">
                         <BalanceCell
-                          value={totals.chain_in}
-                          expect={totals.expect_chain_in}
+                          value={0}
+                          expect={0}
                           displayBtc={displayBtc}
                         />
                       </TableCell>
                       {!isMobile && (
                         <TableCell className="crystal-table-cell">
                           <BalanceCell
-                            value={totals.mempool_in}
-                            expect={totals.expect_mempool_in}
+                            value={0}
+                            expect={0}
                             displayBtc={displayBtc}
                           />
                         </TableCell>
@@ -737,11 +743,19 @@ export default function Addresses() {
     });
   };
 
-  const handleAddAddress = (collection, name, address) => {
+  const handleAddAddress = (collection, name, address, setNewAddress) => {
     socketIO.emit("add", { collection, name, address }, (response) => {
       console.log("add", response);
       if (response.error) {
-        alert(response.error);
+        setNotification({
+          open: true,
+          message: response.error,
+          severity: "error",
+        });
+      } else if (response.status === "ok" && response.record) {
+        // The address was added successfully and is in a loading state
+        // The UI will update automatically when the updateState event is received
+        setNewAddress(null);
       }
     });
   };

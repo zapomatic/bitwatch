@@ -1,6 +1,6 @@
 # Bitwatch
 
-> Monitor Bitcoin addresses in the mempool and on-chain using the mempool.space API
+> Monitor Bitcoin addresses in the mempool and on-chain using the mempool.space API. Run your own node and monitor your own addresses privately. Get Telegram notifications for onchain and mempool activity relating to addresses.
 
 ![Bitwatch](./client/public/app.png)
 
@@ -13,10 +13,13 @@
 - Mobile responsive design
 - Telegram notifications for balance changes
 - Integration with mempool.space API
+- Option to use your own local node for privacy
 
 ## Installation
 
 ### As an Umbrel App
+
+> COMING SOON
 
 1. Click the "Install" button in the Umbrel app store
 2. Wait for installation to complete
@@ -33,7 +36,7 @@ npm run dev
 
 - **API Endpoint**: By default, uses mempool.space API. Can be configured to use your local mempool instance.
 - **Update Interval**: Configurable polling interval (default: 10 minutes)
-- **Rate Limiting**: Adjustable API rate limiting to prevent overload
+- **Parallel Request Limiting**: Adjustable API parallelization config to prevent rate limiting
 - **Telegram Integration**: Optional notifications via Telegram bot
 
 ## Usage
@@ -45,7 +48,9 @@ npm run dev
 
 ## Some Interesting Addresses to Monitor
 
-1. **Satoshi Genesis Block Reward** - `1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa`
+By default, the app will ship monitoring the following addresses (as examples):
+
+1. **Genesis Block Reward** - `1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa`
    - The original bitcoin genesis block reward address
    - Technically unspendable, but receives frequent transactions from Runestones
    - Great for testing monitoring functionality
@@ -63,10 +68,11 @@ If running on an Umbrel home, and the desire is to run a sovereign monitoring no
 1. Install the Umbrel app
 2. Install Fulcrum (faster electrum server, using Electrs will return 502 errors looking up address data on an Umbrel Home or Raspberry Pi device)
 3. Install Mempool app
-4. Configure Mempool to use Fulcrum as the server
+4. Configure Mempool to use Fulcrum as the server (right click on the Mempool app and under Settings, set the server to Fulcrum)
 5. Wait for Fulcum/Mempool to sync
-6. Configure Bitwatch to use the local Mempool instance
-7. Configure Bitwatch to use the Telegram bot
+6. Restart Mempool
+7. Configure Bitwatch to use the local Mempool instance (e.g. `http://10.0.0.33:3006`)
+8. (optional) Configure Bitwatch to use a Telegram bot for notifications
 
 ## Contributing
 

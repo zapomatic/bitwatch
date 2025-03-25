@@ -79,33 +79,59 @@ const socketIO = {
           if (existing) return cb({ error: `address already exists` });
         }
 
+        // Add the address immediately with a loading state
+        const record = {
+          address,
+          name,
+          expect: {
+            chain_in: 0,
+            chain_out: 0,
+            mempool_in: 0,
+            mempool_out: 0
+          },
+          actual: null,
+          error: false,
+          errorMessage: null
+        };
+
+        memory.db.collections[collection].addresses.push(record);
+        memory.saveDb();
+        // Emit state update to ALL clients
+        socketIO.io.emit("updateState", { collections: memory.db.collections });
+        cb({ status: "ok", record });
+
         try {
           const balance = await getAddressBalance(address);
           logger.data(`Balance for ${address}: chain (in=${balance.actual.chain_in}, out=${balance.actual.chain_out}), mempool (in=${balance.actual.mempool_in}, out=${balance.actual.mempool_out})`);
           
-          // Initialize the record with both expect and actual values
-          const record = {
-            address,
-            name,
-            expect: balance.error ? {
-              chain_in: 0,
-              chain_out: 0,
-              mempool_in: 0,
-              mempool_out: 0
-            } : balance.actual,
-            actual: balance.error ? null : balance.actual,
-            error: balance.error || false,
-            errorMessage: balance.error ? balance.message : null
-          };
-
-          memory.db.collections[collection].addresses.push(record);
-          memory.saveDb();
-          // Emit state update to ALL clients
-          socketIO.io.emit("updateState", { collections: memory.db.collections });
-          cb({ status: "ok", record });
+          // Update the record with the fetched balance
+          const index = memory.db.collections[collection].addresses.findIndex(a => a.address === address);
+          if (index !== -1) {
+            memory.db.collections[collection].addresses[index] = {
+              ...record,
+              actual: balance.error ? null : balance.actual,
+              error: balance.error || false,
+              errorMessage: balance.error ? balance.message : null
+            };
+            memory.saveDb();
+            // Emit state update to ALL clients
+            socketIO.io.emit("updateState", { collections: memory.db.collections });
+          }
         } catch (error) {
           logger.error(`Error adding address ${address}: ${error.message}`);
-          cb({ error: `Failed to add address: ${error.message}` });
+          // Update the record with the error state
+          const index = memory.db.collections[collection].addresses.findIndex(a => a.address === address);
+          if (index !== -1) {
+            memory.db.collections[collection].addresses[index] = {
+              ...record,
+              actual: null,
+              error: true,
+              errorMessage: error.message
+            };
+            memory.saveDb();
+            // Emit state update to ALL clients
+            socketIO.io.emit("updateState", { collections: memory.db.collections });
+          }
         }
       });
 
