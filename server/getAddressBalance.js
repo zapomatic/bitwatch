@@ -29,11 +29,11 @@ const attemptCall = async (addr) => {
     currentOpt.path = `${options.path}/${addr}`;
     
     // Build curl command for logging
-    const headers = Object.entries(currentOpt.headers)
-      .map(([key, value]) => `-H '${key}: ${value}'`)
-      .join(' ');
+    // const headers = Object.entries(currentOpt.headers)
+    //   .map(([key, value]) => `-H '${key}: ${value}'`)
+    //   .join(' ');
     const fullUrl = `${api.protocol}//${api.hostname}${api.port ? `:${api.port}` : ''}${currentOpt.path}`;
-    logger.network(`Fetching balance for ${addr}:\ncurl ${headers} '${fullUrl}'`);
+    logger.network(`Fetching balance for ${addr}:\ncurl '${fullUrl}'`);
     
     const req = (api.protocol === "https:" ? https : http).request(
       currentOpt,

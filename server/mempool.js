@@ -221,6 +221,16 @@ const processTransaction = (tx, io) => {
   }
 };
 
+const updateWebSocketState = (io, state) => {
+  logger.info(`Updating WebSocket state to: ${state}`);
+  memory.db.websocketState = state;
+  // Emit to all connected clients immediately
+  io.emit("updateState", {
+    collections: memory.db.collections,
+    websocketState: state,
+  });
+};
+
 const setupWebSocket = (io) => {
   if (isConnecting) {
     logger.warning("Already attempting to connect, skipping...");
@@ -230,6 +240,24 @@ const setupWebSocket = (io) => {
   isConnecting = true;
   isReady = false;
   logger.info("Setting up new websocket connection...");
+  updateWebSocketState(io, "CONNECTING");
+
+  let connectionTimeout;
+  let cleanup = () => {
+    if (connectionTimeout) {
+      clearTimeout(connectionTimeout);
+    }
+    if (ws) {
+      // Only remove listeners if the WebSocket exists
+      try {
+        ws.removeAllListeners();
+      } catch (error) {
+        logger.warning("Error removing WebSocket listeners:", error);
+      }
+    }
+    isConnecting = false;
+    isReady = false;
+  };
 
   try {
     logger.info("Creating new mempool websocket...");
@@ -238,54 +266,43 @@ const setupWebSocket = (io) => {
       `Websocket created, initial state: ${getWebSocketState(ws)}`
     );
 
-    // Wait for the websocket to be fully established
-    const waitForConnection = () => {
-      return new Promise((resolve) => {
-        if (ws.readyState === 1) {
-          resolve();
-        } else {
-          const checkConnection = () => {
-            if (ws.readyState === 1) {
-              ws.removeEventListener("open", checkConnection);
-              resolve();
-            }
-          };
-          ws.addEventListener("open", checkConnection);
-        }
-      });
-    };
+    // Add error handler before any other operations
+    ws.on("error", (error) => {
+      logger.error(`WebSocket error during setup: ${error.message}`);
+      cleanup();
+      updateWebSocketState(io, "ERROR");
+      handleDisconnect(io);
+    });
+
+    // Add connection timeout
+    connectionTimeout = setTimeout(() => {
+      if (ws && ws.readyState !== 1) {
+        // 1 = OPEN
+        logger.error("WebSocket connection timeout - no open event received");
+        cleanup();
+        // Don't try to close the WebSocket here, just let the error handler deal with it
+        handleDisconnect(io);
+      }
+    }, 10000); // 10 second timeout
 
     ws.addEventListener("open", async () => {
+      clearTimeout(connectionTimeout);
       logger.success(
         `Connected to mempool.space WebSocket (state: ${getWebSocketState(ws)})`
       );
       isConnecting = false;
-      reconnectAttempts = 0; // Reset reconnect attempts on successful connection
+      reconnectAttempts = 0;
+      updateWebSocketState(io, "CONNECTED");
 
+      // Subscribe to mempool info to confirm connection is ready
       try {
-        // Wait for connection to be fully established
-        await waitForConnection();
-        logger.success(
-          `Websocket fully established (state: ${getWebSocketState(ws)})`
-        );
-
-        // Subscribe to data
-        logger.info(
-          `Attempting to subscribe to mempool data (state: ${getWebSocketState(
-            ws
-          )})`
-        );
-
-        // Wait a moment before updating tracked addresses
-        setTimeout(() => {
-          logger.info(
-            "Resubscribing to tracked addresses after reconnection..."
-          );
-          updateTrackedAddresses();
-        }, 1000);
+        logger.info("Requesting mempool info to confirm connection...");
+        mempoolClient.bitcoin.websocket.wsRequestMempoolInfo(ws);
       } catch (error) {
-        logger.error(`Error during websocket setup: ${error.message}`);
-        logger.error(`Error details:`, error);
+        logger.error(`Error requesting mempool info: ${error.message}`);
+        cleanup();
+        updateWebSocketState(io, "ERROR");
+        handleDisconnect(io);
       }
     });
 
@@ -297,8 +314,10 @@ const setupWebSocket = (io) => {
 
         // Handle mempoolInfo message - this indicates the connection is ready
         if (res.mempoolInfo) {
-          logger.info(`Received mempool info`);
+          logger.info(`Received mempool info, connection is ready`);
           isReady = true;
+          // Update tracked addresses now that connection is ready
+          updateTrackedAddresses();
         }
 
         // Only process other messages if we're ready
@@ -369,7 +388,7 @@ const setupWebSocket = (io) => {
         }
 
         // Log any unhandled message types
-        // logger.warning(`Unhandled message type: ${messageType}`);
+        logger.warning(`Unhandled message type: ${messageType}`);
       } catch (error) {
         logger.error(`Error processing websocket message: ${error.message}`);
         logger.error(`Error details:`, error);
@@ -377,28 +396,28 @@ const setupWebSocket = (io) => {
     });
 
     ws.addEventListener("error", (error) => {
+      cleanup();
       logger.error(`Mempool WebSocket error: ${error.message}`);
       logger.error(`Error details:`, error);
       logger.error(`Websocket state at error: ${getWebSocketState(ws)}`);
-      isConnecting = false;
-      isReady = false;
+      updateWebSocketState(io, "ERROR");
       handleDisconnect(io);
     });
 
     ws.addEventListener("close", (event) => {
+      cleanup();
       logger.websocket(
         `Mempool WebSocket connection closed (code: ${event.code}, reason: ${event.reason})`
       );
       logger.websocket(`Final websocket state: ${getWebSocketState(ws)}`);
-      isConnecting = false;
-      isReady = false;
+      updateWebSocketState(io, "DISCONNECTED");
       handleDisconnect(io);
     });
   } catch (error) {
+    cleanup();
     logger.error("Error setting up websocket:");
     logger.error("Error details:", error);
-    isConnecting = false;
-    isReady = false;
+    updateWebSocketState(io, "ERROR");
     handleDisconnect(io);
   }
 };
@@ -409,16 +428,22 @@ const handleDisconnect = (io) => {
     return;
   }
 
-  reconnectAttempts++;
-  logger.info(
-    `Attempting to reconnect (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`
-  );
+  // Only increment reconnect attempts if we're not already connecting
+  if (!isConnecting) {
+    reconnectAttempts++;
+    logger.info(
+      `Attempting to reconnect (attempt ${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})...`
+    );
+  }
 
   trackedAddresses.clear(); // Clear tracked addresses to force resubscription
 
-  setTimeout(() => {
-    setupWebSocket(io);
-  }, RECONNECT_DELAY);
+  // Only schedule a new connection if we're not already connecting
+  if (!isConnecting) {
+    setTimeout(() => {
+      setupWebSocket(io);
+    }, RECONNECT_DELAY);
+  }
 };
 
 const init = async (io) => {
@@ -434,13 +459,20 @@ const init = async (io) => {
     const apiUrl = new URL(memory.db.api);
     const hostname = apiUrl.hostname;
     const protocol = apiUrl.protocol === "https:" ? "wss" : "ws";
+    const port = apiUrl.port;
 
-    logger.network(`Using mempool API: ${hostname} (${protocol})`);
+    // Construct and log the full WebSocket URL
+    const wsUrl = `${protocol}://${hostname}${
+      port ? `:${port}` : ""
+    }/api/v1/ws`;
+    logger.network(`Full WebSocket URL: ${wsUrl}`);
+    logger.network(`Using mempool API: ${hostname}:${port} (${protocol})`);
 
     mempoolClient = mempoolJS({
       hostname,
       network: "bitcoin",
       protocol,
+      port: port || (protocol === "wss" ? 443 : 80),
     });
 
     setupWebSocket(io);

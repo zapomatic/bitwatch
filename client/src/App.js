@@ -10,6 +10,7 @@ import Container from "@mui/material/Container";
 import CssBaseline from "@mui/material/CssBaseline";
 import Grid from "@mui/material/Grid";
 import IconButton from "@mui/material/IconButton";
+import Link from "@mui/material/Link";
 import MuiAppBar from "@mui/material/AppBar";
 import Paper from "@mui/material/Paper";
 import React, { useCallback, useEffect, useState } from "react";
@@ -20,7 +21,6 @@ import Typography from "@mui/material/Typography";
 import Integrations from "./Integrations";
 import Configuration from "./Configuration";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
-import Footer from "./Footer";
 import WatchListIcon from "@mui/icons-material/List";
 import IntegrationIcon from "@mui/icons-material/Extension";
 
@@ -97,14 +97,20 @@ const darkTheme = createTheme({
 
 function AppContent() {
   const [version, setVersion] = useState("");
+  const [websocketState, setWebsocketState] = useState("DISCONNECTED");
+  const [apiState, setApiState] = useState("UNKNOWN");
   const navigate = useNavigate();
 
   const onSocketConnect = useCallback(() => {
-    socketIO.emit("client", {}, ({ version }) => {
+    socketIO.emit("client", {}, ({ version, websocketState, apiState }) => {
       console.log("client loaded", {
         version,
+        websocketState,
+        apiState,
       });
       setVersion(version);
+      setWebsocketState(websocketState);
+      setApiState(apiState);
     });
   }, []);
 
@@ -119,14 +125,76 @@ function AppContent() {
     });
     socketIO.on("connect", onSocketConnect);
     socketIO.on("reconnect", onSocketConnect);
+    socketIO.on("updateState", (state) => {
+      console.log("Received state update:", state);
+      if (state.websocketState) {
+        console.log("Updating WebSocket state to:", state.websocketState);
+        setWebsocketState(state.websocketState);
+      }
+      if (state.apiState) {
+        console.log("Updating API state to:", state.apiState);
+        setApiState(state.apiState);
+      }
+    });
 
     return () => {
       socketIO.removeAllListeners("info");
       socketIO.removeAllListeners("connect");
       socketIO.removeAllListeners("reconnect");
       socketIO.removeAllListeners("reload");
+      socketIO.removeAllListeners("updateState");
     };
   }, [onSocketConnect]);
+
+  const getStatusColor = (state) => {
+    switch (state) {
+      case "CONNECTED":
+      case "GOOD":
+        return "var(--theme-success)";
+      case "CONNECTING":
+      case "CHECKING":
+        return "var(--theme-warning)";
+      case "ERROR":
+      case "FAILED":
+      case "DISCONNECTED":
+        return "var(--theme-danger)";
+      default:
+        return "var(--theme-text)";
+    }
+  };
+
+  const StatusIndicator = ({ state, label }) => (
+    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      <Box
+        sx={{
+          width: "12px",
+          height: "12px",
+          borderRadius: "50%",
+          backgroundColor: getStatusColor(state),
+          boxShadow: `0 0 10px ${getStatusColor(state)}`,
+          animation:
+            state === "CONNECTING" || state === "CHECKING"
+              ? "pulse 2s infinite"
+              : "none",
+          "@keyframes pulse": {
+            "0%": { opacity: 1 },
+            "50%": { opacity: 0.5 },
+            "100%": { opacity: 1 },
+          },
+        }}
+      />
+      <Typography
+        variant="caption"
+        sx={{
+          color: "var(--theme-accent)",
+          textTransform: "uppercase",
+          letterSpacing: "0.05em",
+        }}
+      >
+        {label}: {state}
+      </Typography>
+    </Box>
+  );
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
@@ -157,7 +225,7 @@ function AppContent() {
           >
             Bitwatch {version}
           </Typography>
-          <Box sx={{ display: "flex", gap: 1 }}>
+          <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
             <IconButton
               color="inherit"
               onClick={() => navigate("/")}
@@ -193,6 +261,7 @@ function AppContent() {
           height: "100vh",
           overflow: "auto",
           pt: 8,
+          pb: 8,
         }}
       >
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
@@ -219,8 +288,46 @@ function AppContent() {
               </Paper>
             </Grid>
           </Grid>
-          <Footer sx={{ pt: 4 }} />
         </Container>
+      </Box>
+      <Box
+        component="footer"
+        sx={{
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: "var(--theme-surface)",
+          borderTop: "1px solid rgba(77, 244, 255, 0.3)",
+          backdropFilter: "blur(5px)",
+          zIndex: 1000,
+          py: 1,
+          px: 2,
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <StatusIndicator state={websocketState} label="WebSocket" />
+          <StatusIndicator state={apiState} label="API" />
+        </Box>
+        <Typography
+          variant="caption"
+          sx={{
+            color: "var(--theme-accent)",
+            opacity: 0.7,
+          }}
+        >
+          Made with ❤️ and 🤖 by{" "}
+          <Link
+            color="inherit"
+            target="zap"
+            href="https://zapomatic.github.io/"
+          >
+            Zap-O-Matic
+          </Link>
+        </Typography>
       </Box>
     </Box>
   );

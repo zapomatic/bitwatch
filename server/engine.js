@@ -92,9 +92,32 @@ const updateAddressAndEmit = (addr, balance) => {
     );
   }
 
+  // Determine API state based on address data
+  const hasActualData = Object.values(collections).some((col) =>
+    col.addresses.some((addr) => addr.actual !== null)
+  );
+  const hasErrors = Object.values(collections).some((col) =>
+    col.addresses.some((addr) => addr.error)
+  );
+  const hasLoading = Object.values(collections).some((col) =>
+    col.addresses.some((addr) => addr.actual === null && !addr.error)
+  );
+
+  let apiState = "?";
+  if (hasErrors) {
+    apiState = "ERROR";
+  } else if (hasLoading) {
+    apiState = "CHECKING";
+  } else if (hasActualData) {
+    apiState = "GOOD";
+  }
+
   // Update state and emit changes
   memory.state = { collections };
-  socketIO.io.emit("updateState", { collections });
+  socketIO.io.emit("updateState", {
+    collections,
+    apiState,
+  });
 };
 
 const engine = async () => {
@@ -110,6 +133,12 @@ const engine = async () => {
       });
     });
   }
+
+  // Set API state to CHECKING when starting a new check
+  socketIO.io.emit("updateState", {
+    collections: memory.db.collections,
+    apiState: "CHECKING",
+  });
 
   logger.processing(
     `Starting balance check for ${allAddresses.length} addresses (${memory.db.apiParallelLimit} concurrent)`

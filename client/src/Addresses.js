@@ -790,22 +790,9 @@ export default function Addresses() {
                 {displayBtc ? "Show Satoshis" : "Show Bitcoin"}
               </Button>
               <Button
-                className="crystal-button"
+                className="crystal-button crystal-button-primary"
                 onClick={() => setNewCollection({ name: "" })}
                 startIcon={<AddIcon />}
-                sx={{
-                  background:
-                    "linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))",
-                  color: "var(--theme-background)",
-                  borderRadius: "8px",
-                  border: "1px solid rgba(77, 244, 255, 0.3)",
-                  boxShadow: "0 0 10px var(--theme-glow-primary)",
-                  "&:hover": {
-                    background:
-                      "linear-gradient(135deg, var(--theme-secondary), var(--theme-primary))",
-                    boxShadow: "0 0 15px var(--theme-glow-primary)",
-                  },
-                }}
               >
                 Add Collection
               </Button>

@@ -49,7 +49,8 @@ If the desire is to run a sovereign monitoring node (for privacy reasons), the f
 4. Configure Mempool to use Fulcrum as the server (right click on the Mempool app and under Settings, set the server to Fulcrum)
 5. Wait for Fulcum/Mempool to sync
 6. Restart Mempool
-7. Configure Bitwatch to use the local Mempool instance in the app UI configure page (e.g. `http://10.0.0.33:3006`)
+7. Configure Bitwatch to use the local Mempool instance in the app UI configure page: `http://10.21.21.26:3006`
+   - https://github.com/getumbrel/umbrel-apps/blob/master/mempool/exports.sh#L1C24-L1C35
 8. (optional) Configure Bitwatch to use a Telegram bot for notifications in the integrations page
 
 ### Development Setup

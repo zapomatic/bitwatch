@@ -38,9 +38,32 @@ const socketIO = {
 
       socket.on("client", async (data, cb) => {
         logger.info(`Client connected (ID: ${socketID})`);
+        
+        // Determine initial API state based on address data
+        const hasActualData = Object.values(memory.db.collections).some(col => 
+          col.addresses.some(addr => addr.actual !== null)
+        );
+        const hasErrors = Object.values(memory.db.collections).some(col => 
+          col.addresses.some(addr => addr.error)
+        );
+        const hasLoading = Object.values(memory.db.collections).some(col => 
+          col.addresses.some(addr => addr.actual === null && !addr.error)
+        );
+
+        let apiState = "?";
+        if (hasErrors) {
+          apiState = "ERROR";
+        } else if (hasLoading) {
+          apiState = "CHECKING";
+        } else if (hasActualData) {
+          apiState = "GOOD";
+        }
+
         cb({
           version: pjson.version,
           collections: memory.db.collections,
+          websocketState: memory.db.websocketState || "DISCONNECTED",
+          apiState: apiState
         });
       });
 

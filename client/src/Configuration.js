@@ -72,7 +72,60 @@ function Config() {
   return (
     <>
       <div className="crystal-panel">
-        <Title>Configuration</Title>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "2rem",
+          }}
+        >
+          <Title>Configuration</Title>
+          <div className="crystal-toggle-group">
+            <Button
+              className="crystal-button"
+              onClick={() =>
+                setConfig({
+                  ...config,
+                  api: "http://10.21.21.26:3006",
+                  apiParallelLimit: 100,
+                  interval: 60000,
+                })
+              }
+              sx={{
+                background: "var(--theme-surface)",
+                color: "var(--theme-text)",
+                "&:hover": {
+                  background: "rgba(77, 244, 255, 0.1)",
+                  boxShadow: "0 0 10px var(--theme-glow-secondary)",
+                },
+              }}
+            >
+              Use Local Node
+            </Button>
+            <Button
+              className="crystal-button"
+              onClick={() =>
+                setConfig({
+                  ...config,
+                  api: "https://mempool.space",
+                  apiParallelLimit: 5,
+                  interval: 600000,
+                })
+              }
+              sx={{
+                background: "var(--theme-surface)",
+                color: "var(--theme-text)",
+                "&:hover": {
+                  background: "rgba(77, 244, 255, 0.1)",
+                  boxShadow: "0 0 10px var(--theme-glow-secondary)",
+                },
+              }}
+            >
+              Use Public API
+            </Button>
+          </div>
+        </div>
         <Grid container spacing={3}>
           {Object.keys(config).map((key) => (
             <Grid item xs={12} key={key}>
@@ -103,7 +156,37 @@ function Config() {
                       fontSize: "0.75rem",
                     }}
                   >
-                    Updates every {formatInterval(parseInt(config[key]))}
+                    Updates every {formatInterval(parseInt(config[key]))} (if
+                    running local mempool, you can run this much more
+                    frequently)
+                  </Typography>
+                )}
+                {key === "api" && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "var(--theme-accent)",
+                      marginTop: "0.25rem",
+                      display: "block",
+                      fontSize: "0.75rem",
+                    }}
+                  >
+                    Most users should use https://mempool.space (default) or
+                    http://10.21.21.26:3006 (umbrel)
+                  </Typography>
+                )}
+                {key === "apiParallelLimit" && (
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: "var(--theme-accent)",
+                      marginTop: "0.25rem",
+                      display: "block",
+                      fontSize: "0.75rem",
+                    }}
+                  >
+                    If you are using your own local mempool instance, you can
+                    increase this number to speed up address monitoring.
                   </Typography>
                 )}
               </div>
