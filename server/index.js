@@ -18,8 +18,18 @@ app.use((req, res, next) => {
     credentials: true,
     methods: "GET,PUT,POST",
     origin: req.headers.origin,
+    exposedHeaders: ["Content-Type"],
   })(req, res, next);
 });
+
+// Add specific CORS headers for manifest.json
+app.get("/manifest.json", (req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Methods", "GET");
+  next();
+});
+
 app.use(express.static(memory.dirUI));
 
 const PORT = process.env.PORT || 3117;

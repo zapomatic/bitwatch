@@ -9,7 +9,6 @@
 - Real-time monitoring of Bitcoin addresses
 - Track both on-chain and mempool activity
 - Set and manage balance expectations
-- Beautiful cyberpunk crystal theme
 - Mobile responsive design
 - Telegram notifications for balance changes
 - Integration with mempool.space API
