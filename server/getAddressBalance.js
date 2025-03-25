@@ -11,7 +11,7 @@ const attemptCall = async (addr) => {
     const api = url.parse(memory.db.api);
     const options = {
       headers: {
-        Origin: `${api.protocol}//${api.hostname}`,
+        Origin: `${api.protocol}//${api.hostname}${api.port ? `:${api.port}` : ''}`,
         "User-Agent": `Bitwatch/${pjson.version}`,
         Accept: "application/json, text/plain, */*",
         "Accept-Language": "en-US,en;q=0.9",
@@ -27,7 +27,13 @@ const attemptCall = async (addr) => {
 
     const currentOpt = { ...options };
     currentOpt.path = `${options.path}/${addr}`;
-    logger.network(`Fetching balance for ${addr}`);
+    
+    // Build curl command for logging
+    const headers = Object.entries(currentOpt.headers)
+      .map(([key, value]) => `-H '${key}: ${value}'`)
+      .join(' ');
+    const fullUrl = `${api.protocol}//${api.hostname}${api.port ? `:${api.port}` : ''}${currentOpt.path}`;
+    logger.network(`Fetching balance for ${addr}:\ncurl ${headers} '${fullUrl}'`);
     
     const req = (api.protocol === "https:" ? https : http).request(
       currentOpt,
@@ -52,7 +58,7 @@ const attemptCall = async (addr) => {
               mempool_in: json.mempool_stats.funded_txo_sum || 0,
               mempool_out: json.mempool_stats.spent_txo_sum || 0,
             };
-            logger.success(`Balance fetched for ${addr}: chain_in=${json.actual.chain_in}, chain_out=${json.actual.chain_out}, mempool_in=${json.actual.mempool_in}, mempool_out=${json.actual.mempool_out}`);
+            logger.success(`Balance for ${addr}: chain (in=${json.actual.chain_in}, out=${json.actual.chain_out}), mempool (in=${json.actual.mempool_in}, out=${json.actual.mempool_out})`);
             resolve(json);
           } catch (error) {
             logger.error(`JSON parse error for ${addr}: ${error.message}`);

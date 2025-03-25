@@ -131,13 +131,37 @@ const calculateAddressBalance = (transactions, address) => {
 };
 
 const updateAddressBalance = (address, balance, io) => {
-  for (const collection of Object.values(memory.db.collections)) {
+  for (const [collectionName, collection] of Object.entries(
+    memory.db.collections
+  )) {
     const addr = collection.addresses.find((a) => a.address === address);
     if (addr) {
+      const oldBalance = { ...addr.actual };
       addr.actual = {
         ...addr.actual,
         ...balance,
       };
+
+      // Log balance changes if they differ from expected
+      if (addr.expect) {
+        const changes = {};
+        if (addr.actual.chain_in !== addr.expect.chain_in)
+          changes.chain_in = addr.actual.chain_in;
+        if (addr.actual.chain_out !== addr.expect.chain_out)
+          changes.chain_out = addr.actual.chain_out;
+        if (addr.actual.mempool_in !== addr.expect.mempool_in)
+          changes.mempool_in = addr.actual.mempool_in;
+        if (addr.actual.mempool_out !== addr.expect.mempool_out)
+          changes.mempool_out = addr.actual.mempool_out;
+
+        if (Object.keys(changes).length > 0) {
+          logger.warning(`Websocket balance mismatch detected for ${address} (${collectionName}/${addr.name}):
+Expected: chain_in=${addr.expect.chain_in}, chain_out=${addr.expect.chain_out}, mempool_in=${addr.expect.mempool_in}, mempool_out=${addr.expect.mempool_out}
+Actual: chain_in=${addr.actual.chain_in}, chain_out=${addr.actual.chain_out}, mempool_in=${addr.actual.mempool_in}, mempool_out=${addr.actual.mempool_out}
+Previous: chain_in=${oldBalance.chain_in}, chain_out=${oldBalance.chain_out}, mempool_in=${oldBalance.mempool_in}, mempool_out=${oldBalance.mempool_out}`);
+        }
+      }
+
       // Emit update for this address
       io.emit("updateState", { collections: memory.db.collections });
       return true;

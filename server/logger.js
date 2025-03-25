@@ -8,7 +8,7 @@ const logger = {
   // General purpose logging
   info: (message) => console.log(formatMessage(`ℹ️  ${message}`)),
   success: (message) => console.log(formatMessage(`✅ ${message}`)),
-  warning: (message) => console.warn(formatMessage(`⚠️ ${message}`)),
+  warning: (message) => console.warn(formatMessage(`🚨 ${message}`)),
   error: (message) => console.error(formatMessage(`❌ ${message}`)),
   debug: (message) => console.debug(formatMessage(`🔍 ${message}`)),
 

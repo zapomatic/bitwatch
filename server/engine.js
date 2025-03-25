@@ -5,7 +5,13 @@ import memory from "./memory.js";
 import telegram from "./telegram.js";
 import logger from "./logger.js";
 
-const detectChanges = (actual, expected) => {
+const detectChanges = (
+  actual,
+  expected,
+  address,
+  collectionName,
+  addressName
+) => {
   if (!actual || !expected) return null;
   const changes = {};
   if (actual.chain_in !== expected.chain_in) changes.chain_in = actual.chain_in;
@@ -15,6 +21,13 @@ const detectChanges = (actual, expected) => {
     changes.mempool_in = actual.mempool_in;
   if (actual.mempool_out !== expected.mempool_out)
     changes.mempool_out = actual.mempool_out;
+
+  if (Object.keys(changes).length > 0) {
+    logger.warning(`Balance mismatch detected for ${address} (${collectionName}/${addressName}):
+Expected: chain_in=${expected.chain_in}, chain_out=${expected.chain_out}, mempool_in=${expected.mempool_in}, mempool_out=${expected.mempool_out}
+Actual: chain_in=${actual.chain_in}, chain_out=${actual.chain_out}, mempool_in=${actual.mempool_in}, mempool_out=${actual.mempool_out}`);
+  }
+
   return Object.keys(changes).length > 0 ? changes : null;
 };
 
@@ -65,7 +78,10 @@ const updateAddressAndEmit = (addr, balance) => {
   // Check for changes and notify
   const changes = detectChanges(
     balance.actual,
-    collection.addresses[index].expect
+    collection.addresses[index].expect,
+    addr.address,
+    addr.collection,
+    collection.addresses[index].name
   );
   if (changes) {
     telegram.notifyBalanceChange(

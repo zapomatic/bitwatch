@@ -81,7 +81,7 @@ const socketIO = {
 
         try {
           const balance = await getAddressBalance(address);
-          logger.data(`Balance fetched for ${address}: chain_in=${balance.actual.chain_in}, chain_out=${balance.actual.chain_out}, mempool_in=${balance.actual.mempool_in}, mempool_out=${balance.actual.mempool_out}`);
+          logger.data(`Balance for ${address}: chain (in=${balance.actual.chain_in}, out=${balance.actual.chain_out}), mempool (in=${balance.actual.mempool_in}, out=${balance.actual.mempool_out})`);
           
           // Initialize the record with both expect and actual values
           const record = {
