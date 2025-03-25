@@ -25,6 +25,9 @@ mkdir ~/.bitwatch
 
 # run the container
 docker run --rm --name bitwatch -p 3117:3117 -v ~/.bitwatch:/app/server/data ghcr.io/zapomatic/bitwatch:latest
+
+# stop and remove the container
+docker stop bitwatch
 ```
 
 ### As an Umbrel App
