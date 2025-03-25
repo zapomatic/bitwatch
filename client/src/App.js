@@ -200,12 +200,12 @@ function AppContent() {
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <CssBaseline />
       <AppBar position="absolute">
-        <Toolbar sx={{ pr: "24px" }}>
+        <Toolbar sx={{ pr: "24px", minHeight: "48px !important" }}>
           <img
             src="/bitwatch-512-transparent.png"
             alt="favicon"
-            width="42"
-            height="42"
+            width="32"
+            height="32"
             sx={{}}
           />
           <Typography
@@ -215,7 +215,6 @@ function AppContent() {
             noWrap
             sx={{
               flexGrow: 1,
-              marginTop: "3",
               cursor: "pointer",
               "&:hover": {
                 textShadow: "0 0 8px var(--theme-glow-secondary)",
@@ -223,13 +222,14 @@ function AppContent() {
             }}
             onClick={() => navigate("/")}
           >
-            Bitwatch {version}
+            itwatch {version}
           </Typography>
           <Box sx={{ display: "flex", gap: 1, alignItems: "center" }}>
             <IconButton
               color="inherit"
               onClick={() => navigate("/")}
               className="header-nav-icon"
+              size="small"
             >
               <WatchListIcon />
             </IconButton>
@@ -237,6 +237,7 @@ function AppContent() {
               color="inherit"
               onClick={() => navigate("/integrations")}
               className="header-nav-icon"
+              size="small"
             >
               <IntegrationIcon />
             </IconButton>
@@ -244,6 +245,7 @@ function AppContent() {
               color="inherit"
               onClick={() => navigate("/config")}
               className="header-nav-icon"
+              size="small"
             >
               <SettingsIcon />
             </IconButton>
@@ -260,7 +262,7 @@ function AppContent() {
           flexGrow: 1,
           height: "100vh",
           overflow: "auto",
-          pt: 8,
+          pt: 6,
           pb: 8,
         }}
       >
