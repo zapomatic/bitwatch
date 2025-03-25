@@ -275,7 +275,7 @@ const CollectionRow = ({
     <>
       <TableRow className="crystal-table-row collection-row">
         <TableCell>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "right", gap: 1 }}>
             <IconButton
               size="small"
               onClick={() => setIsExpanded(!isExpanded)}
@@ -285,7 +285,7 @@ const CollectionRow = ({
             </IconButton>
             {isEditingName ? (
               <Box
-                sx={{ display: "flex", alignItems: "center", gap: 1, flex: 1 }}
+                sx={{ display: "flex", alignItems: "right", gap: 1, flex: 1 }}
               >
                 <input
                   className="crystal-input"
@@ -526,7 +526,7 @@ const CollectionRow = ({
                               <Box
                                 sx={{
                                   display: "flex",
-                                  alignItems: "center",
+                                  alignItems: "right",
                                   gap: 1,
                                 }}
                               >
@@ -598,7 +598,7 @@ const CollectionRow = ({
                           <Box
                             sx={{
                               display: "flex",
-                              justifyContent: "center",
+                              justifyContent: "right",
                               gap: 1,
                             }}
                           >
