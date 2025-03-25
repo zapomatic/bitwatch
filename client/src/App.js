@@ -262,8 +262,8 @@ function AppContent() {
           flexGrow: 1,
           height: "100vh",
           overflow: "auto",
-          pt: 6,
-          pb: 8,
+          pt: 5,
+          pb: 7,
         }}
       >
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
