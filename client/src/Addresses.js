@@ -31,6 +31,43 @@ import Alert from "@mui/material/Alert";
 import "./theme.css";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 
+const CrystalNotification = ({ open, onClose, message, severity = "info" }) => (
+  <Snackbar
+    open={open}
+    autoHideDuration={6000}
+    onClose={onClose}
+    anchorOrigin={{ vertical: "top", horizontal: "right" }}
+    sx={{
+      position: "fixed",
+      top: "16px",
+      right: "16px",
+      zIndex: 9999,
+    }}
+  >
+    <Alert
+      onClose={onClose}
+      severity={severity}
+      sx={{
+        width: "100%",
+        background: "var(--theme-surface)",
+        color: "var(--theme-text)",
+        border: "1px solid rgba(77, 244, 255, 0.3)",
+        boxShadow: "0 0 15px var(--theme-glow-secondary)",
+        "& .MuiAlert-icon": {
+          color:
+            severity === "error"
+              ? "var(--theme-danger)"
+              : severity === "warning"
+              ? "var(--theme-warning)"
+              : "var(--theme-success)",
+        },
+      }}
+    >
+      {message}
+    </Alert>
+  </Snackbar>
+);
+
 const formatSatoshis = (sats, displayBtc = true) => {
   if (!sats && sats !== 0) return "—";
   if (displayBtc) {
@@ -46,7 +83,7 @@ const formatSatoshis = (sats, displayBtc = true) => {
 const BalanceCell = ({ value, expect, displayBtc, error, pending }) => {
   if (pending) {
     return (
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      <Box className="crystal-flex crystal-flex-start crystal-gap-1">
         <Typography className="crystal-text" sx={{ opacity: 0.5 }}>
           Loading...
         </Typography>
@@ -56,20 +93,14 @@ const BalanceCell = ({ value, expect, displayBtc, error, pending }) => {
 
   if (error) {
     return (
-      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+      <Box className="crystal-flex crystal-flex-start crystal-gap-1">
         <Typography className="crystal-text" sx={{ opacity: 0.5 }}>
           —
         </Typography>
         <Tooltip title="Failed to fetch balance">
           <WarningIcon
-            sx={{
-              color: "var(--theme-warning)",
-              fontSize: "1rem",
-              "&:hover": {
-                color: "var(--theme-danger)",
-                textShadow: "0 0 8px var(--theme-glow-secondary)",
-              },
-            }}
+            className="crystal-text-warning"
+            sx={{ fontSize: "1rem" }}
           />
         </Tooltip>
       </Box>
@@ -80,29 +111,13 @@ const BalanceCell = ({ value, expect, displayBtc, error, pending }) => {
   const isVerified = diff === 0;
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+    <Box className="crystal-flex crystal-flex-start crystal-gap-1">
       {isVerified ? (
-        <CheckIcon
-          sx={{
-            color: "var(--theme-success)",
-            fontSize: "1rem",
-            textShadow: "0 0 8px var(--theme-glow-success)",
-            "&:hover": {
-              textShadow: "0 0 12px var(--theme-glow-success)",
-            },
-          }}
-        />
+        <CheckIcon className="crystal-text-success" sx={{ fontSize: "1rem" }} />
       ) : (
         <WarningIcon
-          sx={{
-            color: "var(--theme-warning)",
-            fontSize: "1rem",
-            textShadow: "0 0 8px var(--theme-glow-warning)",
-            "&:hover": {
-              color: "var(--theme-danger)",
-              textShadow: "0 0 12px var(--theme-glow-danger)",
-            },
-          }}
+          className="crystal-text-warning"
+          sx={{ fontSize: "1rem" }}
         />
       )}
       <Typography className="crystal-text">
@@ -110,12 +125,10 @@ const BalanceCell = ({ value, expect, displayBtc, error, pending }) => {
       </Typography>
       {!isVerified && (
         <Typography
-          className="crystal-text"
-          sx={{
-            color: diff > 0 ? "var(--theme-success)" : "var(--theme-danger)",
-            fontSize: "0.8em",
-            opacity: 0.8,
-          }}
+          className={`crystal-text ${
+            diff > 0 ? "crystal-text-success" : "crystal-text-danger"
+          }`}
+          sx={{ fontSize: "0.8em", opacity: 0.8 }}
         >
           ({diff > 0 ? "+" : ""}
           {formatSatoshis(diff, displayBtc)})
@@ -141,29 +154,15 @@ const AddressCell = ({ address }) => {
 
   return (
     <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        gap: 1,
-        width: "100%",
-      }}
+      className="crystal-flex crystal-flex-start crystal-gap-1"
+      sx={{ width: "100%" }}
     >
       <Box
         component="a"
         href={`https://mempool.space/address/${address}`}
         target="_blank"
         rel="noopener noreferrer"
-        sx={{
-          color: "var(--theme-accent)",
-          textDecoration: "none",
-          fontFamily: "monospace",
-          transition: "all 0.2s",
-          "&:hover": {
-            color: "var(--theme-secondary)",
-            textDecoration: "underline",
-            textShadow: "0 0 8px var(--theme-glow-secondary)",
-          },
-        }}
+        className="crystal-link"
       >
         {`${address.slice(0, 8)}...`}
       </Box>
@@ -171,12 +170,7 @@ const AddressCell = ({ address }) => {
         <IconButton
           size="small"
           onClick={handleCopy}
-          sx={{
-            color: "var(--theme-accent)",
-            "&:hover": {
-              color: "var(--theme-secondary)",
-            },
-          }}
+          className="crystal-icon-button"
         >
           <ContentCopyIcon fontSize="small" />
         </IconButton>
@@ -236,12 +230,10 @@ const CollectionRow = ({
   displayBtc,
   onRenameCollection,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(autoShowAddForm);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(collection.name);
-  const [newAddress, setNewAddress] = useState(
-    autoShowAddForm ? { name: "", address: "" } : null
-  );
+  const [newAddress, setNewAddress] = useState(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -252,6 +244,14 @@ const CollectionRow = ({
     setIsExpanded(true);
     setNewAddress({ name: "", address: "" });
   };
+
+  // Initialize newAddress if autoShowAddForm is true
+  useEffect(() => {
+    if (autoShowAddForm) {
+      setIsExpanded(true);
+      setNewAddress({ name: "", address: "" });
+    }
+  }, [autoShowAddForm]);
 
   const handleSubmitAddress = () => {
     if (newAddress.name && newAddress.address) {
@@ -275,7 +275,7 @@ const CollectionRow = ({
     <>
       <TableRow className="crystal-table-row collection-row">
         <TableCell>
-          <Box sx={{ display: "flex", alignItems: "right", gap: 1 }}>
+          <Box className="crystal-flex crystal-flex-start crystal-gap-1">
             <IconButton
               size="small"
               onClick={() => setIsExpanded(!isExpanded)}
@@ -285,12 +285,18 @@ const CollectionRow = ({
             </IconButton>
             {isEditingName ? (
               <Box
-                sx={{ display: "flex", alignItems: "right", gap: 1, flex: 1 }}
+                className="crystal-flex crystal-flex-end crystal-gap-1"
+                sx={{ flex: 1 }}
               >
                 <input
                   className="crystal-input"
                   value={editedName}
                   onChange={(e) => setEditedName(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter" && editedName.trim()) {
+                      handleRenameCollection();
+                    }
+                  }}
                   style={{ width: "calc(100% - 80px)" }}
                 />
                 <IconButton
@@ -326,7 +332,7 @@ const CollectionRow = ({
           {collection.addresses.length}
         </TableCell>
         <TableCell className="crystal-table-cell">
-          <Box sx={{ display: "flex", justifyContent: "left" }}>
+          <Box className="crystal-flex crystal-flex-start">
             <BalanceCell
               value={totals.chain_in}
               expect={totals.expect_chain_in}
@@ -338,7 +344,7 @@ const CollectionRow = ({
         </TableCell>
         {!isMobile && (
           <TableCell className="crystal-table-cell">
-            <Box sx={{ display: "flex", justifyContent: "left" }}>
+            <Box className="crystal-flex crystal-flex-start">
               <BalanceCell
                 value={totals.mempool_in}
                 expect={totals.expect_mempool_in}
@@ -350,7 +356,7 @@ const CollectionRow = ({
           </TableCell>
         )}
         <TableCell>
-          <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
+          <Box className="crystal-flex crystal-flex-center crystal-gap-1">
             <IconButton
               size="small"
               onClick={handleAddClick}
@@ -404,262 +410,135 @@ const CollectionRow = ({
                 </TableHead>
                 <TableBody>
                   {newAddress && (
-                    <TableRow>
-                      <TableCell>
-                        <input
-                          className="crystal-input"
-                          value={newAddress.name}
-                          onChange={(e) =>
-                            setNewAddress({
-                              ...newAddress,
-                              name: e.target.value,
-                            })
-                          }
-                          placeholder="Name"
-                          style={{ width: "100%" }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <input
-                          className="crystal-input"
-                          value={newAddress.address}
-                          onChange={(e) =>
-                            setNewAddress({
-                              ...newAddress,
-                              address: e.target.value,
-                            })
-                          }
-                          placeholder="Address"
-                          style={{ width: "100%" }}
-                          onKeyPress={(e) => {
-                            if (e.key === "Enter") {
-                              handleSubmitAddress();
-                            }
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell className="crystal-table-cell">
-                        <BalanceCell
-                          value={0}
-                          expect={0}
-                          displayBtc={displayBtc}
-                        />
-                      </TableCell>
-                      {!isMobile && (
-                        <TableCell className="crystal-table-cell">
-                          <BalanceCell
-                            value={0}
-                            expect={0}
-                            displayBtc={displayBtc}
-                          />
-                        </TableCell>
-                      )}
-                      <TableCell>
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "center",
-                            gap: 1,
-                          }}
-                        >
-                          <Button
-                            className="crystal-button"
-                            onClick={handleSubmitAddress}
-                            disabled={!newAddress.name || !newAddress.address}
+                    <TableRow className="crystal-table-row">
+                      <TableCell
+                        colSpan={isMobile ? 4 : 5}
+                        className="crystal-table-cell"
+                      >
+                        <Box className="crystal-flex crystal-flex-start crystal-gap-2">
+                          <Box
+                            className="crystal-flex crystal-flex-start crystal-gap-1"
+                            sx={{ flex: 1 }}
                           >
-                            Add
-                          </Button>
-                          <Button
-                            className="crystal-button"
-                            onClick={() => setNewAddress(null)}
-                            sx={{
-                              background:
-                                "linear-gradient(135deg, var(--theme-danger), var(--theme-warning))",
-                              color: "var(--theme-background)",
-                              "&:hover": {
-                                background:
-                                  "linear-gradient(135deg, var(--theme-warning), var(--theme-danger))",
-                                boxShadow: "0 0 15px var(--theme-glow-primary)",
-                              },
-                            }}
-                          >
-                            Cancel
-                          </Button>
+                            <input
+                              className="crystal-input"
+                              placeholder="Name"
+                              value={newAddress.name}
+                              onChange={(e) =>
+                                setNewAddress((prev) => ({
+                                  ...prev,
+                                  name: e.target.value,
+                                }))
+                              }
+                            />
+                            <input
+                              className="crystal-input"
+                              placeholder="Address"
+                              value={newAddress.address}
+                              onChange={(e) =>
+                                setNewAddress((prev) => ({
+                                  ...prev,
+                                  address: e.target.value,
+                                }))
+                              }
+                            />
+                            <IconButton
+                              size="small"
+                              onClick={handleSubmitAddress}
+                              className="crystal-icon-button crystal-icon-button-success"
+                            >
+                              <CheckIcon />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                setNewAddress(null);
+                                setIsExpanded(false);
+                              }}
+                              className="crystal-icon-button crystal-icon-button-danger"
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Box>
                         </Box>
                       </TableCell>
                     </TableRow>
                   )}
-                  {collection.addresses.map((row, i) => {
-                    const chain_in_ok =
-                      row.actual?.chain_in === row.expect.chain_in;
-                    const chain_out_ok =
-                      row.actual?.chain_out === row.expect.chain_out;
-                    const mempool_in_ok =
-                      row.actual?.mempool_in === row.expect.mempool_in;
-                    const mempool_out_ok =
-                      row.actual?.mempool_out === row.expect.mempool_out;
-                    const changed = !(
-                      chain_in_ok &&
-                      chain_out_ok &&
-                      mempool_in_ok &&
-                      mempool_out_ok
-                    );
-                    const hasError = row.error;
-                    const isPending = !row.actual && !row.error;
-                    const hasValidActual = row.actual && !hasError;
-
-                    return (
-                      <TableRow
-                        key={`address_${i}`}
-                        className="crystal-table-row address-row"
-                      >
-                        <TableCell>
-                          <Typography
-                            className="crystal-text"
-                            onClick={() => {
-                              setIsEditingName(true);
-                              setEditedName(row.name);
-                            }}
-                            sx={{ cursor: "pointer" }}
-                          >
-                            {isEditingName ? (
-                              <Box
-                                sx={{
-                                  display: "flex",
-                                  alignItems: "right",
-                                  gap: 1,
-                                }}
-                              >
-                                <input
-                                  className="crystal-input"
-                                  value={editedName}
-                                  onChange={(e) =>
-                                    setEditedName(e.target.value)
-                                  }
-                                  style={{ width: "calc(100% - 80px)" }}
-                                />
-                                <IconButton
-                                  size="small"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleRenameCollection();
-                                  }}
-                                  className="crystal-icon-button crystal-icon-button-success"
-                                >
-                                  <CheckIcon />
-                                </IconButton>
-                                <IconButton
-                                  size="small"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setIsEditingName(false);
-                                    setEditedName(row.name);
-                                  }}
-                                  className="crystal-icon-button crystal-icon-button-danger"
-                                >
-                                  <DeleteIcon />
-                                </IconButton>
-                              </Box>
-                            ) : (
-                              row.name
-                            )}
+                  {collection.addresses.map((address, index) => (
+                    <TableRow
+                      key={index}
+                      className="crystal-table-row address-row"
+                    >
+                      <TableCell>
+                        <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+                          <Typography className="crystal-text">
+                            {address.name}
                           </Typography>
-                        </TableCell>
+                        </Box>
+                      </TableCell>
+                      <TableCell className="crystal-table-cell">
+                        <AddressCell address={address.address} />
+                      </TableCell>
+                      <TableCell className="crystal-table-cell">
+                        <Box className="crystal-flex crystal-flex-start">
+                          <BalanceCell
+                            value={address.actual?.chain_in}
+                            expect={address.expect?.chain_in || 0}
+                            displayBtc={displayBtc}
+                            error={address.error}
+                            pending={!address.actual && !address.error}
+                          />
+                        </Box>
+                      </TableCell>
+                      {!isMobile && (
                         <TableCell className="crystal-table-cell">
-                          <AddressCell address={row.address} />
-                        </TableCell>
-                        <TableCell className="crystal-table-cell">
-                          <Box sx={{ display: "flex", justifyContent: "left" }}>
+                          <Box className="crystal-flex crystal-flex-start">
                             <BalanceCell
-                              value={row.actual?.chain_in}
-                              expect={row.expect.chain_in}
+                              value={address.actual?.mempool_in}
+                              expect={address.expect?.mempool_in || 0}
                               displayBtc={displayBtc}
-                              error={hasError}
-                              pending={isPending}
+                              error={address.error}
+                              pending={!address.actual && !address.error}
                             />
                           </Box>
                         </TableCell>
-                        {!isMobile && (
-                          <TableCell className="crystal-table-cell">
-                            <Box
-                              sx={{ display: "flex", justifyContent: "left" }}
-                            >
-                              <BalanceCell
-                                value={row.actual?.mempool_in}
-                                expect={row.expect.mempool_in}
-                                displayBtc={displayBtc}
-                                error={hasError}
-                                pending={isPending}
-                              />
-                            </Box>
-                          </TableCell>
-                        )}
-                        <TableCell>
-                          <Box
-                            sx={{
-                              display: "flex",
-                              justifyContent: "right",
-                              gap: 1,
-                            }}
-                          >
-                            {changed && hasValidActual && (
-                              <Button
-                                className="crystal-button success"
-                                size="small"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onSaveExpected({
-                                    ...row,
-                                    collection: collection.name,
-                                  });
-                                }}
-                                sx={{
-                                  minWidth: "40px",
-                                  "&.success:not(:disabled)": {
-                                    background:
-                                      "linear-gradient(135deg, var(--theme-success), var(--theme-secondary))",
-                                  },
-                                  "&.success:not(:disabled):hover": {
-                                    background:
-                                      "linear-gradient(135deg, var(--theme-secondary), var(--theme-success))",
-                                    boxShadow:
-                                      "0 0 15px var(--theme-glow-success)",
-                                  },
-                                }}
-                              >
-                                <CheckIcon />
-                              </Button>
-                            )}
-                            <Button
-                              className="crystal-button"
+                      )}
+                      <TableCell>
+                        <Box className="crystal-flex crystal-flex-center crystal-gap-1">
+                          {address.actual?.chain_in !==
+                            address.expect?.chain_in && (
+                            <IconButton
                               size="small"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onDelete({
-                                  address: row.address,
+                              onClick={() =>
+                                onSaveExpected({
                                   collection: collection.name,
-                                });
-                              }}
-                              sx={{
-                                minWidth: "40px",
-                                background:
-                                  "linear-gradient(135deg, var(--theme-danger), var(--theme-warning))",
-                                color: "var(--theme-background)",
-                                "&:hover": {
-                                  background:
-                                    "linear-gradient(135deg, var(--theme-warning), var(--theme-danger))",
-                                  boxShadow:
-                                    "0 0 15px var(--theme-glow-primary)",
-                                },
-                              }}
+                                  address: address.address,
+                                  actual: address.actual,
+                                  expect: address.actual,
+                                })
+                              }
+                              className="crystal-action-button crystal-action-button-success"
                             >
-                              <DeleteIcon />
-                            </Button>
-                          </Box>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                              <CheckIcon />
+                            </IconButton>
+                          )}
+                          <IconButton
+                            size="small"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onDelete({
+                                collection: collection.name,
+                                address: address.address,
+                              });
+                            }}
+                            className="crystal-action-button crystal-action-button-danger"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
             </Box>
@@ -768,6 +647,21 @@ export default function Addresses() {
     socketIO.emit("saveExpected", updatedRow, (response) => {
       if (response?.error) {
         console.error("Error saving expected state:", response.error);
+      } else {
+        // Update local state to reflect the new expected values
+        setCollections((prevCollections) => {
+          const newCollections = { ...prevCollections };
+          const collection = newCollections[row.collection];
+          if (collection) {
+            const address = collection.addresses.find(
+              (addr) => addr.address === row.address
+            );
+            if (address) {
+              address.expect = { ...address.actual };
+            }
+          }
+          return newCollections;
+        });
       }
     });
   }, []);
@@ -1085,40 +979,12 @@ export default function Addresses() {
         </Dialog>
       </div>
 
-      <Snackbar
+      <CrystalNotification
         open={notification.open}
-        autoHideDuration={6000}
         onClose={handleCloseNotification}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
-        sx={{
-          position: "fixed",
-          top: "16px",
-          right: "16px",
-          zIndex: 9999,
-        }}
-      >
-        <Alert
-          onClose={handleCloseNotification}
-          severity={notification.severity}
-          sx={{
-            width: "100%",
-            background: "var(--theme-surface)",
-            color: "var(--theme-text)",
-            border: "1px solid rgba(77, 244, 255, 0.3)",
-            boxShadow: "0 0 15px var(--theme-glow-secondary)",
-            "& .MuiAlert-icon": {
-              color:
-                notification.severity === "error"
-                  ? "var(--theme-danger)"
-                  : notification.severity === "warning"
-                  ? "var(--theme-warning)"
-                  : "var(--theme-success)",
-            },
-          }}
-        >
-          {notification.message}
-        </Alert>
-      </Snackbar>
+        message={notification.message}
+        severity={notification.severity}
+      />
     </>
   );
 }

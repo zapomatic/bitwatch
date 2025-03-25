@@ -114,9 +114,6 @@ function Config() {
               className="crystal-button crystal-button-primary"
               onClick={saveConfig}
               disabled={saving}
-              sx={{
-                opacity: saving ? 0.7 : 1,
-              }}
             >
               {saving ? "Saving..." : "Save Configuration"}
             </Button>

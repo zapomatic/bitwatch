@@ -50,7 +50,16 @@ const socketIO = {
         if (!collection) return cb(`collection not found`);
         const record = collection.addresses.find((a) => a.address === data.address);
         if (!record) return cb(`address not found`);
-        record.expect = data.actual;
+        
+        // Update expect values while preserving the object structure
+        // Use actual values if expect values aren't available
+        record.expect = {
+          chain_in: data.expect?.chain_in ?? data.actual?.chain_in ?? 0,
+          chain_out: data.expect?.chain_out ?? data.actual?.chain_out ?? 0,
+          mempool_in: data.expect?.mempool_in ?? data.actual?.mempool_in ?? 0,
+          mempool_out: data.expect?.mempool_out ?? data.actual?.mempool_out ?? 0
+        };
+        
         memory.saveDb();
         // Emit state update to ALL clients
         socketIO.io.emit("updateState", { collections: memory.db.collections });
