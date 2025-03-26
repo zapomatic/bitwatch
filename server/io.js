@@ -1,10 +1,8 @@
 import { Server as io } from "socket.io";
 import pjson from "../package.json" with { type: "json" };
 import memory from "./memory.js";
-import getAddressBalance from "./getAddressBalance.js";
 import telegram from "./telegram.js";
 import engine from "./engine.js";
-import fs from "fs";
 import logger from "./logger.js";
 // const { v4: uuidv4 } = require("uuid");
 
@@ -162,47 +160,8 @@ const socketIO = {
         });
         cb({ status: "ok", record });
 
-        try {
-          const balance = await getAddressBalance(address);
-          logger.data(`${address}: chain (in=${balance.actual.chain_in}, out=${balance.actual.chain_out}), mempool (in=${balance.actual.mempool_in}, out=${balance.actual.mempool_out})`);
-          
-          // Update the record with the fetched balance
-          const index = memory.db.collections[collection].addresses.findIndex(a => a.address === address);
-          if (index !== -1) {
-            memory.db.collections[collection].addresses[index] = {
-              ...record,
-              actual: balance.error ? null : balance.actual,
-              error: balance.error || false,
-              errorMessage: balance.error ? balance.message : null
-            };
-            memory.saveDb();
-            // Emit state update to ALL clients
-            socketIO.io.emit("updateState", {
-              collections: memory.db.collections,
-              apiState,
-              interval: memory.db.interval
-            });
-          }
-        } catch (error) {
-          logger.error(`Error adding address ${address}: ${error.message}`);
-          // Update the record with the error state
-          const index = memory.db.collections[collection].addresses.findIndex(a => a.address === address);
-          if (index !== -1) {
-            memory.db.collections[collection].addresses[index] = {
-              ...record,
-              actual: null,
-              error: true,
-              errorMessage: error.message
-            };
-            memory.saveDb();
-            // Emit state update to ALL clients
-            socketIO.io.emit("updateState", {
-              collections: memory.db.collections,
-              apiState: "ERROR",
-              interval: memory.db.interval
-            });
-          }
-        }
+        // Trigger a refresh to fetch the balance
+        engine();
       });
 
       socket.on("delete", async ({ collection, address }, cb) => {
