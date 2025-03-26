@@ -2,12 +2,12 @@ manifestVersion: 1
 id: bitwatch
 category: bitcoin
 name: Bitwatch
-version: "0.2.2"
+version: "0.4.0"
 tagline: Monitor Bitcoin addresses in real-time
 description: >-
   Monitor Bitcoin addresses in the mempool and on-chain using the mempool.space API. 
   Track balance changes, get notifications, and manage expectations for multiple addresses.
-  Recommended to have Mempool + Fulcrum to run privately.
+  Recommended to have Mempool + Fulcrum to run privately but not required.
 developer: Zap-O-Matic
 website: https://github.com/zapomatic/bitwatch
 repo: https://github.com/zapomatic/bitwatch
