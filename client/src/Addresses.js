@@ -430,6 +430,15 @@ const CollectionRow = ({
                                   name: e.target.value,
                                 }))
                               }
+                              onKeyPress={(e) => {
+                                if (
+                                  e.key === "Enter" &&
+                                  newAddress.name &&
+                                  newAddress.address
+                                ) {
+                                  handleSubmitAddress();
+                                }
+                              }}
                             />
                             <input
                               className="crystal-input"
@@ -441,6 +450,15 @@ const CollectionRow = ({
                                   address: e.target.value,
                                 }))
                               }
+                              onKeyPress={(e) => {
+                                if (
+                                  e.key === "Enter" &&
+                                  newAddress.name &&
+                                  newAddress.address
+                                ) {
+                                  handleSubmitAddress();
+                                }
+                              }}
                             />
                             <IconButton
                               size="small"
