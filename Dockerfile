@@ -1,5 +1,5 @@
 # Build stage for React client
-FROM --platform=$BUILDPLATFORM node:20-alpine as client-builder
+FROM --platform=$BUILDPLATFORM node:22-alpine as client-builder
 WORKDIR /app
 COPY client/package*.json ./
 RUN npm install
@@ -7,7 +7,7 @@ COPY client/ ./
 RUN npm run build
 
 # Build stage for Node.js server
-FROM --platform=$TARGETPLATFORM node:20-alpine
+FROM --platform=$TARGETPLATFORM node:22-alpine
 WORKDIR /app
 
 # Copy server files
