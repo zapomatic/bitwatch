@@ -58,7 +58,7 @@ const attemptCall = async (addr) => {
               mempool_in: json.mempool_stats.funded_txo_sum || 0,
               mempool_out: json.mempool_stats.spent_txo_sum || 0,
             };
-            logger.success(`Balance for ${addr}: chain (in=${json.actual.chain_in}, out=${json.actual.chain_out}), mempool (in=${json.actual.mempool_in}, out=${json.actual.mempool_out})`);
+            logger.success(`Balance ${addr}: chain (in=${json.actual.chain_in}, out=${json.actual.chain_out}), mempool (in=${json.actual.mempool_in}, out=${json.actual.mempool_out})`);
             resolve(json);
           } catch (error) {
             logger.error(`JSON parse error for ${addr}: ${error.message}`);
