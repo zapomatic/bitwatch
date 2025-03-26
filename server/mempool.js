@@ -66,38 +66,29 @@ const updateTrackedAddresses = () => {
 
   // Update tracking
   if (addressesToTrack.length > 0) {
-    try {
-      logger.info(
-        `Attempting to track ${addressesToTrack.length} new addresses`
-      );
-      mempoolClient.bitcoin.websocket.wsTrackAddresses(ws, addressesToTrack);
-      addressesToTrack.forEach((addr) => trackedAddresses.add(addr));
-      logger.success(
-        `Successfully tracking ${addressesToTrack.length} new addresses`
-      );
-    } catch (error) {
-      logger.error("Error tracking addresses: " + error);
-      logger.error("Error details: " + error);
-    }
+    addressesToTrack.forEach((address) => {
+      try {
+        logger.info(`Tracking address: ${address}`);
+        mempoolClient.bitcoin.websocket.wsTrackAddress(ws, address);
+        trackedAddresses.add(address);
+        logger.success(`Successfully tracking address: ${address}`);
+      } catch (error) {
+        logger.error(`Error tracking address ${address}: ${error.message}`);
+      }
+    });
   }
 
   if (addressesToUntrack.length > 0) {
-    try {
-      logger.info(
-        `Attempting to untrack ${addressesToUntrack.length} addresses`
-      );
-      mempoolClient.bitcoin.websocket.wsStopTrackingAddresses(
-        ws,
-        addressesToUntrack
-      );
-      addressesToUntrack.forEach((addr) => trackedAddresses.delete(addr));
-      logger.success(
-        `Successfully untracked ${addressesToUntrack.length} addresses`
-      );
-    } catch (error) {
-      logger.error("Error untracking addresses: " + error);
-      logger.error("Error details: " + error);
-    }
+    addressesToUntrack.forEach((address) => {
+      try {
+        logger.info(`Untracking address: ${address}`);
+        mempoolClient.bitcoin.websocket.wsStopTrackingAddress(ws, address);
+        trackedAddresses.delete(address);
+        logger.success(`Successfully untracked address: ${address}`);
+      } catch (error) {
+        logger.error(`Error untracking address ${address}: ${error.message}`);
+      }
+    });
   }
 };
 
@@ -293,17 +284,6 @@ const setupWebSocket = (io) => {
       isConnecting = false;
       reconnectAttempts = 0;
       updateWebSocketState(io, "CONNECTED");
-
-      // Subscribe to mempool info to confirm connection is ready
-      try {
-        logger.info("Requesting mempool info to confirm connection...");
-        mempoolClient.bitcoin.websocket.wsRequestMempoolInfo(ws);
-      } catch (error) {
-        logger.error(`Error requesting mempool info: ${error.message}`);
-        cleanup();
-        updateWebSocketState(io, "ERROR");
-        handleDisconnect(io);
-      }
     });
 
     ws.addEventListener("message", (event) => {
@@ -318,6 +298,15 @@ const setupWebSocket = (io) => {
           isReady = true;
           // Update tracked addresses now that connection is ready
           updateTrackedAddresses();
+        }
+
+        // Handle track-addresses-error message
+        if (res["track-addresses-error"]) {
+          logger.error(
+            `Error tracking addresses: ${res["track-addresses-error"]}`
+          );
+          // Don't mark connection as not ready, just log the error
+          return;
         }
 
         // Only process other messages if we're ready
@@ -457,22 +446,17 @@ const init = async (io) => {
   try {
     // Parse the API URL from the database configuration
     const apiUrl = new URL(memory.db.api);
-    const hostname = apiUrl.hostname;
+    const hostname = apiUrl.hostname + (apiUrl.port ? `:${apiUrl.port}` : "");
     const protocol = apiUrl.protocol === "https:" ? "wss" : "ws";
-    const port = apiUrl.port;
 
     // Construct and log the full WebSocket URL
-    const wsUrl = `${protocol}://${hostname}${
-      port ? `:${port}` : ""
-    }/api/v1/ws`;
-    logger.network(`Full WebSocket URL: ${wsUrl}`);
-    logger.network(`Using mempool API: ${hostname}:${port} (${protocol})`);
+    const wsUrl = `${protocol}://${hostname}/api/v1/ws`;
+    logger.network(`Mempool websocket: ${wsUrl}`);
 
     mempoolClient = mempoolJS({
       hostname,
       network: "bitcoin",
       protocol,
-      port: port || (protocol === "wss" ? 443 : 80),
     });
 
     setupWebSocket(io);

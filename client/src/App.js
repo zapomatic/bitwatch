@@ -23,6 +23,7 @@ import Configuration from "./Configuration";
 import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import WatchListIcon from "@mui/icons-material/List";
 import IntegrationIcon from "@mui/icons-material/Extension";
+import Tooltip from "@mui/material/Tooltip";
 
 const AppBar = styled(MuiAppBar)(({ theme }) => ({
   zIndex: theme.zIndex.drawer + 1,
@@ -163,38 +164,40 @@ function AppContent() {
     }
   };
 
-  const StatusIndicator = ({ state, label }) => (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-      <Box
-        sx={{
-          width: "12px",
-          height: "12px",
-          borderRadius: "50%",
-          backgroundColor: getStatusColor(state),
-          boxShadow: `0 0 10px ${getStatusColor(state)}`,
-          animation:
-            state === "CONNECTING" || state === "CHECKING"
-              ? "pulse 2s infinite"
-              : "none",
-          "@keyframes pulse": {
-            "0%": { opacity: 1 },
-            "50%": { opacity: 0.5 },
-            "100%": { opacity: 1 },
-          },
-        }}
-      />
-      <Typography
-        variant="caption"
-        sx={{
-          color: "var(--theme-accent)",
-          textTransform: "uppercase",
-          letterSpacing: "0.05em",
-        }}
-      >
-        {label}: {state}
-      </Typography>
-    </Box>
-  );
+  const StatusIndicator = ({ label, state }) => {
+    const color = getStatusColor(state);
+    const isConnecting = state === "CONNECTING" || state === "CHECKING";
+
+    return (
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        <Tooltip title={state} arrow>
+          <Box
+            sx={{
+              width: 8,
+              height: 8,
+              borderRadius: "50%",
+              backgroundColor: color,
+              animation: isConnecting ? "pulse 1.5s infinite" : "none",
+              "@keyframes pulse": {
+                "0%": {
+                  boxShadow: `0 0 0 0 ${color}80`,
+                },
+                "70%": {
+                  boxShadow: `0 0 0 6px ${color}00`,
+                },
+                "100%": {
+                  boxShadow: `0 0 0 0 ${color}00`,
+                },
+              },
+            }}
+          />
+        </Tooltip>
+        <Typography variant="body2" sx={{ color: "text.secondary" }}>
+          {label}
+        </Typography>
+      </Box>
+    );
+  };
 
   return (
     <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
@@ -311,8 +314,8 @@ function AppContent() {
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <StatusIndicator state={websocketState} label="WebSocket" />
-          <StatusIndicator state={apiState} label="API" />
+          <StatusIndicator label="WebSocket" state={websocketState} />
+          <StatusIndicator label="API" state={apiState} />
         </Box>
         <Typography
           variant="caption"
