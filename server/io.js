@@ -63,7 +63,8 @@ const socketIO = {
           version: pjson.version,
           collections: memory.db.collections,
           websocketState: memory.db.websocketState || "DISCONNECTED",
-          apiState: apiState
+          apiState: apiState,
+          interval: memory.db.interval
         });
       });
 
@@ -84,8 +85,33 @@ const socketIO = {
         };
         
         memory.saveDb();
+
+        // Determine API state based on address data
+        const hasActualData = Object.values(memory.db.collections).some(col => 
+          col.addresses.some(addr => addr.actual !== null)
+        );
+        const hasErrors = Object.values(memory.db.collections).some(col => 
+          col.addresses.some(addr => addr.error)
+        );
+        const hasLoading = Object.values(memory.db.collections).some(col => 
+          col.addresses.some(addr => addr.actual === null && !addr.error)
+        );
+
+        let apiState = "?";
+        if (hasErrors) {
+          apiState = "ERROR";
+        } else if (hasLoading) {
+          apiState = "CHECKING";
+        } else if (hasActualData) {
+          apiState = "GOOD";
+        }
+
         // Emit state update to ALL clients
-        socketIO.io.emit("updateState", { collections: memory.db.collections });
+        socketIO.io.emit("updateState", {
+          collections: memory.db.collections,
+          apiState,
+          interval: memory.db.interval
+        });
         cb();
       });
 
@@ -129,12 +155,16 @@ const socketIO = {
         memory.db.collections[collection].addresses.push(record);
         memory.saveDb();
         // Emit state update to ALL clients
-        socketIO.io.emit("updateState", { collections: memory.db.collections });
+        socketIO.io.emit("updateState", {
+          collections: memory.db.collections,
+          apiState: "CHECKING",
+          interval: memory.db.interval
+        });
         cb({ status: "ok", record });
 
         try {
           const balance = await getAddressBalance(address);
-          logger.data(`Balance for ${address}: chain (in=${balance.actual.chain_in}, out=${balance.actual.chain_out}), mempool (in=${balance.actual.mempool_in}, out=${balance.actual.mempool_out})`);
+          logger.data(`${address}: chain (in=${balance.actual.chain_in}, out=${balance.actual.chain_out}), mempool (in=${balance.actual.mempool_in}, out=${balance.actual.mempool_out})`);
           
           // Update the record with the fetched balance
           const index = memory.db.collections[collection].addresses.findIndex(a => a.address === address);
@@ -147,7 +177,11 @@ const socketIO = {
             };
             memory.saveDb();
             // Emit state update to ALL clients
-            socketIO.io.emit("updateState", { collections: memory.db.collections });
+            socketIO.io.emit("updateState", {
+              collections: memory.db.collections,
+              apiState,
+              interval: memory.db.interval
+            });
           }
         } catch (error) {
           logger.error(`Error adding address ${address}: ${error.message}`);
@@ -162,7 +196,11 @@ const socketIO = {
             };
             memory.saveDb();
             // Emit state update to ALL clients
-            socketIO.io.emit("updateState", { collections: memory.db.collections });
+            socketIO.io.emit("updateState", {
+              collections: memory.db.collections,
+              apiState: "ERROR",
+              interval: memory.db.interval
+            });
           }
         }
       });
@@ -186,7 +224,10 @@ const socketIO = {
 
       socket.on('getState', async(data, cb) => {
         logger.info(`State requested by client ${socketID}`);
-        cb({ collections: memory.db.collections });
+        cb({ 
+          collections: memory.db.collections,
+          interval: memory.db.interval
+        });
       });
 
       socket.on('getConfig', async(data, cb) => {
@@ -200,11 +241,24 @@ const socketIO = {
 
       socket.on('saveConfig', async(data, cb)=>{
         logger.processing(`Saving configuration: ${JSON.stringify(data)}`);
+        const oldInterval = memory.db.interval;
         memory.db.interval = data.interval || memory.db.interval;
         memory.db.apiParallelLimit = data.apiParallelLimit || memory.db.apiParallelLimit;
         memory.db.api = data.api || memory.db.api;
         memory.saveDb();
-        cb(data)
+
+        // If interval changed, restart the engine
+        if (oldInterval !== memory.db.interval) {
+          logger.info(`Interval changed from ${oldInterval}ms to ${memory.db.interval}ms, restarting engine`);
+          engine(); // This will start a new cycle with the new interval
+        }
+
+        // Emit state update to ALL clients
+        socketIO.io.emit("updateState", {
+          collections: memory.db.collections,
+          interval: memory.db.interval
+        });
+        cb(data);
       });
 
       socket.on('getIntegrations', async(data, cb) => {

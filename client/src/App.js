@@ -100,19 +100,30 @@ function AppContent() {
   const [version, setVersion] = useState("");
   const [websocketState, setWebsocketState] = useState("DISCONNECTED");
   const [apiState, setApiState] = useState("UNKNOWN");
+  const [interval, setInterval] = useState(0);
+  const intervalRef = React.useRef(0);
   const navigate = useNavigate();
 
   const onSocketConnect = useCallback(() => {
-    socketIO.emit("client", {}, ({ version, websocketState, apiState }) => {
-      console.log("client loaded", {
-        version,
-        websocketState,
-        apiState,
-      });
-      setVersion(version);
-      setWebsocketState(websocketState);
-      setApiState(apiState);
-    });
+    socketIO.emit(
+      "client",
+      {},
+      ({ version, websocketState, apiState, interval }) => {
+        console.log("client loaded", {
+          version,
+          websocketState,
+          apiState,
+          interval,
+        });
+        setVersion(version);
+        setWebsocketState(websocketState);
+        setApiState(apiState);
+        if (interval) {
+          intervalRef.current = interval;
+          setInterval(interval);
+        }
+      }
+    );
   }, []);
 
   useEffect(() => {
@@ -135,6 +146,11 @@ function AppContent() {
       if (state.apiState) {
         console.log("Updating API state to:", state.apiState);
         setApiState(state.apiState);
+      }
+      if (state.interval) {
+        console.log("Updating interval to:", state.interval);
+        intervalRef.current = state.interval;
+        setInterval(state.interval);
       }
     });
 
@@ -316,6 +332,36 @@ function AppContent() {
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <StatusIndicator label="WebSocket" state={websocketState} />
           <StatusIndicator label="API" state={apiState} />
+          {interval > 0 && (
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Box
+                sx={{
+                  width: "100px",
+                  height: "8px",
+                  backgroundColor: "rgba(77, 244, 255, 0.2)",
+                  borderRadius: "4px",
+                  overflow: "hidden",
+                  position: "relative",
+                }}
+              >
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    height: "100%",
+                    width: "0%",
+                    backgroundColor: "var(--theme-secondary)",
+                    animation: `progress ${interval}ms linear infinite`,
+                    "@keyframes progress": {
+                      "0%": { width: "0%" },
+                      "100%": { width: "100%" },
+                    },
+                  }}
+                />
+              </Box>
+            </Box>
+          )}
         </Box>
         <Typography
           variant="caption"
