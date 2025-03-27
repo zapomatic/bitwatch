@@ -234,11 +234,49 @@ const CollectionRow = ({
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(collection.name);
   const [newAddress, setNewAddress] = useState(null);
+  const [addressSortConfig, setAddressSortConfig] = useState({
+    field: "name",
+    direction: "asc",
+  });
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   // Calculate totals from addresses
   const totals = calculateCollectionTotals(collection.addresses);
+
+  const handleAddressSort = (field) => {
+    setAddressSortConfig((prevConfig) => ({
+      field,
+      direction:
+        prevConfig.field === field && prevConfig.direction === "asc"
+          ? "desc"
+          : "asc",
+    }));
+  };
+
+  const getSortedAddresses = () => {
+    return [...collection.addresses].sort((a, b) => {
+      let comparison = 0;
+      switch (addressSortConfig.field) {
+        case "name":
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case "address":
+          comparison = a.address.localeCompare(b.address);
+          break;
+        case "chain_in":
+          comparison = (a.actual?.chain_in || 0) - (b.actual?.chain_in || 0);
+          break;
+        case "mempool_in":
+          comparison =
+            (a.actual?.mempool_in || 0) - (b.actual?.mempool_in || 0);
+          break;
+        default:
+          comparison = 0;
+      }
+      return addressSortConfig.direction === "asc" ? comparison : -comparison;
+    });
+  };
 
   const handleAddClick = () => {
     setIsExpanded(true);
@@ -393,16 +431,64 @@ const CollectionRow = ({
               <Table size="small" className="crystal-table address-subtable">
                 <TableHead>
                   <TableRow>
-                    <TableCell className="crystal-table-header">Name</TableCell>
-                    <TableCell className="crystal-table-header">
-                      Address
+                    <TableCell
+                      className="crystal-table-header"
+                      onClick={() => handleAddressSort("name")}
+                      sx={{ cursor: "pointer" }}
+                    >
+                      <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+                        Name
+                        {addressSortConfig.field === "name" && (
+                          <span>
+                            {addressSortConfig.direction === "asc" ? "↑" : "↓"}
+                          </span>
+                        )}
+                      </Box>
                     </TableCell>
-                    <TableCell className="crystal-table-header">
-                      On-Chain
+                    <TableCell
+                      className="crystal-table-header"
+                      onClick={() => handleAddressSort("address")}
+                      sx={{ cursor: "pointer" }}
+                    >
+                      <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+                        Address
+                        {addressSortConfig.field === "address" && (
+                          <span>
+                            {addressSortConfig.direction === "asc" ? "↑" : "↓"}
+                          </span>
+                        )}
+                      </Box>
+                    </TableCell>
+                    <TableCell
+                      className="crystal-table-header"
+                      onClick={() => handleAddressSort("chain_in")}
+                      sx={{ cursor: "pointer" }}
+                    >
+                      <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+                        On-Chain
+                        {addressSortConfig.field === "chain_in" && (
+                          <span>
+                            {addressSortConfig.direction === "asc" ? "↑" : "↓"}
+                          </span>
+                        )}
+                      </Box>
                     </TableCell>
                     {!isMobile && (
-                      <TableCell className="crystal-table-header">
-                        Mempool
+                      <TableCell
+                        className="crystal-table-header"
+                        onClick={() => handleAddressSort("mempool_in")}
+                        sx={{ cursor: "pointer" }}
+                      >
+                        <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+                          Mempool
+                          {addressSortConfig.field === "mempool_in" && (
+                            <span>
+                              {addressSortConfig.direction === "asc"
+                                ? "↑"
+                                : "↓"}
+                            </span>
+                          )}
+                        </Box>
                       </TableCell>
                     )}
                     <TableCell className="crystal-table-header"></TableCell>
@@ -482,7 +568,7 @@ const CollectionRow = ({
                       </TableCell>
                     </TableRow>
                   )}
-                  {collection.addresses.map((address, index) => (
+                  {getSortedAddresses().map((address, index) => (
                     <TableRow
                       key={index}
                       className="crystal-table-row address-row"
