@@ -609,8 +609,10 @@ const CollectionRow = ({
                       )}
                       <TableCell>
                         <Box className="crystal-flex crystal-flex-center crystal-gap-1">
-                          {address.actual?.chain_in !==
-                            address.expect?.chain_in && (
+                          {(address.actual?.chain_in !==
+                            address.expect?.chain_in ||
+                            address.actual?.mempool_in !==
+                              address.expect?.mempool_in) && (
                             <IconButton
                               size="small"
                               onClick={() =>
