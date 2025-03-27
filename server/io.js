@@ -57,11 +57,14 @@ const socketIO = {
           apiState = "GOOD";
         }
 
+        // Update memory state
+        memory.state.apiState = apiState;
+
         cb({
           version: pjson.version,
           collections: memory.db.collections,
-          websocketState: memory.db.websocketState || "DISCONNECTED",
-          apiState: apiState,
+          websocketState: memory.state.websocketState,
+          apiState: memory.state.apiState,
           interval: memory.db.interval
         });
       });

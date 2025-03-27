@@ -55,6 +55,5 @@
   "telegram": {
     "chatId": "",
     "token": ""
-  },
-  "websocketState": "CONNECTED"
+  }
 }

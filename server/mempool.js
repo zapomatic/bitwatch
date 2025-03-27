@@ -214,7 +214,7 @@ const processTransaction = (tx, io) => {
 
 const updateWebSocketState = (io, state) => {
   logger.info(`Updating WebSocket state to: ${state}`);
-  memory.db.websocketState = state;
+  memory.state.websocketState = state;
   // Emit to all connected clients immediately
   io.emit("updateState", {
     collections: memory.db.collections,

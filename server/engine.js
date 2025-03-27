@@ -113,10 +113,14 @@ const updateAddressAndEmit = (addr, balance) => {
   }
 
   // Update state and emit changes
-  memory.state = { collections };
+  memory.state = {
+    collections,
+    websocketState: memory.state.websocketState,
+    apiState,
+  };
   socketIO.io.emit("updateState", {
     collections,
-    apiState,
+    apiState: memory.state.apiState,
   });
 };
 
@@ -135,9 +139,10 @@ const engine = async () => {
   }
 
   // Set API state to CHECKING when starting a new check
+  memory.state.apiState = "CHECKING";
   socketIO.io.emit("updateState", {
     collections: memory.db.collections,
-    apiState: "CHECKING",
+    apiState: memory.state.apiState,
   });
 
   logger.processing(

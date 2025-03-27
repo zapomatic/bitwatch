@@ -77,7 +77,11 @@ const saveDb = () => {
 };
 
 const memory = {
-  state: { collections: {} },
+  state: {
+    collections: {},
+    websocketState: "DISCONNECTED",
+    apiState: "UNKNOWN",
+  },
   dirUI: path.join(__dirname, "../client/build"),
   dbFile,
   dataDir,
