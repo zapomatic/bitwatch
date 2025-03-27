@@ -402,18 +402,16 @@ const CollectionRow = ({
             >
               <AddIcon />
             </IconButton>
-            {collection.name !== "Satoshi" && (
-              <IconButton
-                size="small"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete({ collection: collection.name });
-                }}
-                className="crystal-icon-button crystal-icon-button-danger"
-              >
-                <DeleteIcon />
-              </IconButton>
-            )}
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete({ collection: collection.name });
+              }}
+              className="crystal-icon-button crystal-icon-button-danger"
+            >
+              <DeleteIcon />
+            </IconButton>
           </Box>
         </TableCell>
       </TableRow>
