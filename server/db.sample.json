@@ -3,12 +3,12 @@
     "Satoshi": {
       "addresses": [
         {
-          "name": "genesis",
           "address": "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
+          "name": "genesis",
           "expect": {
-            "chain_in": 5296838115,
+            "chain_in": 5297010577,
             "chain_out": 0,
-            "mempool_in": 0,
+            "mempool_in": 1638,
             "mempool_out": 0
           }
         },
@@ -16,7 +16,7 @@
           "address": "1HLoD9E4SDFFPDiYfNYnkBLQ85Y51J3Zb1",
           "name": "early",
           "expect": {
-            "chain_in": 5007878871,
+            "chain_in": 7878871,
             "chain_out": 0,
             "mempool_in": 0,
             "mempool_out": 0
@@ -33,6 +33,20 @@
           }
         }
       ]
+    },
+    "Donations": {
+      "addresses": [
+        {
+          "address": "bc1q67csgqm9muhynyd864tj2p48g8gachyg2nwara",
+          "name": "zapomatic",
+          "expect": {
+            "chain_in": 0,
+            "chain_out": 0,
+            "mempool_in": 0,
+            "mempool_out": 0
+          }
+        }
+      ]
     }
   },
   "interval": 600000,
@@ -41,5 +55,6 @@
   "telegram": {
     "chatId": "",
     "token": ""
-  }
+  },
+  "websocketState": "CONNECTED"
 }

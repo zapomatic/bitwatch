@@ -583,8 +583,53 @@ export default function Addresses() {
     message: "",
     severity: "info",
   });
+  const [sortConfig, setSortConfig] = useState({
+    field: "name",
+    direction: "asc",
+  });
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  const handleSort = (field) => {
+    setSortConfig((prevConfig) => ({
+      field,
+      direction:
+        prevConfig.field === field && prevConfig.direction === "asc"
+          ? "desc"
+          : "asc",
+    }));
+  };
+
+  const getSortedCollections = () => {
+    const collectionEntries = Object.entries(collections);
+    return collectionEntries.sort(
+      ([nameA, collectionA], [nameB, collectionB]) => {
+        const totalsA = calculateCollectionTotals(collectionA.addresses);
+        const totalsB = calculateCollectionTotals(collectionB.addresses);
+
+        let comparison = 0;
+        switch (sortConfig.field) {
+          case "name":
+            comparison = nameA.localeCompare(nameB);
+            break;
+          case "addresses":
+            comparison =
+              collectionA.addresses.length - collectionB.addresses.length;
+            break;
+          case "chain_in":
+            comparison = (totalsA.chain_in || 0) - (totalsB.chain_in || 0);
+            break;
+          case "mempool_in":
+            comparison = (totalsA.mempool_in || 0) - (totalsB.mempool_in || 0);
+            break;
+          default:
+            comparison = 0;
+        }
+
+        return sortConfig.direction === "asc" ? comparison : -comparison;
+      }
+    );
+  };
 
   useEffect(() => {
     // Initial state fetch
@@ -831,14 +876,56 @@ export default function Addresses() {
           <Table size="small" className="crystal-table">
             <TableHead>
               <TableRow>
-                <TableCell className="crystal-table-header">
-                  Collection
+                <TableCell
+                  className="crystal-table-header"
+                  onClick={() => handleSort("name")}
+                  sx={{ cursor: "pointer" }}
+                >
+                  <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+                    Collection
+                    {sortConfig.field === "name" && (
+                      <span>{sortConfig.direction === "asc" ? "↑" : "↓"}</span>
+                    )}
+                  </Box>
                 </TableCell>
-                <TableCell className="crystal-table-header">Info</TableCell>
-                <TableCell className="crystal-table-header">On-Chain</TableCell>
+                <TableCell
+                  className="crystal-table-header"
+                  onClick={() => handleSort("addresses")}
+                  sx={{ cursor: "pointer" }}
+                >
+                  <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+                    Info
+                    {sortConfig.field === "addresses" && (
+                      <span>{sortConfig.direction === "asc" ? "↑" : "↓"}</span>
+                    )}
+                  </Box>
+                </TableCell>
+                <TableCell
+                  className="crystal-table-header"
+                  onClick={() => handleSort("chain_in")}
+                  sx={{ cursor: "pointer" }}
+                >
+                  <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+                    On-Chain
+                    {sortConfig.field === "chain_in" && (
+                      <span>{sortConfig.direction === "asc" ? "↑" : "↓"}</span>
+                    )}
+                  </Box>
+                </TableCell>
                 {!isMobile && (
-                  <TableCell className="crystal-table-header">
-                    Mempool
+                  <TableCell
+                    className="crystal-table-header"
+                    onClick={() => handleSort("mempool_in")}
+                    sx={{ cursor: "pointer" }}
+                  >
+                    <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+                      Mempool
+                      {sortConfig.field === "mempool_in" && (
+                        <span>
+                          {sortConfig.direction === "asc" ? "↑" : "↓"}
+                        </span>
+                      )}
+                    </Box>
                   </TableCell>
                 )}
                 <TableCell className="crystal-table-header"></TableCell>
@@ -914,7 +1001,7 @@ export default function Addresses() {
                   </TableCell>
                 </TableRow>
               )}
-              {Object.entries(collections).map(([name, collection]) => (
+              {getSortedCollections().map(([name, collection]) => (
                 <CollectionRow
                   key={name}
                   collection={{ ...collection, name }}
