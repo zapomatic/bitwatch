@@ -14,6 +14,16 @@
 - Integration with mempool.space API
 - Option to use your own local node for privacy
 
+## Why?
+
+There are many reasons you might want automated monitoring of Bitcoin addresses. Here are some examples:
+
+- Know when Satoshi's coins move
+- Observe a set of P2PK addresses to get alerted if Quantum attacks become a reality
+- Monitor honey pot keys that you've placed in plaintext across accounts (email, cloud storage, etc) to learn if/when those get compromised
+- Monitor reserve wallets for exchanges
+- Monitor Donation addresses for activity (for instance, this project address: bc1q67csgqm9muhynyd864tj2p48g8gachyg2nwara)
+
 ## Installation
 
 ### As a Docker Container
@@ -82,3 +92,19 @@ Pull requests are welcome. For major changes, please open an issue first to disc
 ## License
 
 ISC
+
+## Donations
+
+If you'd like to donate to the project, you can send BTC to the following address:
+
+```
+bc1q67csgqm9muhynyd864tj2p48g8gachyg2nwara
+```
+
+Or keysend a thanks over LN to: Zap-O-Matic:
+
+```
+026d0169e8c220d8e789de1e7543f84b9041bbb3e819ab14b9824d37caa94f1eb2
+```
+
+https://zapomatic.github.io/
