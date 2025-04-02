@@ -107,4 +107,12 @@ Or keysend a thanks over LN to: Zap-O-Matic:
 026d0169e8c220d8e789de1e7543f84b9041bbb3e819ab14b9824d37caa94f1eb2
 ```
 
+Or send a tip to the project via the following address:
+
+```
+zapomatic@getalby.com
+```
+
+Or open a channel with Zap-O-Matic:
+
 https://zapomatic.github.io/
