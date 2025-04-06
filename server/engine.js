@@ -4,6 +4,7 @@ import socketIO from "./io.js";
 import memory from "./memory.js";
 import telegram from "./telegram.js";
 import logger from "./logger.js";
+import { detectBalanceChanges } from "./balance.js";
 
 const detectChanges = (
   actual,
@@ -76,10 +77,9 @@ const updateAddressAndEmit = (addr, balance) => {
   };
 
   // Check for changes and notify
-  const changes = detectChanges(
-    balance.actual,
-    collection.addresses[index].expect,
+  const changes = detectBalanceChanges(
     addr.address,
+    balance.actual,
     addr.collection,
     collection.addresses[index].name
   );

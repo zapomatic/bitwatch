@@ -11,7 +11,10 @@
 ## Features
 
 - Real-time monitoring of Bitcoin addresses
+- Subscribes to mempool.space (or locally hosted) websocket for real-time mempool activity
+- Double checks data against mempool.space (or locally hosted) API on a configured interval
 - Track both on-chain and mempool activity
+- Configure auto-acceptance or alert mode of balance changes (chain_in, chain_out, mempool_in, mempool_out)
 - Set and manage balance expectations
 - Mobile responsive design
 - Telegram notifications for balance changes
