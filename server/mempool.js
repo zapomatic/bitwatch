@@ -128,29 +128,49 @@ const updateAddressBalance = (address, balance, io) => {
     const addr = collection.addresses.find((a) => a.address === address);
     if (addr) {
       const oldBalance = { ...addr.actual };
-      addr.actual = {
-        ...addr.actual,
-        ...balance,
+      const newBalance = { ...addr.actual, ...balance };
+
+      // Check for changes that need alerts
+      const changes = {};
+      const needsAlert = (type) => {
+        if (!addr.monitor) return true; // Default to alert if no monitor settings
+        return addr.monitor[type] === "alert";
       };
 
-      // Log balance changes if they differ from expected
-      if (addr.expect) {
-        const changes = {};
-        if (addr.actual.chain_in !== addr.expect.chain_in)
-          changes.chain_in = addr.actual.chain_in;
-        if (addr.actual.chain_out !== addr.expect.chain_out)
-          changes.chain_out = addr.actual.chain_out;
-        if (addr.actual.mempool_in !== addr.expect.mempool_in)
-          changes.mempool_in = addr.actual.mempool_in;
-        if (addr.actual.mempool_out !== addr.expect.mempool_out)
-          changes.mempool_out = addr.actual.mempool_out;
+      if (
+        newBalance.chain_in !== addr.expect.chain_in &&
+        needsAlert("chain_in")
+      ) {
+        changes.chain_in = newBalance.chain_in;
+      }
+      if (
+        newBalance.chain_out !== addr.expect.chain_out &&
+        needsAlert("chain_out")
+      ) {
+        changes.chain_out = newBalance.chain_out;
+      }
+      if (
+        newBalance.mempool_in !== addr.expect.mempool_in &&
+        needsAlert("mempool_in")
+      ) {
+        changes.mempool_in = newBalance.mempool_in;
+      }
+      if (
+        newBalance.mempool_out !== addr.expect.mempool_out &&
+        needsAlert("mempool_out")
+      ) {
+        changes.mempool_out = newBalance.mempool_out;
+      }
 
-        if (Object.keys(changes).length > 0) {
-          logger.warning(`Websocket balance mismatch detected for ${address} (${collectionName}/${addr.name}):
+      // Update the address with new balance
+      addr.actual = newBalance;
+
+      // If there are changes that need alerts, log them
+      if (Object.keys(changes).length > 0) {
+        logger.warning(`Balance mismatch detected for ${address} (${collectionName}/${addr.name}):
 Expected: chain_in=${addr.expect.chain_in}, chain_out=${addr.expect.chain_out}, mempool_in=${addr.expect.mempool_in}, mempool_out=${addr.expect.mempool_out}
-Actual: chain_in=${addr.actual.chain_in}, chain_out=${addr.actual.chain_out}, mempool_in=${addr.actual.mempool_in}, mempool_out=${addr.actual.mempool_out}
+Actual: chain_in=${newBalance.chain_in}, chain_out=${newBalance.chain_out}, mempool_in=${newBalance.mempool_in}, mempool_out=${newBalance.mempool_out}
 Previous: chain_in=${oldBalance.chain_in}, chain_out=${oldBalance.chain_out}, mempool_in=${oldBalance.mempool_in}, mempool_out=${oldBalance.mempool_out}`);
-        }
       }
 
       // Emit update for this address

@@ -32,6 +32,13 @@ import "./theme.css";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
+import TextField from "@mui/material/TextField";
+import Grid from "@mui/material/Grid";
+import FormControl from "@mui/material/FormControl";
+import InputLabel from "@mui/material/InputLabel";
+import Select from "@mui/material/Select";
+import MenuItem from "@mui/material/MenuItem";
+import EditIcon from "@mui/icons-material/Edit";
 
 const CrystalNotification = ({ open, onClose, message, severity = "info" }) => (
   <Snackbar
@@ -233,6 +240,7 @@ const CollectionRow = ({
   autoShowAddForm,
   displayBtc,
   onRenameCollection,
+  onEditAddress,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
@@ -611,6 +619,15 @@ const CollectionRow = ({
                       )}
                       <TableCell>
                         <Box className="crystal-flex crystal-flex-center crystal-gap-1">
+                          <IconButton
+                            size="small"
+                            onClick={() =>
+                              onEditAddress(collection.name, address)
+                            }
+                            className="crystal-icon-button"
+                          >
+                            <EditIcon />
+                          </IconButton>
                           {(address.actual?.chain_in !==
                             address.expect?.chain_in ||
                             address.actual?.mempool_in !==
@@ -657,6 +674,270 @@ const CollectionRow = ({
   );
 };
 
+const AddressDialog = ({ open, onClose, address, onSave }) => {
+  const [editedAddress, setEditedAddress] = useState(address || {});
+  const [monitorSettings, setMonitorSettings] = useState(
+    address?.monitor || {
+      chain_in: "auto-accept",
+      chain_out: "alert",
+      mempool_in: "auto-accept",
+      mempool_out: "alert",
+    }
+  );
+
+  useEffect(() => {
+    setEditedAddress(address || {});
+    setMonitorSettings(
+      address?.monitor || {
+        chain_in: "auto-accept",
+        chain_out: "alert",
+        mempool_in: "auto-accept",
+        mempool_out: "alert",
+      }
+    );
+  }, [address]);
+
+  const handleSave = () => {
+    onSave({ ...editedAddress, monitor: monitorSettings });
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <DialogTitle>{address ? "Edit Address" : "Add Address"}</DialogTitle>
+      <DialogContent>
+        <TextField
+          autoFocus
+          margin="dense"
+          label="Name"
+          fullWidth
+          value={editedAddress.name || ""}
+          onChange={(e) =>
+            setEditedAddress({ ...editedAddress, name: e.target.value })
+          }
+        />
+        <TextField
+          margin="dense"
+          label="Address"
+          fullWidth
+          value={editedAddress.address || ""}
+          onChange={(e) =>
+            setEditedAddress({ ...editedAddress, address: e.target.value })
+          }
+        />
+        <Typography variant="subtitle1" sx={{ mt: 0, mb: 1 }}>
+          Expected Balances
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={6}>
+            <TextField
+              margin="dense"
+              label="Chain In"
+              type="number"
+              fullWidth
+              value={editedAddress.expect?.chain_in || 0}
+              onChange={(e) =>
+                setEditedAddress({
+                  ...editedAddress,
+                  expect: {
+                    ...editedAddress.expect,
+                    chain_in: parseInt(e.target.value) || 0,
+                  },
+                })
+              }
+            />
+          </Grid>
+          <Grid item xs={6}>
+            <TextField
+              margin="dense"
+              label="Chain Out"
+              type="number"
+              fullWidth
+              value={editedAddress.expect?.chain_out || 0}
+              onChange={(e) =>
+                setEditedAddress({
+                  ...editedAddress,
+                  expect: {
+                    ...editedAddress.expect,
+                    chain_out: parseInt(e.target.value) || 0,
+                  },
+                })
+              }
+            />
+          </Grid>
+          <Grid item xs={6}>
+            <TextField
+              margin="dense"
+              label="Mempool In"
+              type="number"
+              fullWidth
+              value={editedAddress.expect?.mempool_in || 0}
+              onChange={(e) =>
+                setEditedAddress({
+                  ...editedAddress,
+                  expect: {
+                    ...editedAddress.expect,
+                    mempool_in: parseInt(e.target.value) || 0,
+                  },
+                })
+              }
+            />
+          </Grid>
+          <Grid item xs={6}>
+            <TextField
+              margin="dense"
+              label="Mempool Out"
+              type="number"
+              fullWidth
+              value={editedAddress.expect?.mempool_out || 0}
+              onChange={(e) =>
+                setEditedAddress({
+                  ...editedAddress,
+                  expect: {
+                    ...editedAddress.expect,
+                    mempool_out: parseInt(e.target.value) || 0,
+                  },
+                })
+              }
+            />
+          </Grid>
+        </Grid>
+        <Typography variant="subtitle1" sx={{ mt: 0, mb: 1 }}>
+          Monitoring Settings
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={6}>
+            <FormControl fullWidth sx={{ mt: 1 }}>
+              <InputLabel sx={{ background: "var(--theme-surface)", px: 1 }}>
+                Chain In
+              </InputLabel>
+              <Select
+                value={monitorSettings.chain_in}
+                onChange={(e) =>
+                  setMonitorSettings({
+                    ...monitorSettings,
+                    chain_in: e.target.value,
+                  })
+                }
+                sx={{
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "rgba(77, 244, 255, 0.3)",
+                  },
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "var(--theme-secondary)",
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "var(--theme-primary)",
+                  },
+                }}
+              >
+                <MenuItem value="alert">Alert</MenuItem>
+                <MenuItem value="auto-accept">Auto Accept</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={6}>
+            <FormControl fullWidth sx={{ mt: 1 }}>
+              <InputLabel sx={{ background: "var(--theme-surface)", px: 1 }}>
+                Chain Out
+              </InputLabel>
+              <Select
+                value={monitorSettings.chain_out}
+                onChange={(e) =>
+                  setMonitorSettings({
+                    ...monitorSettings,
+                    chain_out: e.target.value,
+                  })
+                }
+                sx={{
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "rgba(77, 244, 255, 0.3)",
+                  },
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "var(--theme-secondary)",
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "var(--theme-primary)",
+                  },
+                }}
+              >
+                <MenuItem value="alert">Alert</MenuItem>
+                <MenuItem value="auto-accept">Auto Accept</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={6}>
+            <FormControl fullWidth sx={{ mt: 1 }}>
+              <InputLabel sx={{ background: "var(--theme-surface)", px: 1 }}>
+                Mempool In
+              </InputLabel>
+              <Select
+                value={monitorSettings.mempool_in}
+                onChange={(e) =>
+                  setMonitorSettings({
+                    ...monitorSettings,
+                    mempool_in: e.target.value,
+                  })
+                }
+                sx={{
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "rgba(77, 244, 255, 0.3)",
+                  },
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "var(--theme-secondary)",
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "var(--theme-primary)",
+                  },
+                }}
+              >
+                <MenuItem value="alert">Alert</MenuItem>
+                <MenuItem value="auto-accept">Auto Accept</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={6}>
+            <FormControl fullWidth sx={{ mt: 1 }}>
+              <InputLabel sx={{ background: "var(--theme-surface)", px: 1 }}>
+                Mempool Out
+              </InputLabel>
+              <Select
+                value={monitorSettings.mempool_out}
+                onChange={(e) =>
+                  setMonitorSettings({
+                    ...monitorSettings,
+                    mempool_out: e.target.value,
+                  })
+                }
+                sx={{
+                  "& .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "rgba(77, 244, 255, 0.3)",
+                  },
+                  "&:hover .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "var(--theme-secondary)",
+                  },
+                  "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+                    borderColor: "var(--theme-primary)",
+                  },
+                }}
+              >
+                <MenuItem value="alert">Alert</MenuItem>
+                <MenuItem value="auto-accept">Auto Accept</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+        </Grid>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={handleSave} variant="contained" color="primary">
+          Save
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 export default function Addresses() {
   const [collections, setCollections] = useState({});
   const [newCollection, setNewCollection] = useState(null);
@@ -681,6 +962,11 @@ export default function Addresses() {
     open: false,
     file: null,
     error: null,
+  });
+  const [editDialog, setEditDialog] = useState({
+    open: false,
+    collection: null,
+    address: null,
   });
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -975,6 +1261,40 @@ export default function Addresses() {
     });
   };
 
+  const handleEditAddress = (collection, address) => {
+    setEditDialog({
+      open: true,
+      collection,
+      address,
+    });
+  };
+
+  const handleSaveAddress = (updatedAddress) => {
+    socketIO.emit(
+      "updateAddress",
+      {
+        collection: editDialog.collection,
+        address: updatedAddress,
+      },
+      (response) => {
+        if (response.error) {
+          setNotification({
+            open: true,
+            message: response.error,
+            severity: "error",
+          });
+        } else {
+          setNotification({
+            open: true,
+            message: "Address updated successfully",
+            severity: "success",
+          });
+        }
+        setEditDialog({ open: false, collection: null, address: null });
+      }
+    );
+  };
+
   return (
     <>
       <div className="crystal-panel">
@@ -1238,6 +1558,7 @@ export default function Addresses() {
                   onDelete={handleDelete}
                   onAddAddress={handleAddAddress}
                   onRenameCollection={handleRenameCollection}
+                  onEditAddress={handleEditAddress}
                   autoShowAddForm={name === justCreatedCollection}
                   displayBtc={displayBtc}
                 />
@@ -1353,6 +1674,15 @@ export default function Addresses() {
             )}
           </DialogActions>
         </Dialog>
+
+        <AddressDialog
+          open={editDialog.open}
+          onClose={() =>
+            setEditDialog({ open: false, collection: null, address: null })
+          }
+          address={editDialog.address}
+          onSave={handleSaveAddress}
+        />
       </div>
 
       <CrystalNotification

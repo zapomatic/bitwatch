@@ -68,6 +68,12 @@ const saveDb = () => {
             address: addr.address,
             name: addr.name,
             expect: addr.expect,
+            monitor: addr.monitor || {
+              chain_in: "auto-accept",
+              chain_out: "alert",
+              mempool_in: "auto-accept",
+              mempool_out: "alert",
+            },
           })),
         },
       ])

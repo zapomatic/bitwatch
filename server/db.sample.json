@@ -10,6 +10,12 @@
             "chain_out": 0,
             "mempool_in": 1638,
             "mempool_out": 0
+          },
+          "monitor": {
+            "chain_in": "auto-accept",
+            "chain_out": "alert",
+            "mempool_in": "auto-accept",
+            "mempool_out": "alert"
           }
         },
         {

@@ -309,6 +309,32 @@ const socketIO = {
         socketIO.io.emit("updateState", { collections: memory.db.collections });
         cb({ status: "ok" });
       });
+
+      socket.on('updateAddress', async ({ collection, address }, cb) => {
+        logger.info(`Updating address ${address.address} in collection ${collection}`);
+        const col = memory.db.collections[collection];
+        if (!col) return cb({ error: `collection not found` });
+        
+        const index = col.addresses.findIndex((a) => a.address === address.address);
+        if (index === -1) return cb({ error: `address not found` });
+
+        // Update the address with new values
+        col.addresses[index] = {
+          ...col.addresses[index],
+          ...address,
+          // Ensure monitor settings are properly set
+          monitor: {
+            chain_in: address.monitor?.chain_in || "auto-accept",
+            chain_out: address.monitor?.chain_out || "alert",
+            mempool_in: address.monitor?.mempool_in || "auto-accept",
+            mempool_out: address.monitor?.mempool_out || "alert"
+          }
+        };
+        
+        memory.saveDb();
+        socketIO.io.emit("updateState", { collections: memory.db.collections });
+        cb({ status: "ok" });
+      });
     });
 
     return socketIO.io;

@@ -4,6 +4,10 @@
 
 ![Bitwatch](./client/public/app.png)
 
+![Bitwatch](./client/public/app_1.png)
+![Bitwatch](./client/public/app_2.png)
+![Bitwatch](./client/public/app_3.png)
+
 ## Features
 
 - Real-time monitoring of Bitcoin addresses
