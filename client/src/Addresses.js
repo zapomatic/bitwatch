@@ -853,7 +853,11 @@ export default function Addresses() {
     const { address, collection } = deleteDialog;
     socketIO.emit("delete", { address, collection }, (response) => {
       if (response.error) {
-        alert(response.error);
+        setNotification({
+          open: true,
+          message: response.error,
+          severity: "error",
+        });
       }
       setDeleteDialog({ open: false, address: null, collection: null });
     });

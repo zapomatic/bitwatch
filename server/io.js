@@ -168,18 +168,30 @@ const socketIO = {
       });
 
       socket.on("delete", async ({ collection, address }, cb) => {
-        logger.info(`Deleting ${address} from collection ${collection}`);
+        logger.info(`Deleting ${address ? `address ${address} from` : ''} collection ${collection}`);
         const col = memory.db.collections[collection];
         if (!col) return cb({ error: `collection not found` });
+        
+        // If no address provided, delete the entire collection
+        if (!address) {
+          delete memory.db.collections[collection];
+          memory.saveDb();
+          socketIO.io.emit("updateState", { collections: memory.db.collections });
+          return cb({ status: "ok" });
+        }
+
+        // Remove the address if it exists
         const index = col.addresses.findIndex((a) => a.address === address);
-        if (index === -1) return cb({ error: `address not found` });
-        col.addresses.splice(index, 1);
+        if (index !== -1) {
+          col.addresses.splice(index, 1);
+        }
+        
         // If collection is empty and not the default "Satoshi" collection, remove it
         if (col.addresses.length === 0 && collection !== "Satoshi") {
           delete memory.db.collections[collection];
         }
+        
         memory.saveDb();
-        // Emit state update to ALL clients
         socketIO.io.emit("updateState", { collections: memory.db.collections });
         cb({ status: "ok" });
       });
