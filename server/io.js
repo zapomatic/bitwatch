@@ -148,6 +148,12 @@ const socketIO = {
             mempool_in: 0,
             mempool_out: 0
           },
+          monitor: {
+            chain_in: "auto-accept",
+            chain_out: "alert",
+            mempool_in: "auto-accept",
+            mempool_out: "alert"
+          },
           actual: null,
           error: false,
           errorMessage: null

@@ -208,12 +208,27 @@ const AddressCell = ({ address }) => {
   const handleCopy = async (e) => {
     e.preventDefault();
     e.stopPropagation();
+
+    // Create a temporary textarea element
+    const textarea = document.createElement("textarea");
+    textarea.value = address;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+
     try {
-      await navigator.clipboard.writeText(address);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
+      // Select and copy the text
+      textarea.select();
+      const successful = document.execCommand("copy");
+      if (successful) {
+        setCopied(true);
+        setTimeout(() => setCopied(false), 1500);
+      }
     } catch (err) {
       console.error("Failed to copy address:", err);
+    } finally {
+      // Clean up
+      document.body.removeChild(textarea);
     }
   };
 
