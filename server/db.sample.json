@@ -47,6 +47,50 @@
           }
         }
       ]
+    },
+    "Puzzle": {
+      "addresses": [
+        {
+          "address": "1MVDYgVaSN6iKKEsbzRUAYFrYJadLYZvvZ",
+          "name": "68",
+          "expect": {
+            "chain_in": 680015167,
+            "chain_out": 0,
+            "mempool_in": 0,
+            "mempool_out": 0
+          }
+        },
+        {
+          "address": "19vkiEajfhuZ8bs8Zu2jgmC6oqZbWqhxhG",
+          "name": "69",
+          "expect": {
+            "chain_in": 690013661,
+            "chain_out": 0,
+            "mempool_in": 0,
+            "mempool_out": 0
+          }
+        },
+        {
+          "address": "1PWo3JeB9jrGwfHDNpdGK54CRas7fsVzXU",
+          "name": "71",
+          "expect": {
+            "chain_in": 710004370,
+            "chain_out": 0,
+            "mempool_in": 0,
+            "mempool_out": 0
+          }
+        },
+        {
+          "address": "1JTK7s9YVYywfm5XUH7RNhHJH1LshCaRFR",
+          "name": "72",
+          "expect": {
+            "chain_in": 720004379,
+            "chain_out": 0,
+            "mempool_in": 0,
+            "mempool_out": 0
+          }
+        }
+      ]
     }
   },
   "interval": 600000,

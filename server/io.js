@@ -270,6 +270,33 @@ const socketIO = {
         engine(); // Trigger immediate refresh
         cb({ status: "ok" });
       });
+
+      socket.on('importCollections', async(data, cb) => {
+        logger.info(`Importing collections from file`);
+        if (!data.collections || typeof data.collections !== "object") {
+          return cb({ error: "Invalid collections data" });
+        }
+
+        // Validate the structure of each collection
+        for (const [name, collection] of Object.entries(data.collections)) {
+          if (!collection.addresses || !Array.isArray(collection.addresses)) {
+            return cb({ error: `Invalid collection structure for ${name}` });
+          }
+          for (const addr of collection.addresses) {
+            if (!addr.address || !addr.name || !addr.expect) {
+              return cb({ error: `Invalid address structure in collection ${name}` });
+            }
+          }
+        }
+
+        // Update the collections in memory
+        memory.db.collections = data.collections;
+        memory.saveDb();
+
+        // Emit state update to ALL clients
+        socketIO.io.emit("updateState", { collections: memory.db.collections });
+        cb({ status: "ok" });
+      });
     });
 
     return socketIO.io;

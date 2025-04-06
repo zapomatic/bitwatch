@@ -19,7 +19,7 @@
 There are many reasons you might want automated monitoring of Bitcoin addresses. Here are some examples:
 
 - Know when Satoshi's coins move
-- Observe a set of P2PK addresses to get alerted if Quantum attacks become a reality
+- Monitor the Bitcoin Puzzle Transaction Addresses: https://www.blockchain.com/explorer/transactions/btc/08389f34c98c606322740c0be6a7125d9860bb8d5cb182c02f98461e5fa6cd15 to be alerted of LBC progress: https://lbc.cryptoguru.org/about
 - Monitor honey pot keys that you've placed in plaintext across accounts (email, cloud storage, etc) to learn if/when those get compromised
 - Monitor reserve wallets for exchanges
 - Monitor Donation addresses for activity (for instance, this project address: bc1q67csgqm9muhynyd864tj2p48g8gachyg2nwara)
@@ -82,6 +82,8 @@ By default, the app will ship monitoring the following addresses (as examples):
    - The first user-to-user transaction source address in Bitcoin, sent to Hal Finney
 3. **Early Block Reward Address** - `1HLoD9E4SDFFPDiYfNYnkBLQ85Y51J3Zb1`
    - One of the early block reward payout addresses (but the reward was moved)
+4. **Puzzle Addresses** - https://www.blockchain.com/explorer/transactions/btc/08389f34c98c606322740c0be6a7125d9860bb8d5cb182c02f98461e5fa6cd15
+   - The next few addresses that have not yet been found by the [Large Bitcoin Collider](https://lbc.cryptoguru.org/about) project (or by others)
 
 Of course, services like [Arkham](https://intel.arkm.com/explorer/entity/satoshi-nakamoto) have a full tracker for Satoshi's addresses, but we want to check our own addresses (and probably privately with our own node)
 

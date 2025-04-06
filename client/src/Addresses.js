@@ -30,6 +30,8 @@ import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import "./theme.css";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import FileUploadIcon from "@mui/icons-material/FileUpload";
 
 const CrystalNotification = ({ open, onClose, message, severity = "info" }) => (
   <Snackbar
@@ -142,6 +144,7 @@ const AddressCell = ({ address }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async (e) => {
+    e.preventDefault();
     e.stopPropagation();
     try {
       await navigator.clipboard.writeText(address);
@@ -163,6 +166,7 @@ const AddressCell = ({ address }) => {
         target="_blank"
         rel="noopener noreferrer"
         className="crystal-link"
+        onClick={(e) => e.stopPropagation()}
       >
         {`${address.slice(0, 8)}...`}
       </Box>
@@ -673,6 +677,11 @@ export default function Addresses() {
     field: "name",
     direction: "asc",
   });
+  const [importDialog, setImportDialog] = useState({
+    open: false,
+    file: null,
+    error: null,
+  });
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
@@ -755,15 +764,23 @@ export default function Addresses() {
   }, [refreshing]);
 
   const handleAddCollection = () => {
-    if (!newCollection?.name) return;
+    if (!newCollection?.name?.trim()) return;
     const collection = newCollection.name.trim();
     if (collections[collection]) {
-      alert("Collection already exists");
+      setNotification({
+        open: true,
+        message: "Collection already exists",
+        severity: "error",
+      });
       return;
     }
     socketIO.emit("add", { collection }, (response) => {
       if (response.error) {
-        alert(response.error);
+        setNotification({
+          open: true,
+          message: response.error,
+          severity: "error",
+        });
       } else {
         setJustCreatedCollection(collection);
         setNewCollection(null);
@@ -871,6 +888,89 @@ export default function Addresses() {
     setNotification({ ...notification, open: false });
   };
 
+  const handleExport = () => {
+    const exportData = {
+      collections: Object.fromEntries(
+        Object.entries(collections).map(([name, collection]) => [
+          name,
+          {
+            addresses: collection.addresses.map((addr) => ({
+              address: addr.address,
+              name: addr.name,
+              expect: addr.expect,
+            })),
+          },
+        ])
+      ),
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "bitwatch-collections.json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImport = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (!data.collections || typeof data.collections !== "object") {
+          setImportDialog({
+            open: true,
+            file: null,
+            error: "Invalid file format. Expected a collections object.",
+          });
+          return;
+        }
+
+        setImportDialog({
+          open: true,
+          file: data,
+          error: null,
+        });
+      } catch (err) {
+        setImportDialog({
+          open: true,
+          file: null,
+          error: "Failed to parse JSON file.",
+        });
+      }
+    };
+    reader.readAsText(file);
+  };
+
+  const confirmImport = () => {
+    if (!importDialog.file) return;
+
+    socketIO.emit("importCollections", importDialog.file, (response) => {
+      if (response.error) {
+        setNotification({
+          open: true,
+          message: response.error,
+          severity: "error",
+        });
+      } else {
+        setNotification({
+          open: true,
+          message: "Collections imported successfully",
+          severity: "success",
+        });
+      }
+      setImportDialog({ open: false, file: null, error: null });
+    });
+  };
+
   return (
     <>
       <div className="crystal-panel">
@@ -896,6 +996,45 @@ export default function Addresses() {
               Watch List
             </Typography>
             <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
+              <Button
+                className="crystal-button"
+                onClick={handleExport}
+                startIcon={<FileDownloadIcon />}
+                sx={{
+                  background: "var(--theme-surface)",
+                  color: "var(--theme-text)",
+                  "&:hover": {
+                    background: "rgba(77, 244, 255, 0.1)",
+                    boxShadow: "0 0 10px var(--theme-glow-secondary)",
+                  },
+                }}
+              >
+                Export
+              </Button>
+              <input
+                type="file"
+                accept=".json"
+                style={{ display: "none" }}
+                id="import-file"
+                onChange={handleImport}
+              />
+              <label htmlFor="import-file">
+                <Button
+                  component="span"
+                  className="crystal-button"
+                  startIcon={<FileUploadIcon />}
+                  sx={{
+                    background: "var(--theme-surface)",
+                    color: "var(--theme-text)",
+                    "&:hover": {
+                      background: "rgba(77, 244, 255, 0.1)",
+                      boxShadow: "0 0 10px var(--theme-glow-secondary)",
+                    },
+                  }}
+                >
+                  Import
+                </Button>
+              </label>
               <Button
                 className="crystal-button"
                 onClick={handleRefresh}
@@ -1153,6 +1292,61 @@ export default function Addresses() {
             >
               Delete
             </Button>
+          </DialogActions>
+        </Dialog>
+
+        {/* Import confirmation dialog */}
+        <Dialog
+          open={importDialog.open}
+          onClose={() =>
+            setImportDialog({ open: false, file: null, error: null })
+          }
+          PaperProps={{
+            sx: {
+              background: "var(--theme-surface)",
+              border: "1px solid rgba(77, 244, 255, 0.3)",
+            },
+          }}
+        >
+          <DialogTitle sx={{ color: "var(--theme-secondary)" }}>
+            Import Collections
+          </DialogTitle>
+          <DialogContent>
+            <DialogContentText sx={{ color: "var(--theme-text)" }}>
+              {importDialog.error ? (
+                <Alert severity="error">{importDialog.error}</Alert>
+              ) : (
+                "This will overwrite all existing collections. Are you sure you want to continue?"
+              )}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button
+              onClick={() =>
+                setImportDialog({ open: false, file: null, error: null })
+              }
+              className="crystal-button"
+            >
+              Cancel
+            </Button>
+            {!importDialog.error && (
+              <Button
+                onClick={confirmImport}
+                className="crystal-button"
+                sx={{
+                  background:
+                    "linear-gradient(135deg, var(--theme-danger), var(--theme-warning))",
+                  color: "var(--theme-background)",
+                  "&:hover": {
+                    background:
+                      "linear-gradient(135deg, var(--theme-warning), var(--theme-danger))",
+                    boxShadow: "0 0 15px var(--theme-glow-primary)",
+                  },
+                }}
+              >
+                Import
+              </Button>
+            )}
           </DialogActions>
         </Dialog>
       </div>
