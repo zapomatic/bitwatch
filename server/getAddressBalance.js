@@ -51,7 +51,6 @@ const attemptCall = async (addr) => {
           }
           try {
             const json = JSON.parse(body);
-            // Subtract mempool values from chain values to get true confirmed balances
             json.actual = {
               chain_in: json.chain_stats.funded_txo_sum||0,
               chain_out: json.chain_stats.spent_txo_sum||0,

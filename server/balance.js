@@ -14,9 +14,13 @@ export const detectBalanceChanges = (
   const addr = collection.addresses.find((a) => a.address === address);
   if (!addr) return null;
 
+  // if (addressName === "early") {
+  //   balance.mempool_out = 7878871;
+  // }
+
   // Store old balance for comparison
   const oldBalance = { ...addr.actual };
-  const newBalance = { ...addr.actual, ...balance };
+  const newBalance = { ...balance };
 
   // Check for changes that need alerts
   const changes = {};

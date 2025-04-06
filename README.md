@@ -7,6 +7,7 @@
 ![Bitwatch](./client/public/app_1.png)
 ![Bitwatch](./client/public/app_2.png)
 ![Bitwatch](./client/public/app_3.png)
+![Bitwatch](./client/public/app_4.png)
 
 ## Features
 
@@ -15,6 +16,8 @@
 - Double checks data against mempool.space (or locally hosted) API on a configured interval
 - Track both on-chain and mempool activity
 - Configure auto-acceptance or alert mode of balance changes (chain_in, chain_out, mempool_in, mempool_out)
+  - by default, incoming transactions are auto-accepted, outgoing transactions are alerted
+  - all activity will be alerted to telegram once (even when auto-accepted)
 - Set and manage balance expectations
 - Mobile responsive design
 - Telegram notifications for balance changes
