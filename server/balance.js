@@ -14,6 +14,7 @@ export const detectBalanceChanges = (
   const addr = collection.addresses.find((a) => a.address === address);
   if (!addr) return null;
 
+  // Store old balance for comparison
   const oldBalance = { ...addr.actual };
   const newBalance = { ...addr.actual, ...balance };
 
@@ -24,10 +25,14 @@ export const detectBalanceChanges = (
     return addr.monitor[type] === "alert";
   };
 
-  // Always track changes, regardless of monitor setting
+  // Check each balance type for changes
   if (newBalance.chain_in !== addr.expect.chain_in) {
     changes.chain_in = newBalance.chain_in;
-    if (!needsAlert("chain_in")) {
+    if (needsAlert("chain_in")) {
+      logger.info(
+        `alert chain_in (${newBalance.chain_in}) for ${address} (${collectionName}/${addressName})`
+      );
+    } else {
       logger.info(
         `auto-accept chain_in (${newBalance.chain_in}) for ${address} (${collectionName}/${addressName})`
       );
@@ -36,7 +41,11 @@ export const detectBalanceChanges = (
   }
   if (newBalance.chain_out !== addr.expect.chain_out) {
     changes.chain_out = newBalance.chain_out;
-    if (!needsAlert("chain_out")) {
+    if (needsAlert("chain_out")) {
+      logger.info(
+        `alert chain_out (${newBalance.chain_out}) for ${address} (${collectionName}/${addressName})`
+      );
+    } else {
       logger.info(
         `auto-accept chain_out (${newBalance.chain_out}) for ${address} (${collectionName}/${addressName})`
       );
@@ -45,7 +54,11 @@ export const detectBalanceChanges = (
   }
   if (newBalance.mempool_in !== addr.expect.mempool_in) {
     changes.mempool_in = newBalance.mempool_in;
-    if (!needsAlert("mempool_in")) {
+    if (needsAlert("mempool_in")) {
+      logger.info(
+        `alert mempool_in (${newBalance.mempool_in}) for ${address} (${collectionName}/${addressName})`
+      );
+    } else {
       logger.info(
         `auto-accept mempool_in (${newBalance.mempool_in}) for ${address} (${collectionName}/${addressName})`
       );
@@ -54,7 +67,11 @@ export const detectBalanceChanges = (
   }
   if (newBalance.mempool_out !== addr.expect.mempool_out) {
     changes.mempool_out = newBalance.mempool_out;
-    if (!needsAlert("mempool_out")) {
+    if (needsAlert("mempool_out")) {
+      logger.info(
+        `alert mempool_out (${newBalance.mempool_out}) for ${address} (${collectionName}/${addressName})`
+      );
+    } else {
       logger.info(
         `auto-accept mempool_out (${newBalance.mempool_out}) for ${address} (${collectionName}/${addressName})`
       );

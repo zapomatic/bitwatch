@@ -2,6 +2,7 @@ import mempoolJS from "@mempool/mempool.js";
 import memory from "./memory.js";
 import logger from "./logger.js";
 import { detectBalanceChanges } from "./balance.js";
+import telegram from "./telegram.js";
 
 let mempoolClient = null;
 let trackedAddresses = new Set();
@@ -184,7 +185,7 @@ const processTransaction = (tx, io) => {
     // Update each affected address
     for (const address of relevantAddresses) {
       const mempoolBalance = calculateAddressBalance([tx], address);
-      updateAddressBalance(
+      const changes = updateAddressBalance(
         address,
         {
           mempool_in: mempoolBalance.in,
@@ -192,6 +193,25 @@ const processTransaction = (tx, io) => {
         },
         io
       );
+
+      // If changes were detected and require alerting, notify via Telegram
+      if (changes) {
+        // Find the address in our collections to get its name and collection
+        for (const [collectionName, collection] of Object.entries(
+          memory.db.collections
+        )) {
+          const addr = collection.addresses.find((a) => a.address === address);
+          if (addr) {
+            telegram.notifyBalanceChange(
+              address,
+              changes,
+              collectionName,
+              addr.name
+            );
+            break;
+          }
+        }
+      }
     }
   }
 };

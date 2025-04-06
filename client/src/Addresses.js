@@ -92,13 +92,14 @@ const formatSatoshis = (sats, displayBtc = true) => {
 };
 
 const BalanceCell = ({
-  value,
-  expect,
   displayBtc,
   error,
-  pending,
+  expect,
+  label,
   monitor,
+  pending,
   type,
+  value,
 }) => {
   if (pending) {
     return (
@@ -131,6 +132,7 @@ const BalanceCell = ({
 
   return (
     <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+      {label && <Typography className="crystal-text">{label}</Typography>}
       {isVerified ? (
         <CheckIcon className="crystal-text-success" sx={{ fontSize: "1rem" }} />
       ) : (
@@ -139,20 +141,22 @@ const BalanceCell = ({
           sx={{ fontSize: "1rem" }}
         />
       )}
-      <Typography className="crystal-text">
-        {formatSatoshis(value, displayBtc)}
-      </Typography>
-      {!isVerified && (
-        <Typography
-          className={`crystal-text ${
-            diff > 0 ? "crystal-text-success" : "crystal-text-danger"
-          }`}
-          sx={{ fontSize: "0.8em", opacity: 0.8 }}
-        >
-          ({diff > 0 ? "+" : ""}
-          {formatSatoshis(diff, displayBtc)})
+      <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+        <Typography className="crystal-text">
+          {formatSatoshis(value, displayBtc)}
         </Typography>
-      )}
+        {!isVerified && (
+          <Typography
+            className={`crystal-text ${
+              diff > 0 ? "crystal-text-success" : "crystal-text-danger"
+            }`}
+            sx={{ fontSize: "0.9em", fontWeight: 500, ml: 1 }}
+          >
+            ({diff > 0 ? "+" : ""}
+            {formatSatoshis(diff, displayBtc)})
+          </Typography>
+        )}
+      </Box>
       {monitor && type && (
         <Box
           className="crystal-flex crystal-flex-start crystal-gap-1"
@@ -666,8 +670,24 @@ const CollectionRow = ({
                       <TableCell className="crystal-table-cell">
                         <Box className="crystal-flex crystal-flex-start">
                           <BalanceCell
+                            label="⬅️"
                             value={address.actual?.chain_in}
                             expect={address.expect?.chain_in || 0}
+                            displayBtc={displayBtc}
+                            error={address.error}
+                            pending={!address.actual && !address.error}
+                            monitor={address.monitor}
+                            type="chain"
+                          />
+                        </Box>
+                        <Box
+                          className="crystal-flex crystal-flex-start"
+                          sx={{ mt: 1 }}
+                        >
+                          <BalanceCell
+                            label="➡️"
+                            value={address.actual?.chain_out}
+                            expect={address.expect?.chain_out || 0}
                             displayBtc={displayBtc}
                             error={address.error}
                             pending={!address.actual && !address.error}
@@ -682,6 +702,20 @@ const CollectionRow = ({
                             <BalanceCell
                               value={address.actual?.mempool_in}
                               expect={address.expect?.mempool_in || 0}
+                              displayBtc={displayBtc}
+                              error={address.error}
+                              pending={!address.actual && !address.error}
+                              monitor={address.monitor}
+                              type="mempool"
+                            />
+                          </Box>
+                          <Box
+                            className="crystal-flex crystal-flex-start"
+                            sx={{ mt: 1 }}
+                          >
+                            <BalanceCell
+                              value={address.actual?.mempool_out}
+                              expect={address.expect?.mempool_out || 0}
                               displayBtc={displayBtc}
                               error={address.error}
                               pending={!address.actual && !address.error}
@@ -704,8 +738,12 @@ const CollectionRow = ({
                           </IconButton>
                           {(address.actual?.chain_in !==
                             address.expect?.chain_in ||
+                            address.actual?.chain_out !==
+                              address.expect?.chain_out ||
                             address.actual?.mempool_in !==
-                              address.expect?.mempool_in) && (
+                              address.expect?.mempool_in ||
+                            address.actual?.mempool_out !==
+                              address.expect?.mempool_out) && (
                             <IconButton
                               size="small"
                               onClick={() =>
