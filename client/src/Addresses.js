@@ -39,6 +39,8 @@ import InputLabel from "@mui/material/InputLabel";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import EditIcon from "@mui/icons-material/Edit";
+import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 const CrystalNotification = ({ open, onClose, message, severity = "info" }) => (
   <Snackbar
@@ -89,7 +91,15 @@ const formatSatoshis = (sats, displayBtc = true) => {
   return `${sats.toLocaleString()} sat`;
 };
 
-const BalanceCell = ({ value, expect, displayBtc, error, pending }) => {
+const BalanceCell = ({
+  value,
+  expect,
+  displayBtc,
+  error,
+  pending,
+  monitor,
+  type,
+}) => {
   if (pending) {
     return (
       <Box className="crystal-flex crystal-flex-start crystal-gap-1">
@@ -142,6 +152,51 @@ const BalanceCell = ({ value, expect, displayBtc, error, pending }) => {
           ({diff > 0 ? "+" : ""}
           {formatSatoshis(diff, displayBtc)})
         </Typography>
+      )}
+      {monitor && type && (
+        <Box
+          className="crystal-flex crystal-flex-start crystal-gap-1"
+          sx={{ ml: 1 }}
+        >
+          <Tooltip
+            title={`Incoming: ${
+              monitor[`${type}_in`] === "alert"
+                ? "Alert on changes"
+                : "Auto-accept changes"
+            }`}
+          >
+            {monitor[`${type}_in`] === "alert" ? (
+              <NotificationsActiveIcon
+                className="crystal-text-warning"
+                sx={{ fontSize: "1rem" }}
+              />
+            ) : (
+              <CheckCircleIcon
+                className="crystal-text-success"
+                sx={{ fontSize: "1rem" }}
+              />
+            )}
+          </Tooltip>
+          <Tooltip
+            title={`Outgoing: ${
+              monitor[`${type}_out`] === "alert"
+                ? "Alert on changes"
+                : "Auto-accept changes"
+            }`}
+          >
+            {monitor[`${type}_out`] === "alert" ? (
+              <NotificationsActiveIcon
+                className="crystal-text-warning"
+                sx={{ fontSize: "1rem" }}
+              />
+            ) : (
+              <CheckCircleIcon
+                className="crystal-text-success"
+                sx={{ fontSize: "1rem" }}
+              />
+            )}
+          </Tooltip>
+        </Box>
       )}
     </Box>
   );
@@ -601,6 +656,8 @@ const CollectionRow = ({
                             displayBtc={displayBtc}
                             error={address.error}
                             pending={!address.actual && !address.error}
+                            monitor={address.monitor}
+                            type="chain"
                           />
                         </Box>
                       </TableCell>
@@ -613,6 +670,8 @@ const CollectionRow = ({
                               displayBtc={displayBtc}
                               error={address.error}
                               pending={!address.actual && !address.error}
+                              monitor={address.monitor}
+                              type="mempool"
                             />
                           </Box>
                         </TableCell>
@@ -831,8 +890,24 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
                   },
                 }}
               >
-                <MenuItem value="alert">Alert</MenuItem>
-                <MenuItem value="auto-accept">Auto Accept</MenuItem>
+                <MenuItem value="alert">
+                  <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+                    <NotificationsActiveIcon
+                      className="crystal-text-warning"
+                      sx={{ fontSize: "1rem" }}
+                    />
+                    <Typography>Alert</Typography>
+                  </Box>
+                </MenuItem>
+                <MenuItem value="auto-accept">
+                  <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+                    <CheckCircleIcon
+                      className="crystal-text-success"
+                      sx={{ fontSize: "1rem" }}
+                    />
+                    <Typography>Auto Accept</Typography>
+                  </Box>
+                </MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -861,8 +936,24 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
                   },
                 }}
               >
-                <MenuItem value="alert">Alert</MenuItem>
-                <MenuItem value="auto-accept">Auto Accept</MenuItem>
+                <MenuItem value="alert">
+                  <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+                    <NotificationsActiveIcon
+                      className="crystal-text-warning"
+                      sx={{ fontSize: "1rem" }}
+                    />
+                    <Typography>Alert</Typography>
+                  </Box>
+                </MenuItem>
+                <MenuItem value="auto-accept">
+                  <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+                    <CheckCircleIcon
+                      className="crystal-text-success"
+                      sx={{ fontSize: "1rem" }}
+                    />
+                    <Typography>Auto Accept</Typography>
+                  </Box>
+                </MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -891,8 +982,24 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
                   },
                 }}
               >
-                <MenuItem value="alert">Alert</MenuItem>
-                <MenuItem value="auto-accept">Auto Accept</MenuItem>
+                <MenuItem value="alert">
+                  <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+                    <NotificationsActiveIcon
+                      className="crystal-text-warning"
+                      sx={{ fontSize: "1rem" }}
+                    />
+                    <Typography>Alert</Typography>
+                  </Box>
+                </MenuItem>
+                <MenuItem value="auto-accept">
+                  <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+                    <CheckCircleIcon
+                      className="crystal-text-success"
+                      sx={{ fontSize: "1rem" }}
+                    />
+                    <Typography>Auto Accept</Typography>
+                  </Box>
+                </MenuItem>
               </Select>
             </FormControl>
           </Grid>
@@ -921,8 +1028,24 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
                   },
                 }}
               >
-                <MenuItem value="alert">Alert</MenuItem>
-                <MenuItem value="auto-accept">Auto Accept</MenuItem>
+                <MenuItem value="alert">
+                  <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+                    <NotificationsActiveIcon
+                      className="crystal-text-warning"
+                      sx={{ fontSize: "1rem" }}
+                    />
+                    <Typography>Alert</Typography>
+                  </Box>
+                </MenuItem>
+                <MenuItem value="auto-accept">
+                  <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+                    <CheckCircleIcon
+                      className="crystal-text-success"
+                      sx={{ fontSize: "1rem" }}
+                    />
+                    <Typography>Auto Accept</Typography>
+                  </Box>
+                </MenuItem>
               </Select>
             </FormControl>
           </Grid>
