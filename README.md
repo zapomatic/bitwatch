@@ -19,9 +19,7 @@
   - by default, incoming transactions are auto-accepted, outgoing transactions are alerted
   - all activity will be alerted to telegram once (even when auto-accepted)
 - Set and manage balance expectations
-- Mobile responsive design
 - Telegram notifications for balance changes
-- Integration with mempool.space API
 - Option to use your own local node for privacy
 
 ## Why?
