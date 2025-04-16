@@ -14,9 +14,15 @@ export const detectBalanceChanges = (
   const addr = collection.addresses.find((a) => a.address === address);
   if (!addr) return null;
 
-  // if (addressName === "early") {
-  //   balance.mempool_out = 7878871;
-  // }
+  // Initialize alerted field if it doesn't exist
+  if (!addr.alerted) {
+    addr.alerted = {
+      chain_in: false,
+      chain_out: false,
+      mempool_in: false,
+      mempool_out: false,
+    };
+  }
 
   // Store old balance for comparison
   const oldBalance = { ...addr.actual };
@@ -26,7 +32,7 @@ export const detectBalanceChanges = (
   const changes = {};
   const needsAlert = (type) => {
     if (!addr.monitor) return true; // Default to alert if no monitor settings
-    return addr.monitor[type] === "alert";
+    return addr.monitor[type] === "alert" && !addr.alerted[type];
   };
 
   // Check each balance type for changes
@@ -36,11 +42,13 @@ export const detectBalanceChanges = (
       logger.info(
         `alert chain_in (${newBalance.chain_in}) for ${address} (${collectionName}/${addressName})`
       );
+      addr.alerted.chain_in = true;
     } else {
       logger.info(
         `auto-accept chain_in (${newBalance.chain_in}) for ${address} (${collectionName}/${addressName})`
       );
       addr.expect.chain_in = newBalance.chain_in;
+      addr.alerted.chain_in = false;
     }
   }
   if (newBalance.chain_out !== addr.expect.chain_out) {
@@ -49,11 +57,13 @@ export const detectBalanceChanges = (
       logger.info(
         `alert chain_out (${newBalance.chain_out}) for ${address} (${collectionName}/${addressName})`
       );
+      addr.alerted.chain_out = true;
     } else {
       logger.info(
         `auto-accept chain_out (${newBalance.chain_out}) for ${address} (${collectionName}/${addressName})`
       );
       addr.expect.chain_out = newBalance.chain_out;
+      addr.alerted.chain_out = false;
     }
   }
   if (newBalance.mempool_in !== addr.expect.mempool_in) {
@@ -62,11 +72,13 @@ export const detectBalanceChanges = (
       logger.info(
         `alert mempool_in (${newBalance.mempool_in}) for ${address} (${collectionName}/${addressName})`
       );
+      addr.alerted.mempool_in = true;
     } else {
       logger.info(
         `auto-accept mempool_in (${newBalance.mempool_in}) for ${address} (${collectionName}/${addressName})`
       );
       addr.expect.mempool_in = newBalance.mempool_in;
+      addr.alerted.mempool_in = false;
     }
   }
   if (newBalance.mempool_out !== addr.expect.mempool_out) {
@@ -75,11 +87,13 @@ export const detectBalanceChanges = (
       logger.info(
         `alert mempool_out (${newBalance.mempool_out}) for ${address} (${collectionName}/${addressName})`
       );
+      addr.alerted.mempool_out = true;
     } else {
       logger.info(
         `auto-accept mempool_out (${newBalance.mempool_out}) for ${address} (${collectionName}/${addressName})`
       );
       addr.expect.mempool_out = newBalance.mempool_out;
+      addr.alerted.mempool_out = false;
     }
   }
 

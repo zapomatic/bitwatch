@@ -17,7 +17,7 @@
 - Track both on-chain and mempool activity
 - Configure auto-acceptance or alert mode of balance changes (chain_in, chain_out, mempool_in, mempool_out)
   - by default, incoming transactions are auto-accepted, outgoing transactions are alerted
-  - all activity will be alerted to telegram once (even when auto-accepted)
+  - setting to alert will mark the UI and require manual acceptance of the transaction to save the expected state of the address
 - Set and manage balance expectations
 - Telegram notifications for balance changes
 - Option to use your own local node for privacy
