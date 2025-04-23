@@ -11,7 +11,17 @@ export const detectBalanceChanges = (
   const collection = collections[collectionName];
   if (!collection) return null;
 
-  const addr = collection.addresses.find((a) => a.address === address);
+  // Find address in either main addresses or extended key addresses
+  let addr = collection.addresses.find((a) => a.address === address);
+
+  // If not found in main addresses, check extended keys
+  if (!addr && collection.extendedKeys) {
+    for (const extendedKey of collection.extendedKeys) {
+      addr = extendedKey.addresses.find((a) => a.address === address);
+      if (addr) break;
+    }
+  }
+
   if (!addr) return null;
 
   // Initialize alerted field if it doesn't exist

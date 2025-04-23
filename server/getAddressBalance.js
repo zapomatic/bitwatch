@@ -34,7 +34,7 @@ const attemptCall = async (addr) => {
     //   .map(([key, value]) => `-H '${key}: ${value}'`)
     //   .join(' ');
     const fullUrl = `${api.protocol}//${api.hostname}${api.port ? `:${api.port}` : ''}${currentOpt.path}`;
-    logger.network(`Fetching balance for ${addr}:\ncurl '${fullUrl}'`);
+    logger.network(`Fetching balance: ${fullUrl}`);
     
     const req = (api.protocol === "https:" ? https : http).request(
       currentOpt,

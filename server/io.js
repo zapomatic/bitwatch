@@ -83,7 +83,18 @@ const socketIO = {
         logger.processing(`Saving expected state for ${data.collection}/${data.address}`);
         const collection = memory.db.collections[data.collection];
         if (!collection) return cb(`collection not found`);
-        const record = collection.addresses.find((a) => a.address === data.address);
+        
+        // First check main addresses
+        let record = collection.addresses.find((a) => a.address === data.address);
+        
+        // If not found, check extended keys
+        if (!record && collection.extendedKeys) {
+          for (const extendedKey of collection.extendedKeys) {
+            record = extendedKey.addresses.find((a) => a.address === data.address);
+            if (record) break;
+          }
+        }
+        
         if (!record) return cb(`address not found`);
         
         // Update expect values while preserving the object structure
