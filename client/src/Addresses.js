@@ -10,7 +10,6 @@ import Typography from "@mui/material/Typography";
 import Title from "./Title";
 import socketIO from "./io";
 import Box from "@mui/material/Box";
-import useMediaQuery from "@mui/material/useMediaQuery";
 import { useTheme } from "@mui/material/styles";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -260,7 +259,6 @@ const AddressRow = ({
   onSaveExpected,
   onDelete,
   displayBtc,
-  isMobile,
 }) => (
   <TableRow className="crystal-table-row address-row">
     <TableCell>
@@ -297,32 +295,30 @@ const AddressRow = ({
         />
       </Box>
     </TableCell>
-    {!isMobile && (
-      <TableCell className="crystal-table-cell">
-        <Box className="crystal-flex crystal-flex-start">
-          <BalanceCell
-            value={address.actual?.mempool_in}
-            expect={address.expect?.mempool_in || 0}
-            displayBtc={displayBtc}
-            error={address.error}
-            pending={!address.actual && !address.error}
-            monitor={address.monitor}
-            type="mempool"
-          />
-        </Box>
-        <Box className="crystal-flex crystal-flex-start" sx={{ mt: 1 }}>
-          <BalanceCell
-            value={address.actual?.mempool_out}
-            expect={address.expect?.mempool_out || 0}
-            displayBtc={displayBtc}
-            error={address.error}
-            pending={!address.actual && !address.error}
-            monitor={address.monitor}
-            type="mempool"
-          />
-        </Box>
-      </TableCell>
-    )}
+    <TableCell className="crystal-table-cell">
+      <Box className="crystal-flex crystal-flex-start">
+        <BalanceCell
+          value={address.actual?.mempool_in}
+          expect={address.expect?.mempool_in || 0}
+          displayBtc={displayBtc}
+          error={address.error}
+          pending={!address.actual && !address.error}
+          monitor={address.monitor}
+          type="mempool"
+        />
+      </Box>
+      <Box className="crystal-flex crystal-flex-start" sx={{ mt: 1 }}>
+        <BalanceCell
+          value={address.actual?.mempool_out}
+          expect={address.expect?.mempool_out || 0}
+          displayBtc={displayBtc}
+          error={address.error}
+          pending={!address.actual && !address.error}
+          monitor={address.monitor}
+          type="mempool"
+        />
+      </Box>
+    </TableCell>
     <TableCell>
       <Box className="crystal-flex crystal-flex-center crystal-gap-1">
         <IconButtonStyled
@@ -373,7 +369,6 @@ const ExtendedKeyInfo = ({
   onEditAddress,
   onSaveExpected,
   displayBtc,
-  isMobile,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -467,7 +462,6 @@ const ExtendedKeyInfo = ({
                       onSaveExpected={onSaveExpected}
                       onDelete={onDelete}
                       displayBtc={displayBtc}
-                      isMobile={isMobile}
                     />
                   ))}
                 </TableBody>
@@ -641,7 +635,6 @@ const CollectionRow = ({
   const [newAddress, setNewAddress] = useState(null);
   const [showExtendedKeyDialog, setShowExtendedKeyDialog] = useState(false);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   // Calculate totals from addresses
   const totals = calculateCollectionTotals(collection.addresses);
@@ -776,19 +769,17 @@ const CollectionRow = ({
             />
           </Box>
         </TableCell>
-        {!isMobile && (
-          <TableCell className="crystal-table-cell">
-            <Box className="crystal-flex crystal-flex-start">
-              <BalanceCell
-                value={totals.mempool_in}
-                expect={totals.expect_mempool_in}
-                displayBtc={displayBtc}
-                error={totals.hasError}
-                pending={totals.hasPending}
-              />
-            </Box>
-          </TableCell>
-        )}
+        <TableCell className="crystal-table-cell">
+          <Box className="crystal-flex crystal-flex-start">
+            <BalanceCell
+              value={totals.mempool_in}
+              expect={totals.expect_mempool_in}
+              displayBtc={displayBtc}
+              error={totals.hasError}
+              pending={totals.hasPending}
+            />
+          </Box>
+        </TableCell>
         <TableCell>
           <Box className="crystal-flex crystal-flex-center crystal-gap-1">
             <IconButtonStyled
@@ -835,7 +826,6 @@ const CollectionRow = ({
                     onEditAddress={onEditAddress}
                     onSaveExpected={onSaveExpected}
                     displayBtc={displayBtc}
-                    isMobile={isMobile}
                   />
                 ))}
               </TableBody>
@@ -860,10 +850,7 @@ const CollectionRow = ({
               <TableBody>
                 {newAddress && (
                   <TableRow className="crystal-table-row">
-                    <TableCell
-                      colSpan={isMobile ? 4 : 5}
-                      className="crystal-table-cell"
-                    >
+                    <TableCell colSpan={4} className="crystal-table-cell">
                       <Box className="crystal-flex crystal-flex-start crystal-gap-2">
                         <Box
                           className="crystal-flex crystal-flex-start crystal-gap-1"
@@ -937,7 +924,6 @@ const CollectionRow = ({
                     onSaveExpected={onSaveExpected}
                     onDelete={onDelete}
                     displayBtc={displayBtc}
-                    isMobile={isMobile}
                   />
                 ))}
               </TableBody>
@@ -1349,7 +1335,6 @@ export default function Addresses() {
     address: null,
   });
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const handleSort = (field) => {
     setSortConfig((prevConfig) => ({
@@ -1765,9 +1750,9 @@ export default function Addresses() {
         <Title>
           <Toolbar
             sx={{
-              flexDirection: isMobile ? "column" : "row",
-              gap: isMobile ? 2 : 0,
-              alignItems: isMobile ? "stretch" : "center",
+              flexDirection: "row",
+              gap: 2,
+              alignItems: "center",
               maxWidth: "1200px",
               margin: "0 auto",
               width: "100%",
@@ -1781,7 +1766,6 @@ export default function Addresses() {
               sx={{
                 flexGrow: 1,
                 color: "var(--theme-secondary)",
-                textAlign: isMobile ? "center" : "left",
               }}
             >
               Watch List
@@ -1944,22 +1928,18 @@ export default function Addresses() {
                     )}
                   </Box>
                 </TableCell>
-                {!isMobile && (
-                  <TableCell
-                    className="crystal-table-header"
-                    onClick={() => handleSort("mempool_in")}
-                    sx={{ cursor: "pointer" }}
-                  >
-                    <Box className="crystal-flex crystal-flex-start crystal-gap-1">
-                      Mempool
-                      {sortConfig.field === "mempool_in" && (
-                        <span>
-                          {sortConfig.direction === "asc" ? "↑" : "↓"}
-                        </span>
-                      )}
-                    </Box>
-                  </TableCell>
-                )}
+                <TableCell
+                  className="crystal-table-header"
+                  onClick={() => handleSort("mempool_in")}
+                  sx={{ cursor: "pointer" }}
+                >
+                  <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+                    Mempool
+                    {sortConfig.field === "mempool_in" && (
+                      <span>{sortConfig.direction === "asc" ? "↑" : "↓"}</span>
+                    )}
+                  </Box>
+                </TableCell>
                 <TableCell className="crystal-table-header"></TableCell>
               </TableRow>
             </TableHead>
@@ -1987,7 +1967,7 @@ export default function Addresses() {
                       autoFocus
                     />
                   </TableCell>
-                  <TableCell colSpan={!isMobile ? 3 : 2}></TableCell>
+                  <TableCell colSpan={3}></TableCell>
                   <TableCell>
                     <Box
                       sx={{
