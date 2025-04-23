@@ -27,7 +27,6 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import Collapse from "@mui/material/Collapse";
-import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import "./theme.css";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
@@ -42,55 +41,8 @@ import MenuItem from "@mui/material/MenuItem";
 import EditIcon from "@mui/icons-material/Edit";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-
-const CrystalNotification = ({ open, onClose, message, severity = "info" }) => (
-  <Snackbar
-    open={open}
-    autoHideDuration={6000}
-    onClose={onClose}
-    anchorOrigin={{ vertical: "top", horizontal: "right" }}
-    sx={{
-      position: "fixed",
-      top: "16px",
-      right: "16px",
-      zIndex: 9999,
-    }}
-  >
-    <Alert
-      onClose={onClose}
-      severity={severity}
-      sx={{
-        width: "100%",
-        background: "var(--theme-surface)",
-        color: "var(--theme-text)",
-        border: "1px solid rgba(77, 244, 255, 0.3)",
-        boxShadow: "0 0 15px var(--theme-glow-secondary)",
-        "& .MuiAlert-icon": {
-          color:
-            severity === "error"
-              ? "var(--theme-danger)"
-              : severity === "warning"
-              ? "var(--theme-warning)"
-              : "var(--theme-success)",
-        },
-      }}
-    >
-      {message}
-    </Alert>
-  </Snackbar>
-);
-
-const formatSatoshis = (sats, displayBtc = true) => {
-  if (!sats && sats !== 0) return "—";
-  if (displayBtc) {
-    const btc = sats / 100000000;
-    return `${btc.toLocaleString(undefined, {
-      minimumFractionDigits: 8,
-      maximumFractionDigits: 8,
-    })} ₿`;
-  }
-  return `${sats.toLocaleString()} sat`;
-};
+import CrystalNotification from "./components/CrystalNotification";
+import { formatSatoshis } from "./utils/format";
 
 const BalanceCell = ({
   displayBtc,
@@ -1918,9 +1870,22 @@ export default function Addresses() {
                     background: "rgba(77, 244, 255, 0.1)",
                     boxShadow: "0 0 10px var(--theme-glow-secondary)",
                   },
+                  "& .unit-icon": {
+                    fontFamily: "monospace",
+                    fontWeight: "bold",
+                    fontSize: "1.1em",
+                  },
                 }}
               >
-                {displayBtc ? "Show Satoshis" : "Show Bitcoin"}
+                {displayBtc ? (
+                  <>
+                    <span className="unit-icon">sat</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="unit-icon">₿</span>
+                  </>
+                )}
               </Button>
               <Button
                 className="crystal-button crystal-button-primary"
