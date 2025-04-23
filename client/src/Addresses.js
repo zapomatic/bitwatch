@@ -166,7 +166,6 @@ const AddressCell = ({ address }) => {
     e.preventDefault();
     e.stopPropagation();
 
-    // Create a temporary textarea element
     const textarea = document.createElement("textarea");
     textarea.value = address;
     textarea.style.position = "fixed";
@@ -174,7 +173,6 @@ const AddressCell = ({ address }) => {
     document.body.appendChild(textarea);
 
     try {
-      // Select and copy the text
       textarea.select();
       const successful = document.execCommand("copy");
       if (successful) {
@@ -184,7 +182,6 @@ const AddressCell = ({ address }) => {
     } catch (err) {
       console.error("Failed to copy address:", err);
     } finally {
-      // Clean up
       document.body.removeChild(textarea);
     }
   };
@@ -204,15 +201,12 @@ const AddressCell = ({ address }) => {
       >
         {`${address.slice(0, 8)}...`}
       </Box>
-      <Tooltip title={copied ? "Copied!" : "Copy full address"}>
-        <IconButton
-          size="small"
-          onClick={handleCopy}
-          className="crystal-icon-button"
-        >
-          <ContentCopyIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
+      <IconButtonStyled
+        size="small"
+        onClick={handleCopy}
+        icon={<ContentCopyIcon fontSize="small" />}
+        title={copied ? "Copied!" : "Copy full address"}
+      />
     </Box>
   );
 };
@@ -352,7 +346,6 @@ const AddressRow = ({
             }
             icon={<CheckIcon fontSize="small" />}
             variant="success"
-            className="crystal-action-button crystal-action-button-success"
           />
         )}
         <IconButtonStyled
@@ -366,7 +359,6 @@ const AddressRow = ({
           }}
           icon={<DeleteIcon fontSize="small" />}
           variant="danger"
-          className="crystal-action-button crystal-action-button-danger"
         />
       </Box>
     </TableCell>
