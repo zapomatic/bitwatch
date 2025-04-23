@@ -23,6 +23,28 @@ const formatInterval = (ms) => {
   }
 };
 
+const Configs = {
+  api: {
+    label: "API Endpoint",
+    help: "Most users should use https://mempool.space (default) or http://10.21.21.26:3006 (umbrel)",
+  },
+  interval: {
+    label: "Update Interval (ms)",
+    help: (value) =>
+      `Updates every ${formatInterval(
+        parseInt(value)
+      )} (if running local mempool, you can run this much more frequently)`,
+  },
+  apiParallelLimit: {
+    label: "API Parallel Requests",
+    help: "If you are using your own local mempool instance, you can increase this number to speed up address monitoring. If you are only watching a few addresses, you can also increase this when using public mempool.space API, but with a lot of addresses, you will hit rate limits and it will slow things down more.",
+  },
+  apiDelay: {
+    label: "API Delay Between Requests (ms)",
+    help: "Delay between API requests to avoid rate limiting. This is used when we add an extended pub key and initially scan for balances and when we poll the API for changes on the interval. We will additionally backoff and retry if we get limited.",
+  },
+};
+
 function Config() {
   const [config, setConfig] = useState({});
   const [saving, setSaving] = useState(false);
@@ -34,6 +56,7 @@ function Config() {
 
   useEffect(() => {
     socketIO.emit("getConfig", {}, (response) => {
+      console.log(`getConfig`, response);
       setConfig(response);
     });
   }, []);
@@ -63,12 +86,6 @@ function Config() {
     });
   }, [config]);
 
-  const configLabels = {
-    interval: "Update Interval (ms)",
-    apiParallelLimit: "API Parallel Requests",
-    api: "API Endpoint",
-  };
-
   return (
     <>
       <div className="crystal-panel">
@@ -90,6 +107,7 @@ function Config() {
                   api: "http://10.21.21.26:3006",
                   apiParallelLimit: 100,
                   interval: 60000,
+                  apiDelay: 100,
                 })
               }
               sx={{
@@ -109,8 +127,9 @@ function Config() {
                 setConfig({
                   ...config,
                   api: "https://mempool.space",
-                  apiParallelLimit: 5,
+                  apiParallelLimit: 1,
                   interval: 600000,
+                  apiDelay: 2000,
                 })
               }
               sx={{
@@ -128,14 +147,14 @@ function Config() {
         </div>
         <Grid container spacing={3}>
           {Object.keys(config).map((key) => (
-            <Grid item xs={12} key={key}>
+            <Grid item xs={12} sm={6} key={key}>
               <div className="data-item">
                 <Typography
                   component="label"
                   htmlFor={key}
                   className="crystal-label"
                 >
-                  {configLabels[key] || key}
+                  {Configs[key]?.label || key}
                 </Typography>
                 <input
                   id={key}
@@ -146,7 +165,7 @@ function Config() {
                   }
                   style={{ width: "100%" }}
                 />
-                {key === "interval" && (
+                {Configs[key]?.help && (
                   <Typography
                     variant="caption"
                     sx={{
@@ -156,37 +175,9 @@ function Config() {
                       fontSize: "0.75rem",
                     }}
                   >
-                    Updates every {formatInterval(parseInt(config[key]))} (if
-                    running local mempool, you can run this much more
-                    frequently)
-                  </Typography>
-                )}
-                {key === "api" && (
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: "var(--theme-accent)",
-                      marginTop: "0.25rem",
-                      display: "block",
-                      fontSize: "0.75rem",
-                    }}
-                  >
-                    Most users should use https://mempool.space (default) or
-                    http://10.21.21.26:3006 (umbrel)
-                  </Typography>
-                )}
-                {key === "apiParallelLimit" && (
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: "var(--theme-accent)",
-                      marginTop: "0.25rem",
-                      display: "block",
-                      fontSize: "0.75rem",
-                    }}
-                  >
-                    If you are using your own local mempool instance, you can
-                    increase this number to speed up address monitoring.
+                    {typeof Configs[key].help === "function"
+                      ? Configs[key].help(config[key])
+                      : Configs[key].help}
                   </Typography>
                 )}
               </div>

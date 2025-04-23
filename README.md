@@ -8,10 +8,12 @@
 ![Bitwatch](./client/public/app_2.png)
 ![Bitwatch](./client/public/app_3.png)
 ![Bitwatch](./client/public/app_4.png)
+![Bitwatch](./client/public/app_5.png)
 
 ## Features
 
 - Real-time monitoring of Bitcoin addresses
+- Supports collections of single addresses, or extended pub keys
 - Subscribes to mempool.space (or locally hosted) websocket for real-time mempool activity
 - Double checks data against mempool.space (or locally hosted) API on a configured interval
 - Track both on-chain and mempool activity

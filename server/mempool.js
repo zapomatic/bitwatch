@@ -51,9 +51,19 @@ const updateTrackedAddresses = () => {
 
   const newAddresses = new Set();
   Object.values(memory.db.collections).forEach((collection) => {
+    // Add regular addresses
     collection.addresses.forEach((addr) => {
       newAddresses.add(addr.address);
     });
+
+    // Add extended key addresses
+    if (collection.extendedKeys) {
+      collection.extendedKeys.forEach((extendedKey) => {
+        extendedKey.addresses.forEach((addr) => {
+          newAddresses.add(addr.address);
+        });
+      });
+    }
   });
 
   // Get addresses to track
@@ -381,7 +391,7 @@ const setupWebSocket = (io) => {
         }
 
         // Log any unhandled message types
-        logger.warning(`Unhandled message type: ${messageType}`);
+        logger.debug(`ignoring message type: ${messageType}`);
       } catch (error) {
         logger.error(`Error processing websocket message: ${error.message}`);
         logger.error(`Error details:`, error);

@@ -31,6 +31,7 @@ const logger = {
 
   // Data processing
   processing: (message) => console.log(formatMessage(`💽 ${message}`)),
+  scan: (message) => console.log(formatMessage(`🔍 ${message}`)),
 };
 
 export default logger;
