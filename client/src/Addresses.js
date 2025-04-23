@@ -1711,8 +1711,10 @@ export default function Addresses() {
         collection,
         name: data.name,
         key: data.key,
-        gapLimit: data.gapLimit,
+        gapLimit: parseInt(data.gapLimit) || 2,
+        initialAddresses: parseInt(data.initialAddresses) || 10,
         derivationPath: data.derivationPath,
+        skip: parseInt(data.skip) || 0,
       },
       (response) => {
         if (response.error) {

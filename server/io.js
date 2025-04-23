@@ -429,7 +429,7 @@ const socketIO = {
           return;
         }
         
-        logger.info(`Adding extended key to collection ${collection} with path ${derivationPath}`);
+        logger.info(`Adding extended key to collection ${collection} with path ${derivationPath}, skip ${skip || 0}, and initial addresses ${initialAddresses || 10}`);
         
         try {
           // Get initial batch of addresses
@@ -450,6 +450,7 @@ const socketIO = {
             derivationPath,
             name,
             skip: parseInt(skip) || 0,
+            initialAddresses: parseInt(initialAddresses) || 10,
             addresses: initialAddressesList.map(addr => ({
               address: addr.address,
               name: `${name} ${addr.index}`,
@@ -740,7 +741,7 @@ const deriveAddresses = async (extendedKey, startIndex, count, derivationPath) =
 };
 
 const checkGapLimit = async (extendedKey) => {
-  const { key, gapLimit, derivationPath } = extendedKey;
+  const { key, gapLimit, derivationPath, initialAddresses } = extendedKey;
   let lastUsedIndex = -1;
   let emptyCount = 0;
   let currentIndex = extendedKey.addresses.length - 1; // Start after initial addresses
@@ -767,7 +768,7 @@ const checkGapLimit = async (extendedKey) => {
   }
   
   // If we haven't found any used addresses and we've checked at least initialAddresses + gapLimit
-  if (lastUsedIndex === -1 && extendedKey.addresses.length >= (extendedKey.initialAddresses || 10) + gapLimit) {
+  if (lastUsedIndex === -1 && extendedKey.addresses.length >= (initialAddresses || 10) + gapLimit) {
     logger.scan(`No used addresses found after checking ${extendedKey.addresses.length} addresses. Stopping scan.`);
     return { lastUsedIndex, emptyCount };
   }
@@ -778,7 +779,7 @@ const checkGapLimit = async (extendedKey) => {
     logger.scan(`Checking index ${currentIndex}, empty count: ${emptyCount}, gap limit: ${gapLimit}`);
     
     // If we've checked initialAddresses + gapLimit addresses and found nothing, stop
-    if (lastUsedIndex === -1 && currentIndex >= (extendedKey.initialAddresses || 10) + gapLimit) {
+    if (lastUsedIndex === -1 && currentIndex >= (initialAddresses || 10) + gapLimit) {
       logger.scan(`No used addresses found after checking ${currentIndex} addresses. Stopping scan.`);
       break;
     }
