@@ -5,6 +5,7 @@ import pjson from "../package.json" with { type: "json" };
 import memory from "./memory.js";
 import * as url from "node:url";
 import logger from "./logger.js";
+import socketIO from "./io.js";
 
 const attemptCall = async (addr) => {
   return new Promise((resolve, reject) => {
@@ -88,6 +89,13 @@ const getAddressBalance = async (addr, onRateLimit) => {
   while (retryCount < maxRetries) {
     try {
       const result = await attemptCall(addr);
+      // If we got here after retries, notify that API is good again
+      if (retryCount > 0) {
+        socketIO.io.emit("updateState", { 
+          collections: memory.db.collections,
+          apiState: "GOOD"
+        });
+      }
       return result;
     } catch (error) {
       // Check if it's a rate limit error

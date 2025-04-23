@@ -549,14 +549,21 @@ const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
 
   useEffect(() => {
     if (extendedKey) {
-      setName(extendedKey.name);
-      setKey(extendedKey.key);
+      setName(extendedKey.name || "");
+      setKey(extendedKey.key || "");
       setGapLimit(extendedKey.gapLimit || 2);
       setInitialAddresses(extendedKey.initialAddresses || 10);
       setDerivationPath(extendedKey.derivationPath || "m/0");
       setSkip(extendedKey.skip || 0);
+    } else {
+      setName("");
+      setKey("");
+      setGapLimit(2);
+      setInitialAddresses(10);
+      setDerivationPath("m/0");
+      setSkip(0);
     }
-  }, [extendedKey]);
+  }, [extendedKey, open]);
 
   const handleSave = () => {
     if (!name || !key || !derivationPath) {
@@ -722,10 +729,18 @@ const CollectionRow = ({
     if (editingExtendedKey) {
       onEditExtendedKey(collection.name, {
         ...data,
+        initialAddresses: parseInt(data.initialAddresses) || 10,
+        gapLimit: parseInt(data.gapLimit) || 2,
+        skip: parseInt(data.skip) || 0,
         extendedKeyIndex: collection.extendedKeys.indexOf(editingExtendedKey),
       });
     } else {
-      onAddExtendedKey(collection.name, data);
+      onAddExtendedKey(collection.name, {
+        ...data,
+        initialAddresses: parseInt(data.initialAddresses) || 10,
+        gapLimit: parseInt(data.gapLimit) || 2,
+        skip: parseInt(data.skip) || 0,
+      });
     }
     setEditingExtendedKey(null);
     setShowExtendedKeyDialog(false);

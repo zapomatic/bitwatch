@@ -212,10 +212,14 @@ const socketIO = {
           if (index !== -1) {
             // Get all addresses from this extended key for cleanup
             const addressesToRemove = col.extendedKeys[index].addresses.map(addr => addr.address);
-            logger.info(`Removing ${addressesToRemove.length} addresses from extended key`);
+            
+            // Remove the addresses from the collection's addresses array
+            col.addresses = col.addresses.filter(addr => !addressesToRemove.includes(addr.address));
             
             // Remove the extended key
             col.extendedKeys.splice(index, 1);
+            
+            logger.info(`Removed extended key and ${addressesToRemove.length} associated addresses`);
           }
         }
         
@@ -349,21 +353,50 @@ const socketIO = {
         const col = memory.db.collections[collection];
         if (!col) return cb({ error: `collection not found` });
         
-        const index = col.addresses.findIndex((a) => a.address === address.address);
-        if (index === -1) return cb({ error: `address not found` });
-
-        // Update the address with new values
-        col.addresses[index] = {
-          ...col.addresses[index],
-          ...address,
-          // Ensure monitor settings are properly set
-          monitor: {
-            chain_in: address.monitor?.chain_in || "auto-accept",
-            chain_out: address.monitor?.chain_out || "alert",
-            mempool_in: address.monitor?.mempool_in || "auto-accept",
-            mempool_out: address.monitor?.mempool_out || "alert"
+        // First try to find the address in the regular addresses array
+        let addressToUpdate = null;
+        let addressIndex = col.addresses.findIndex((a) => a.address === address.address);
+        
+        if (addressIndex !== -1) {
+          // Address found in regular addresses
+          col.addresses[addressIndex] = {
+            ...col.addresses[addressIndex],
+            ...address,
+            // Ensure monitor settings are properly set
+            monitor: {
+              chain_in: address.monitor?.chain_in || "auto-accept",
+              chain_out: address.monitor?.chain_out || "alert",
+              mempool_in: address.monitor?.mempool_in || "auto-accept",
+              mempool_out: address.monitor?.mempool_out || "alert"
+            }
+          };
+        } else {
+          // If not found in regular addresses, look in extended keys
+          let found = false;
+          for (const extendedKey of col.extendedKeys || []) {
+            addressIndex = extendedKey.addresses.findIndex((a) => a.address === address.address);
+            if (addressIndex !== -1) {
+              // Address found in this extended key
+              extendedKey.addresses[addressIndex] = {
+                ...extendedKey.addresses[addressIndex],
+                ...address,
+                // Ensure monitor settings are properly set
+                monitor: {
+                  chain_in: address.monitor?.chain_in || "auto-accept",
+                  chain_out: address.monitor?.chain_out || "alert",
+                  mempool_in: address.monitor?.mempool_in || "auto-accept",
+                  mempool_out: address.monitor?.mempool_out || "alert"
+                }
+              };
+              found = true;
+              break;
+            }
           }
-        };
+          
+          if (!found) {
+            return cb({ error: `address not found` });
+          }
+        }
         
         memory.saveDb();
         socketIO.io.emit("updateState", { collections: memory.db.collections });
@@ -401,9 +434,12 @@ const socketIO = {
         try {
           // Get initial batch of addresses
           const initialAddressesList = await deriveAddresses(
-            { key, skip: parseInt(skip) || 0 },
+            { 
+              key,
+              skip: parseInt(skip) || 0 
+            },
             0,
-            initialAddresses,
+            parseInt(initialAddresses) || 10,
             derivationPath
           );
           
@@ -505,9 +541,12 @@ const socketIO = {
         try {
           // Get initial batch of addresses
           const initialAddressesList = await deriveAddresses(
-            { key, skip: parseInt(skip) || 0 },
+            { 
+              key,
+              skip: parseInt(skip) || 0 
+            },
             0,
-            initialAddresses,
+            parseInt(initialAddresses) || 10,
             derivationPath
           );
           
@@ -582,8 +621,8 @@ const socketIO = {
             });
             
             // Respect API delay
-            logger.scan(`Waiting ${memory.db.apiDelay}ms before next request`);
-            await new Promise(resolve => setTimeout(resolve, memory.db.apiDelay));
+            logger.scan(`Waiting ${memory.db.config?.apiDelay || 1000}ms before next request`);
+            await new Promise(resolve => setTimeout(resolve, memory.db.config?.apiDelay || 1000));
           }
 
           // Then check gap limit and derive more addresses if needed
@@ -625,7 +664,13 @@ const deriveAddresses = async (extendedKey, startIndex, count, derivationPath) =
     wif: 0x80
   };
   
-  const node = bip32.fromBase58(extendedKey.key, zpubNetwork);
+  // Extract key from extendedKey object if needed
+  const keyString = typeof extendedKey === 'object' ? extendedKey.key : extendedKey;
+  const skipValue = typeof extendedKey === 'object' ? (extendedKey.skip || 0) : 0;
+  
+  logger.scan(`Deriving ${count} addresses starting from index ${startIndex} with skip ${skipValue}`);
+  
+  const node = bip32.fromBase58(keyString, zpubNetwork);
   
   // Parse derivation path and get the base node
   const pathParts = derivationPath.split('/').slice(1); // Remove 'm'
@@ -640,7 +685,7 @@ const deriveAddresses = async (extendedKey, startIndex, count, derivationPath) =
   }
   
   // Calculate the actual start index including skip
-  const actualStartIndex = startIndex + (extendedKey.skip || 0);
+  const actualStartIndex = startIndex + skipValue;
   
   // Derive addresses starting from the actual start index
   for (let i = 0; i < count; i++) {
