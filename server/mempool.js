@@ -2,6 +2,7 @@ import mempoolJS from "@mempool/mempool.js";
 import memory from "./memory.js";
 import logger from "./logger.js";
 import { detectBalanceChanges } from "./balance.js";
+import { checkAddressBalance } from "./balance.js";
 import telegram from "./telegram.js";
 
 let mempoolClient = null;
@@ -133,24 +134,68 @@ const calculateAddressBalance = (transactions, address) => {
   return { in: inAmount, out: outAmount };
 };
 
-const updateAddressBalance = (address, balance, io) => {
+const updateAddressBalance = async (address, balance, io) => {
   // Find the address in our collections
   for (const [collectionName, collection] of Object.entries(
     memory.db.collections
   )) {
+    // Check regular addresses
     const addr = collection.addresses.find((a) => a.address === address);
     if (addr) {
-      const changes = detectBalanceChanges(
-        address,
-        balance,
-        collectionName,
-        addr.name
-      );
-      if (changes) {
-        // Emit update for this address
-        io.emit("updateState", { collections: memory.db.collections });
+      const balanceChanged = await checkAddressBalance(addr, balance);
+      if (balanceChanged) {
+        const changes = detectBalanceChanges(
+          address,
+          balance,
+          collectionName,
+          addr.name
+        );
+        if (changes) {
+          // Emit update for this address
+          io.emit("updateState", { collections: memory.db.collections });
+          // Notify via telegram if needed
+          telegram.notifyBalanceChange(
+            address,
+            changes,
+            collectionName,
+            addr.name
+          );
+        }
       }
       return true;
+    }
+
+    // Check extended key addresses
+    if (collection.extendedKeys) {
+      for (const extendedKey of collection.extendedKeys) {
+        const addr = extendedKey.addresses.find((a) => a.address === address);
+        if (addr) {
+          const balanceChanged = await checkAddressBalance(addr, balance);
+          if (balanceChanged) {
+            const changes = detectBalanceChanges(
+              address,
+              balance,
+              collectionName,
+              addr.name
+            );
+            if (changes) {
+              // Emit update for this address
+              io.emit("updateState", { collections: memory.db.collections });
+              // Notify via telegram if needed
+              telegram.notifyBalanceChange(
+                address,
+                changes,
+                collectionName,
+                addr.name
+              );
+
+              // Check gap limit if balance changed
+              await checkGapLimit(extendedKey);
+            }
+          }
+          return true;
+        }
+      }
     }
   }
   return false;

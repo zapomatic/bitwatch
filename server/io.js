@@ -10,6 +10,7 @@ import * as bitcoin from 'bitcoinjs-lib';
 import { ECPairFactory } from 'ecpair';
 import * as ecc from 'tiny-secp256k1';
 import getAddressBalance from "./getAddressBalance.js";
+import { checkAddressBalance, hasAddressActivity } from "./balance.js";
 // const { v4: uuidv4 } = require("uuid");
 
 const ecpair = ECPairFactory(ecc);
@@ -746,21 +747,13 @@ const checkGapLimit = async (extendedKey) => {
   const { key, gapLimit, derivationPath, initialAddresses } = extendedKey;
   let lastUsedIndex = -1;
   let emptyCount = 0;
-  let currentIndex = extendedKey.addresses.length - 1; // Start after initial addresses
   
-  logger.scan(`Starting gap limit check for ${extendedKey.name} from index ${currentIndex + 1}`);
+  logger.scan(`Starting gap limit check for ${extendedKey.name}`);
   
   // First check all existing addresses to find the last used one
   for (const addr of extendedKey.addresses) {
-    const balance = await getAddressBalance(addr.address);
-    if (balance.error) {
-      logger.error(`Error checking balance for ${addr.address}: ${balance.message}`);
-      continue;
-    }
-    
-    const totalBalance = (balance.actual.chain_in || 0) + (balance.actual.mempool_in || 0);
-    if (totalBalance > 0) {
-      logger.scan(`Found used address at index ${addr.index} with balance ${totalBalance}`);
+    if (hasAddressActivity(addr)) {
+      logger.scan(`Found used address at index ${addr.index}`);
       lastUsedIndex = addr.index;
       emptyCount = 0;
     } else {
@@ -777,7 +770,7 @@ const checkGapLimit = async (extendedKey) => {
   
   // If we haven't found enough empty addresses after the last used one, keep checking
   while (lastUsedIndex === -1 || emptyCount < gapLimit) {
-    currentIndex++;
+    const currentIndex = extendedKey.addresses.length;
     logger.scan(`Checking index ${currentIndex}, empty count: ${emptyCount}, gap limit: ${gapLimit}`);
     
     // If we've checked initialAddresses + gapLimit addresses and found nothing, stop
@@ -805,19 +798,9 @@ const checkGapLimit = async (extendedKey) => {
       logger.error(`Error checking balance for ${newAddr.address}: ${balance.message}`);
       break;
     }
-    
-    const totalBalance = (balance.actual.chain_in || 0) + (balance.actual.mempool_in || 0);
-    if (totalBalance > 0) {
-      logger.scan(`Found used address at index ${newAddr.index} with balance ${totalBalance}`);
-      lastUsedIndex = newAddr.index;
-      emptyCount = 0;
-    } else {
-      emptyCount++;
-      logger.scan(`Empty address at index ${newAddr.index}, empty count: ${emptyCount}`);
-    }
-    
-    // Add the new address to the list
-    extendedKey.addresses.push({
+
+    // Create new address record
+    const addressRecord = {
       address: newAddr.address,
       name: `${extendedKey.name} ${newAddr.index}`,
       index: newAddr.index,
@@ -833,15 +816,25 @@ const checkGapLimit = async (extendedKey) => {
         mempool_in: "auto-accept",
         mempool_out: "alert"
       },
-      actual: {
-        chain_in: balance.actual.chain_in || 0,
-        chain_out: balance.actual.chain_out || 0,
-        mempool_in: balance.actual.mempool_in || 0,
-        mempool_out: balance.actual.mempool_out || 0
-      },
+      actual: null,
       error: false,
       errorMessage: null
-    });
+    };
+
+    // Update balance using shared function
+    await checkAddressBalance(addressRecord, balance.actual);
+    
+    if (hasAddressActivity(addressRecord)) {
+      logger.scan(`Found used address at index ${newAddr.index}`);
+      lastUsedIndex = newAddr.index;
+      emptyCount = 0;
+    } else {
+      emptyCount++;
+      logger.scan(`Empty address at index ${newAddr.index}, empty count: ${emptyCount}`);
+    }
+    
+    // Add the new address to the list
+    extendedKey.addresses.push(addressRecord);
 
     // Save and emit update after each new address
     memory.saveDb();

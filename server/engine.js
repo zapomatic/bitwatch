@@ -6,52 +6,6 @@ import telegram from "./telegram.js";
 import logger from "./logger.js";
 import { detectBalanceChanges } from "./balance.js";
 
-const detectChanges = (
-  actual,
-  expected,
-  address,
-  collectionName,
-  addressName
-) => {
-  if (!actual || !expected) return null;
-  const changes = {};
-  if (actual.chain_in !== expected.chain_in) changes.chain_in = actual.chain_in;
-  if (actual.chain_out !== expected.chain_out)
-    changes.chain_out = actual.chain_out;
-  if (actual.mempool_in !== expected.mempool_in)
-    changes.mempool_in = actual.mempool_in;
-  if (actual.mempool_out !== expected.mempool_out)
-    changes.mempool_out = actual.mempool_out;
-
-  if (Object.keys(changes).length > 0) {
-    logger.warning(`Balance mismatch detected for ${address} (${collectionName}/${addressName}):
-Expected: chain_in=${expected.chain_in}, chain_out=${expected.chain_out}, mempool_in=${expected.mempool_in}, mempool_out=${expected.mempool_out}
-Actual: chain_in=${actual.chain_in}, chain_out=${actual.chain_out}, mempool_in=${actual.mempool_in}, mempool_out=${actual.mempool_out}`);
-  }
-
-  return Object.keys(changes).length > 0 ? changes : null;
-};
-
-const calculateCollectionTotals = (addresses) => {
-  return addresses.reduce(
-    (totals, addr) => {
-      if (!addr.actual || addr.error) return totals;
-      return {
-        chain_in: (totals.chain_in || 0) + (addr.actual.chain_in || 0),
-        chain_out: (totals.chain_out || 0) + (addr.actual.chain_out || 0),
-        mempool_in: (totals.mempool_in || 0) + (addr.actual.mempool_in || 0),
-        mempool_out: (totals.mempool_out || 0) + (addr.actual.mempool_out || 0),
-      };
-    },
-    {
-      chain_in: 0,
-      chain_out: 0,
-      mempool_in: 0,
-      mempool_out: 0,
-    }
-  );
-};
-
 const updateAddressAndEmit = (addr, balance) => {
   const collections = { ...memory.db.collections };
   const collection = collections[addr.collection];

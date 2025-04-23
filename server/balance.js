@@ -113,3 +113,36 @@ Previous: chain_in=${oldBalance.chain_in}, chain_out=${oldBalance.chain_out}, me
 
   return Object.keys(changes).length > 0 ? changes : null;
 };
+
+// Shared function for checking address balance changes
+export const checkAddressBalance = async (addr, newBalance) => {
+  if (!addr) return false;
+
+  // Skip if no actual balance yet
+  if (!addr.actual) {
+    addr.actual = newBalance;
+    return true;
+  }
+
+  // Check if any balance has changed
+  const hasChanged =
+    addr.actual.chain_in !== newBalance.chain_in ||
+    addr.actual.chain_out !== newBalance.chain_out ||
+    addr.actual.mempool_in !== newBalance.mempool_in ||
+    addr.actual.mempool_out !== newBalance.mempool_out;
+
+  if (hasChanged) {
+    logger.scan(`Balance changed for ${addr.address}`);
+    addr.actual = newBalance;
+    addr.error = false;
+    addr.errorMessage = null;
+  }
+
+  return hasChanged;
+};
+
+// Shared function to check if address has activity
+export const hasAddressActivity = (addr) => {
+  if (!addr?.actual) return false;
+  return (addr.actual.chain_in || 0) + (addr.actual.mempool_in || 0) > 0;
+};
