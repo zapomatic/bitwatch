@@ -651,26 +651,35 @@ const socketIO = {
 const deriveAddresses = async (extendedKey, startIndex, count, derivationPath) => {
   const addresses = [];
   
-  // Create a custom network for zpub
-  const zpubNetwork = {
-    ...bitcoin.networks.bitcoin,
-    bip32: {
-      public: 0x04b24746, // zpub prefix
-      private: 0x04b2430c  // zprv prefix
-    },
-    bech32: 'bc',
-    pubKeyHash: 0x00,
-    scriptHash: 0x05,
-    wif: 0x80
-  };
-  
   // Extract key from extendedKey object if needed
   const keyString = typeof extendedKey === 'object' ? extendedKey.key : extendedKey;
   const skipValue = typeof extendedKey === 'object' ? (extendedKey.skip || 0) : 0;
   
   logger.scan(`Deriving ${count} addresses starting from index ${startIndex} with skip ${skipValue}`);
+
+  // Create networks for different key types
+  const networks = {
+    xpub: {
+      ...bitcoin.networks.bitcoin,
+      bip32: {
+        public: 0x0488b21e,  // xpub
+        private: 0x0488ade4  // xprv
+      }
+    },
+    zpub: {
+      ...bitcoin.networks.bitcoin,
+      bip32: {
+        public: 0x04b24746, // zpub
+        private: 0x04b2430c  // zprv
+      }
+    }
+  };
+
+  // Determine which network to use based on key prefix
+  const keyLower = keyString.toLowerCase();
+  const network = keyLower.startsWith('zpub') ? networks.zpub : networks.xpub;
   
-  const node = bip32.fromBase58(keyString, zpubNetwork);
+  const node = bip32.fromBase58(keyString, network);
   
   // Parse derivation path and get the base node
   const pathParts = derivationPath.split('/').slice(1); // Remove 'm'
@@ -691,10 +700,12 @@ const deriveAddresses = async (extendedKey, startIndex, count, derivationPath) =
   for (let i = 0; i < count; i++) {
     const derivationIndex = actualStartIndex + i;
     const child = baseNode.derive(derivationIndex);
-    const { address } = bitcoin.payments.p2wpkh({ 
-      pubkey: child.publicKey,
-      network: zpubNetwork
-    });
+    
+    // Use native segwit (P2WPKH) for zpub and legacy (P2PKH) for xpub
+    const { address } = keyLower.startsWith('zpub') 
+      ? bitcoin.payments.p2wpkh({ pubkey: child.publicKey, network })
+      : bitcoin.payments.p2pkh({ pubkey: child.publicKey, network });
+    
     addresses.push({
       name: `Address ${derivationIndex}`,
       address,
@@ -713,16 +724,9 @@ const checkGapLimit = async (extendedKey) => {
   
   logger.scan(`Starting gap limit check for ${extendedKey.name} from index ${currentIndex + 1}`);
   
-  const handleRateLimit = (delay, attempt, maxAttempts) => {
-    socketIO.io.emit("updateState", { 
-      collections: memory.db.collections,
-      apiState: "CHECKING"
-    });
-  };
-
   // First check all existing addresses to find the last used one
   for (const addr of extendedKey.addresses) {
-    const balance = await getAddressBalance(addr.address, handleRateLimit);
+    const balance = await getAddressBalance(addr.address);
     if (balance.error) {
       logger.error(`Error checking balance for ${addr.address}: ${balance.message}`);
       continue;
@@ -739,10 +743,22 @@ const checkGapLimit = async (extendedKey) => {
     }
   }
   
+  // If we haven't found any used addresses and we've checked at least initialAddresses + gapLimit
+  if (lastUsedIndex === -1 && extendedKey.addresses.length >= (extendedKey.initialAddresses || 10) + gapLimit) {
+    logger.scan(`No used addresses found after checking ${extendedKey.addresses.length} addresses. Stopping scan.`);
+    return { lastUsedIndex, emptyCount };
+  }
+  
   // If we haven't found enough empty addresses after the last used one, keep checking
   while (lastUsedIndex === -1 || emptyCount < gapLimit) {
     currentIndex++;
     logger.scan(`Checking index ${currentIndex}, empty count: ${emptyCount}, gap limit: ${gapLimit}`);
+    
+    // If we've checked initialAddresses + gapLimit addresses and found nothing, stop
+    if (lastUsedIndex === -1 && currentIndex >= (extendedKey.initialAddresses || 10) + gapLimit) {
+      logger.scan(`No used addresses found after checking ${currentIndex} addresses. Stopping scan.`);
+      break;
+    }
     
     const newAddresses = await deriveAddresses(
       { key, skip: extendedKey.skip || 0 },
@@ -756,8 +772,8 @@ const checkGapLimit = async (extendedKey) => {
     const balance = await getAddressBalance(newAddr.address);
     
     // Add delay between API calls
-    logger.scan(`Waiting ${memory.db.apiDelay}ms before next request`);
-    await new Promise(resolve => setTimeout(resolve, memory.db.apiDelay));
+    logger.scan(`Waiting ${memory.db.config?.apiDelay || 1000}ms before next request`);
+    await new Promise(resolve => setTimeout(resolve, memory.db.config?.apiDelay || 1000));
     
     if (balance.error) {
       logger.error(`Error checking balance for ${newAddr.address}: ${balance.message}`);

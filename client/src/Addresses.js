@@ -565,6 +565,22 @@ const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
     }
   }, [extendedKey, open]);
 
+  // Set default derivation path based on key type
+  const handleKeyChange = (e) => {
+    const newKey = e.target.value;
+    setKey(newKey);
+
+    // Only update derivation path if it's currently at its default value
+    if (derivationPath === "m/0" || derivationPath === "m/44/0/0") {
+      const keyLower = newKey.toLowerCase();
+      if (keyLower.startsWith("zpub")) {
+        setDerivationPath("m/0");
+      } else if (keyLower.startsWith("xpub")) {
+        setDerivationPath("m/44/0/0");
+      }
+    }
+  };
+
   const handleSave = () => {
     if (!name || !key || !derivationPath) {
       setError("Name, extended key, and derivation path are required");
@@ -615,7 +631,7 @@ const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
           label="Extended Key"
           fullWidth
           value={key}
-          onChange={(e) => setKey(e.target.value)}
+          onChange={handleKeyChange}
           helperText="Format: xpub, ypub, or zpub"
         />
         <TextField
