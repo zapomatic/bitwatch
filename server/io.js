@@ -9,6 +9,7 @@ import { BIP32Factory } from 'bip32';
 import * as bitcoin from 'bitcoinjs-lib';
 import { ECPairFactory } from 'ecpair';
 import * as ecc from 'tiny-secp256k1';
+import getAddressBalance from "./getAddressBalance.js";
 // const { v4: uuidv4 } = require("uuid");
 
 const ecpair = ECPairFactory(ecc);
@@ -175,7 +176,7 @@ const socketIO = {
         // Emit state update to ALL clients
         socketIO.io.emit("updateState", {
           collections: memory.db.collections,
-          apiState: "CHECKING",
+          apiState: "GOOD",
           interval: memory.db.interval
         });
         cb({ status: "ok", record });
@@ -205,15 +206,20 @@ const socketIO = {
           }
         }
 
-        // Remove the extended key if it exists
+        // Remove the extended key and its addresses if it exists
         if (extendedKey) {
           const index = col.extendedKeys.findIndex((k) => k.key === extendedKey.key);
           if (index !== -1) {
+            // Get all addresses from this extended key for cleanup
+            const addressesToRemove = col.extendedKeys[index].addresses.map(addr => addr.address);
+            logger.info(`Removing ${addressesToRemove.length} addresses from extended key`);
+            
+            // Remove the extended key
             col.extendedKeys.splice(index, 1);
           }
         }
         
-        // If collection is empty and not the default "Satoshi" collection, remove it
+        // Only remove the collection if it's empty AND not the default "Satoshi" collection
         if (col.addresses.length === 0 && col.extendedKeys.length === 0 && collection !== "Satoshi") {
           delete memory.db.collections[collection];
         }
@@ -365,7 +371,7 @@ const socketIO = {
       });
 
       socket.on('addExtendedKey', async (data, callback) => {
-        const { collection, name, key, gapLimit, initialAddresses, derivationPath } = data;
+        const { collection, name, key, gapLimit, initialAddresses, derivationPath, skip } = data;
         
         if (!collection || !name || !key || !derivationPath) {
           callback({ error: "Missing required fields" });
@@ -394,7 +400,12 @@ const socketIO = {
         
         try {
           // Get initial batch of addresses
-          const initialAddressesList = await deriveAddresses(key, 0, initialAddresses, derivationPath);
+          const initialAddressesList = await deriveAddresses(
+            { key, skip: parseInt(skip) || 0 },
+            0,
+            initialAddresses,
+            derivationPath
+          );
           
           // Create new extended key object
           const newExtendedKey = {
@@ -402,6 +413,7 @@ const socketIO = {
             gapLimit: parseInt(gapLimit) || 20,
             derivationPath,
             name,
+            skip: parseInt(skip) || 0,
             addresses: initialAddressesList.map(addr => ({
               address: addr.address,
               name: `${name} ${addr.index}`,
@@ -463,7 +475,7 @@ const socketIO = {
       });
 
       socket.on('editExtendedKey', async (data, callback) => {
-        const { collection, name, key, gapLimit, initialAddresses, derivationPath, extendedKeyIndex } = data;
+        const { collection, name, key, gapLimit, initialAddresses, derivationPath, extendedKeyIndex, skip } = data;
         
         if (!collection || !name || !key || !derivationPath || extendedKeyIndex === undefined) {
           callback({ error: "Missing required fields" });
@@ -492,7 +504,12 @@ const socketIO = {
         
         try {
           // Get initial batch of addresses
-          const initialAddressesList = await deriveAddresses(key, 0, initialAddresses, derivationPath);
+          const initialAddressesList = await deriveAddresses(
+            { key, skip: parseInt(skip) || 0 },
+            0,
+            initialAddresses,
+            derivationPath
+          );
           
           // Update the extended key
           memory.db.collections[collection].extendedKeys[extendedKeyIndex] = {
@@ -500,6 +517,7 @@ const socketIO = {
             gapLimit: parseInt(gapLimit) || 20,
             derivationPath,
             name,
+            skip: parseInt(skip) || 0,
             addresses: initialAddressesList.map(addr => ({
               address: addr.address,
               name: `${name} ${addr.index}`,
@@ -525,7 +543,7 @@ const socketIO = {
           // Save state
           memory.saveDb();
           
-          // Emit update
+          // Emit initial update
           socketIO.io.emit("updateState", { 
             collections: memory.db.collections,
             apiState: "CHECKING"
@@ -533,16 +551,55 @@ const socketIO = {
           
           callback({ success: true });
 
-          // Check gap limit and derive more addresses if needed
-          await checkGapLimit(memory.db.collections[collection].extendedKeys[extendedKeyIndex]);
+          // Perform new initialization scan with updated config
+          const extendedKey = memory.db.collections[collection].extendedKeys[extendedKeyIndex];
           
-          // Save state again after gap limit check
+          logger.scan(`Initializing extended key ${extendedKey.name} : ${extendedKey.addresses.length} addresses with gap limit ${extendedKey.gapLimit}`);
+          
+          // First check the initial addresses
+          for (const addr of extendedKey.addresses) {
+            logger.scan(`Checking balance for address ${addr.address}`);
+            const balance = await getAddressBalance(addr.address);
+            if (balance.error) {
+              addr.error = true;
+              addr.errorMessage = balance.error;
+              logger.error(`Error checking balance for ${addr.address}: ${balance.error}`);
+            } else {
+              addr.actual = {
+                chain_in: balance.actual.chain_in || 0,
+                chain_out: balance.actual.chain_out || 0,
+                mempool_in: balance.actual.mempool_in || 0,
+                mempool_out: balance.actual.mempool_out || 0
+              };
+              logger.scan(`Balance for ${addr.address}: chain_in=${addr.actual.chain_in}, mempool_in=${addr.actual.mempool_in}`);
+            }
+            
+            // Save and emit update after each address
+            memory.saveDb();
+            socketIO.io.emit("updateState", { 
+              collections: memory.db.collections,
+              apiState: "CHECKING"
+            });
+            
+            // Respect API delay
+            logger.scan(`Waiting ${memory.db.apiDelay}ms before next request`);
+            await new Promise(resolve => setTimeout(resolve, memory.db.apiDelay));
+          }
+
+          // Then check gap limit and derive more addresses if needed
+          await checkGapLimit(extendedKey);
+          
+          // Save state again after initialization scan
           memory.saveDb();
-          socketIO.io.emit("updateState", { collections: memory.db.collections });
+          socketIO.io.emit("updateState", { 
+            collections: memory.db.collections,
+            apiState: "GOOD"
+          });
           
           // Trigger a refresh to fetch the balances
           engine();
         } catch (error) {
+          logger.error(`Error in editExtendedKey: ${error.message}`);
           callback({ error: error.message });
         }
       });
@@ -568,7 +625,7 @@ const deriveAddresses = async (extendedKey, startIndex, count, derivationPath) =
     wif: 0x80
   };
   
-  const node = bip32.fromBase58(extendedKey, zpubNetwork);
+  const node = bip32.fromBase58(extendedKey.key, zpubNetwork);
   
   // Parse derivation path and get the base node
   const pathParts = derivationPath.split('/').slice(1); // Remove 'm'
@@ -582,16 +639,21 @@ const deriveAddresses = async (extendedKey, startIndex, count, derivationPath) =
     baseNode = baseNode.derive(index);
   }
   
-  for (let i = startIndex; i < startIndex + count; i++) {
-    const child = baseNode.derive(i);
+  // Calculate the actual start index including skip
+  const actualStartIndex = startIndex + (extendedKey.skip || 0);
+  
+  // Derive addresses starting from the actual start index
+  for (let i = 0; i < count; i++) {
+    const derivationIndex = actualStartIndex + i;
+    const child = baseNode.derive(derivationIndex);
     const { address } = bitcoin.payments.p2wpkh({ 
       pubkey: child.publicKey,
       network: zpubNetwork
     });
     addresses.push({
-      name: `Address ${i}`,
+      name: `Address ${derivationIndex}`,
       address,
-      index: i
+      index: derivationIndex
     });
   }
   
@@ -602,11 +664,20 @@ const checkGapLimit = async (extendedKey) => {
   const { key, gapLimit, derivationPath } = extendedKey;
   let lastUsedIndex = -1;
   let emptyCount = 0;
-  let currentIndex = 0;
+  let currentIndex = extendedKey.addresses.length - 1; // Start after initial addresses
   
-  // Check existing addresses first
+  logger.scan(`Starting gap limit check for ${extendedKey.name} from index ${currentIndex + 1}`);
+  
+  const handleRateLimit = (delay, attempt, maxAttempts) => {
+    socketIO.io.emit("updateState", { 
+      collections: memory.db.collections,
+      apiState: "CHECKING"
+    });
+  };
+
+  // First check all existing addresses to find the last used one
   for (const addr of extendedKey.addresses) {
-    const balance = await getAddressBalance(addr.address);
+    const balance = await getAddressBalance(addr.address, handleRateLimit);
     if (balance.error) {
       logger.error(`Error checking balance for ${addr.address}: ${balance.message}`);
       continue;
@@ -614,25 +685,34 @@ const checkGapLimit = async (extendedKey) => {
     
     const totalBalance = (balance.actual.chain_in || 0) + (balance.actual.mempool_in || 0);
     if (totalBalance > 0) {
+      logger.scan(`Found used address at index ${addr.index} with balance ${totalBalance}`);
       lastUsedIndex = addr.index;
       emptyCount = 0;
     } else {
       emptyCount++;
+      logger.scan(`Empty address at index ${addr.index}, empty count: ${emptyCount}`);
     }
-    currentIndex = addr.index;
   }
   
-  // If we haven't found enough empty addresses, keep checking
-  while (emptyCount < gapLimit) {
+  // If we haven't found enough empty addresses after the last used one, keep checking
+  while (lastUsedIndex === -1 || emptyCount < gapLimit) {
     currentIndex++;
-    const newAddresses = await deriveAddresses(key, currentIndex, 1, derivationPath);
+    logger.scan(`Checking index ${currentIndex}, empty count: ${emptyCount}, gap limit: ${gapLimit}`);
+    
+    const newAddresses = await deriveAddresses(
+      { key, skip: extendedKey.skip || 0 },
+      currentIndex,
+      1,
+      derivationPath
+    );
     if (newAddresses.length === 0) break;
     
     const newAddr = newAddresses[0];
     const balance = await getAddressBalance(newAddr.address);
     
     // Add delay between API calls
-    await new Promise(resolve => setTimeout(resolve, memory.db.apiDelay || 1000));
+    logger.scan(`Waiting ${memory.db.apiDelay}ms before next request`);
+    await new Promise(resolve => setTimeout(resolve, memory.db.apiDelay));
     
     if (balance.error) {
       logger.error(`Error checking balance for ${newAddr.address}: ${balance.message}`);
@@ -641,10 +721,12 @@ const checkGapLimit = async (extendedKey) => {
     
     const totalBalance = (balance.actual.chain_in || 0) + (balance.actual.mempool_in || 0);
     if (totalBalance > 0) {
+      logger.scan(`Found used address at index ${newAddr.index} with balance ${totalBalance}`);
       lastUsedIndex = newAddr.index;
       emptyCount = 0;
     } else {
       emptyCount++;
+      logger.scan(`Empty address at index ${newAddr.index}, empty count: ${emptyCount}`);
     }
     
     // Add the new address to the list
@@ -664,12 +746,25 @@ const checkGapLimit = async (extendedKey) => {
         mempool_in: "auto-accept",
         mempool_out: "alert"
       },
-      actual: balance.actual,
-      error: balance.error,
-      errorMessage: balance.errorMessage
+      actual: {
+        chain_in: balance.actual.chain_in || 0,
+        chain_out: balance.actual.chain_out || 0,
+        mempool_in: balance.actual.mempool_in || 0,
+        mempool_out: balance.actual.mempool_out || 0
+      },
+      error: false,
+      errorMessage: null
+    });
+
+    // Save and emit update after each new address
+    memory.saveDb();
+    socketIO.io.emit("updateState", { 
+      collections: memory.db.collections,
+      apiState: "CHECKING"
     });
   }
   
+  logger.scan(`Extended key ${extendedKey.name} scan complete. Last used index: ${lastUsedIndex}, Empty count: ${emptyCount}`);
   return {
     lastUsedIndex,
     emptyCount

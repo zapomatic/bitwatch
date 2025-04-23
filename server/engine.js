@@ -191,43 +191,45 @@ const engine = async () => {
   });
 
   logger.processing(
-    `Starting balance check for ${allAddresses.length} addresses (${memory.db.apiParallelLimit} concurrent)`
+    `Starting balance check for ${allAddresses.length} addresses (${memory.db.apiParallelLimit} concurrent, ${memory.db.apiDelay}ms delay)`
   );
 
-  // Process addresses in parallel with a limit
-  await parallelLimit(
-    allAddresses.map((addr) => async () => {
-      try {
-        const balance = await getAddressBalance(addr.address);
-        if (balance.error) {
-          logger.error(
-            `Failed to fetch balance for ${addr.address}: ${balance.message}`
-          );
-          updateAddressAndEmit(addr, {
-            actual: null,
-            error: true,
-            errorMessage: balance.message,
-          });
-          return;
-        }
-        updateAddressAndEmit(addr, {
-          actual: balance.actual,
-          error: false,
-          errorMessage: null,
-        });
-      } catch (error) {
+  // Process addresses in parallel with a limit and delay
+  const queue = allAddresses.map((addr) => async () => {
+    try {
+      const balance = await getAddressBalance(addr.address);
+      if (balance.error) {
         logger.error(
-          `Failed to fetch balance for ${addr.address}: ${error.message}`
+          `Failed to fetch balance for ${addr.address}: ${balance.message}`
         );
         updateAddressAndEmit(addr, {
           actual: null,
           error: true,
-          errorMessage: error.message,
+          errorMessage: balance.message,
         });
+        return;
       }
-    }),
-    memory.db.apiParallelLimit
-  );
+      updateAddressAndEmit(addr, {
+        actual: balance.actual,
+        error: false,
+        errorMessage: null,
+      });
+    } catch (error) {
+      logger.error(
+        `Failed to fetch balance for ${addr.address}: ${error.message}`
+      );
+      updateAddressAndEmit(addr, {
+        actual: null,
+        error: true,
+        errorMessage: error.message,
+      });
+    }
+    // Add delay between API calls
+    await new Promise((resolve) => setTimeout(resolve, memory.db.apiDelay));
+  });
+
+  // Process the queue with parallelLimit
+  await parallelLimit(queue, memory.db.apiParallelLimit);
 
   // Schedule next update
   setTimeout(engine, memory.db.interval);

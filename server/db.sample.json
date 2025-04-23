@@ -146,7 +146,8 @@
   },
   "interval": 600000,
   "api": "https://mempool.space",
-  "apiParallelLimit": 5,
+  "apiDelay": 3000,
+  "apiParallelLimit": 3,
   "telegram": {
     "chatId": "",
     "token": ""

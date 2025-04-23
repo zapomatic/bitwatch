@@ -434,17 +434,36 @@ const ExtendedKeyInfo = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
+  const handleExpandClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsExpanded(!isExpanded);
+  };
+
+  const handleEditClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onEdit();
+  };
+
+  const handleDeleteClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onDelete();
+  };
+
   return (
     <>
-      <TableRow className="crystal-table-row address-row">
+      <TableRow
+        className="crystal-table-row address-row"
+        sx={{ "& > *": { borderBottom: "unset" } }}
+      >
         <TableCell>
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            <IconButton size="small" onClick={() => setIsExpanded(!isExpanded)}>
+            <IconButton size="small" onClick={handleExpandClick} sx={{ mr: 1 }}>
               {isExpanded ? <ExpandLess /> : <ExpandMore />}
             </IconButton>
-            <Typography variant="body2" sx={{ ml: 1 }}>
-              {extendedKey.name}
-            </Typography>
+            <Typography variant="body2">{extendedKey.name}</Typography>
           </Box>
         </TableCell>
         <TableCell>
@@ -459,49 +478,59 @@ const ExtendedKeyInfo = ({
           <Typography variant="body2">{extendedKey.gapLimit}</Typography>
         </TableCell>
         <TableCell>
+          <Typography variant="body2">{extendedKey.skip || 0}</Typography>
+        </TableCell>
+        <TableCell>
+          <Typography variant="body2">
+            {extendedKey.initialAddresses || 10}
+          </Typography>
+        </TableCell>
+        <TableCell>
           <Typography variant="body2">
             {extendedKey.addresses.length}
           </Typography>
         </TableCell>
         <TableCell>
           <Box sx={{ display: "flex", gap: 1 }}>
-            <IconButton size="small" onClick={onEdit}>
+            <IconButton size="small" onClick={handleEditClick}>
               <EditIcon />
             </IconButton>
-            <IconButton size="small" onClick={onDelete}>
+            <IconButton size="small" onClick={handleDeleteClick}>
               <DeleteIcon />
             </IconButton>
           </Box>
         </TableCell>
       </TableRow>
       <TableRow>
-        <TableCell colSpan={6} sx={{ padding: 0 }}>
-          <Collapse in={isExpanded}>
-            <Table size="small" sx={{ width: "100%" }}>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Name</TableCell>
-                  <TableCell>Address</TableCell>
-                  <TableCell>On-Chain</TableCell>
-                  {!isMobile && <TableCell>Mempool</TableCell>}
-                  <TableCell></TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {extendedKey.addresses.map((address) => (
-                  <AddressRow
-                    key={address.address}
-                    address={address}
-                    collection={collection}
-                    onEditAddress={onEditAddress}
-                    onSaveExpected={onSaveExpected}
-                    onDelete={onDelete}
-                    displayBtc={displayBtc}
-                    isMobile={isMobile}
-                  />
-                ))}
-              </TableBody>
-            </Table>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
+          <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+            <Box sx={{ margin: 1 }}>
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Address</TableCell>
+                    <TableCell>On-Chain</TableCell>
+                    {!isMobile && <TableCell>Mempool</TableCell>}
+                    <TableCell></TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {extendedKey.addresses.map((address) => (
+                    <AddressRow
+                      key={address.address}
+                      address={address}
+                      collection={collection}
+                      onEditAddress={onEditAddress}
+                      onSaveExpected={onSaveExpected}
+                      onDelete={onDelete}
+                      displayBtc={displayBtc}
+                      isMobile={isMobile}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </Box>
           </Collapse>
         </TableCell>
       </TableRow>
@@ -510,24 +539,22 @@ const ExtendedKeyInfo = ({
 };
 
 const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
-  const [name, setName] = useState(extendedKey?.name || "");
-  const [key, setKey] = useState(extendedKey?.key || "");
-  const [gapLimit, setGapLimit] = useState(extendedKey?.gapLimit || 20);
-  const [initialAddresses, setInitialAddresses] = useState(
-    extendedKey?.addresses?.length || 20
-  );
-  const [derivationPath, setDerivationPath] = useState(
-    extendedKey?.derivationPath || "m/0"
-  );
+  const [name, setName] = useState("");
+  const [key, setKey] = useState("");
+  const [gapLimit, setGapLimit] = useState(2);
+  const [initialAddresses, setInitialAddresses] = useState(10);
+  const [derivationPath, setDerivationPath] = useState("m/0");
+  const [skip, setSkip] = useState(0);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (extendedKey) {
       setName(extendedKey.name);
       setKey(extendedKey.key);
-      setGapLimit(extendedKey.gapLimit);
-      setInitialAddresses(extendedKey.addresses?.length || 20);
-      setDerivationPath(extendedKey.derivationPath);
+      setGapLimit(extendedKey.gapLimit || 2);
+      setInitialAddresses(extendedKey.initialAddresses || 10);
+      setDerivationPath(extendedKey.derivationPath || "m/0");
+      setSkip(extendedKey.skip || 0);
     }
   }, [extendedKey]);
 
@@ -558,6 +585,7 @@ const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
       gapLimit: parseInt(gapLimit),
       initialAddresses: parseInt(initialAddresses),
       derivationPath,
+      skip: parseInt(skip),
     });
     onClose();
   };
@@ -569,7 +597,6 @@ const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
       </DialogTitle>
       <DialogContent>
         <TextField
-          autoFocus
           margin="dense"
           label="Name"
           fullWidth
@@ -578,10 +605,11 @@ const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
         />
         <TextField
           margin="dense"
-          label="Extended Public Key (xpub/ypub/zpub)"
+          label="Extended Key"
           fullWidth
           value={key}
           onChange={(e) => setKey(e.target.value)}
+          helperText="Format: xpub, ypub, or zpub"
         />
         <TextField
           margin="dense"
@@ -589,7 +617,7 @@ const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
           fullWidth
           value={derivationPath}
           onChange={(e) => setDerivationPath(e.target.value)}
-          helperText="Example: m/0 for receiving addresses"
+          helperText="Format: m/0, m/0/0, etc."
         />
         <TextField
           margin="dense"
@@ -602,22 +630,27 @@ const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
         />
         <TextField
           margin="dense"
+          label="Skip Addresses"
+          type="number"
+          fullWidth
+          value={skip}
+          onChange={(e) => setSkip(e.target.value)}
+          helperText="Number of addresses to skip before starting scan"
+        />
+        <TextField
+          margin="dense"
           label="Gap Limit"
           type="number"
           fullWidth
           value={gapLimit}
           onChange={(e) => setGapLimit(e.target.value)}
-          helperText="Number of consecutive empty addresses to maintain at the end"
+          helperText="Number of consecutive empty addresses to maintain"
         />
-        {error && (
-          <Typography color="error" sx={{ mt: 1 }}>
-            {error}
-          </Typography>
-        )}
+        {error && <Typography color="error">{error}</Typography>}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSave} variant="contained">
+        <Button onClick={handleSave} variant="contained" color="primary">
           Save
         </Button>
       </DialogActions>
@@ -803,7 +836,7 @@ const CollectionRow = ({
         </TableCell>
       </TableRow>
       <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
           <Collapse in={expanded} timeout="auto" unmountOnExit>
             <Table size="small" className="crystal-table address-subtable">
               <TableHead>
@@ -812,6 +845,8 @@ const CollectionRow = ({
                   <TableCell>xPub/yPub/zPub</TableCell>
                   <TableCell>Derivation Path</TableCell>
                   <TableCell>Gap Limit</TableCell>
+                  <TableCell>Skip</TableCell>
+                  <TableCell>Initial</TableCell>
                   <TableCell>Addresses</TableCell>
                   <TableCell>
                     <IconButton
@@ -1300,6 +1335,8 @@ export default function Addresses() {
     open: false,
     address: null,
     collection: null,
+    extendedKey: null,
+    message: "",
   });
   const [displayBtc, setDisplayBtc] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -1480,35 +1517,56 @@ export default function Addresses() {
     });
   }, []);
 
-  const handleDelete = useCallback(({ address, collection }) => {
+  const handleDelete = useCallback(({ address, collection, extendedKey }) => {
     if (address) {
       setDeleteDialog({
         open: true,
         address,
         collection,
+        extendedKey: null,
         message: "Remove this address from the collection?",
+      });
+    } else if (extendedKey) {
+      setDeleteDialog({
+        open: true,
+        collection,
+        address: null,
+        extendedKey,
+        message: "Delete this extended key and all its derived addresses?",
       });
     } else {
       setDeleteDialog({
         open: true,
         collection,
+        address: null,
+        extendedKey: null,
         message: "Delete this collection and all its addresses?",
       });
     }
   }, []);
 
   const confirmDelete = useCallback(() => {
-    const { address, collection } = deleteDialog;
-    socketIO.emit("delete", { address, collection }, (response) => {
-      if (response.error) {
-        setNotification({
-          open: true,
-          message: response.error,
-          severity: "error",
+    const { address, collection, extendedKey } = deleteDialog;
+    socketIO.emit(
+      "delete",
+      { address, collection, extendedKey },
+      (response) => {
+        if (response.error) {
+          setNotification({
+            open: true,
+            message: response.error,
+            severity: "error",
+          });
+        }
+        setDeleteDialog({
+          open: false,
+          address: null,
+          collection: null,
+          extendedKey: null,
+          message: "",
         });
       }
-      setDeleteDialog({ open: false, address: null, collection: null });
-    });
+    );
   }, [deleteDialog]);
 
   const handleRenameCollection = useCallback((oldName, newName) => {
@@ -1994,7 +2052,13 @@ export default function Addresses() {
         <Dialog
           open={deleteDialog.open}
           onClose={() =>
-            setDeleteDialog({ open: false, address: null, collection: null })
+            setDeleteDialog({
+              open: false,
+              address: null,
+              collection: null,
+              extendedKey: null,
+              message: "",
+            })
           }
           PaperProps={{
             sx: {
@@ -2018,6 +2082,8 @@ export default function Addresses() {
                   open: false,
                   address: null,
                   collection: null,
+                  extendedKey: null,
+                  message: "",
                 })
               }
               className="crystal-button"

@@ -80,20 +80,44 @@ const attemptCall = async (addr) => {
   });
 };
 
-const getAddressBalance = async (addr) => {
-  try {
-    return await retry(
-      {
-        times: 3,
-        interval: function (retryCount) {
-          return 50 * Math.pow(2, retryCount);
-        },
-      },
-      async () => attemptCall(addr)
-    );
-  } catch (error) {
-    logger.error(`Failed to fetch balance for ${addr}: ${error.message}`);
-    return { error: true, message: error.message };
+const getAddressBalance = async (addr, onRateLimit) => {
+  let retryCount = 0;
+  const maxRetries = 5;
+  const baseDelay = 2000; // Start with 2 seconds
+
+  while (retryCount < maxRetries) {
+    try {
+      const result = await attemptCall(addr);
+      return result;
+    } catch (error) {
+      // Check if it's a rate limit error
+      if (error.message?.includes('429') || error.message?.includes('Too Many Requests')) {
+        retryCount++;
+        if (retryCount === maxRetries) {
+          logger.error(`Rate limit exceeded for ${addr} after ${maxRetries} retries`);
+          return { error: true, message: "Rate limit exceeded. Please try again later." };
+        }
+        
+        // Calculate exponential backoff delay
+        const delay = baseDelay * Math.pow(2, retryCount - 1);
+        logger.warning(`Rate limited for ${addr}, retrying in ${delay}ms (attempt ${retryCount}/${maxRetries})`);
+
+        // Notify about rate limit through callback if provided
+        if (onRateLimit) {
+          onRateLimit(delay, retryCount, maxRetries);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, delay));
+        continue;
+      }
+      
+      // For other errors, return immediately
+      logger.error(`Failed to fetch balance for ${addr}: ${error.message}`);
+      return { error: true, message: error.message };
+    }
   }
+  
+  return { error: true, message: "Max retries exceeded" };
 };
+
 export default getAddressBalance;

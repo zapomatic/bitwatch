@@ -41,7 +41,7 @@ const Configs = {
   },
   apiDelay: {
     label: "API Delay Between Requests (ms)",
-    help: "Delay between API requests to avoid rate limiting. Default is 1000ms (1 second). This is used when we add an extended pub key and initially scan for balances.",
+    help: "Delay between API requests to avoid rate limiting. Default is 1000ms (1 second). This is used when we add an extended pub key and initially scan for balances. We will additionally backoff and retry if we get limited.",
   },
 };
 
@@ -127,9 +127,9 @@ function Config() {
                 setConfig({
                   ...config,
                   api: "https://mempool.space",
-                  apiParallelLimit: 5,
+                  apiParallelLimit: 3,
                   interval: 600000,
-                  apiDelay: 1000,
+                  apiDelay: 3000,
                 })
               }
               sx={{
