@@ -41,6 +41,7 @@ import MenuItem from "@mui/material/MenuItem";
 import EditIcon from "@mui/icons-material/Edit";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import KeyIcon from "@mui/icons-material/Key";
 
 const CrystalNotification = ({ open, onClose, message, severity = "info" }) => (
   <Snackbar
@@ -306,63 +307,317 @@ const calculateCollectionTotals = (addresses) => {
   };
 };
 
+const AddressRow = ({
+  address,
+  collection,
+  onEditAddress,
+  onSaveExpected,
+  onDelete,
+  displayBtc,
+  isMobile,
+}) => (
+  <TableRow className="crystal-table-row address-row">
+    <TableCell>
+      <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+        <Typography className="crystal-text">{address.name}</Typography>
+      </Box>
+    </TableCell>
+    <TableCell className="crystal-table-cell">
+      <AddressCell address={address.address} />
+    </TableCell>
+    <TableCell className="crystal-table-cell">
+      <Box className="crystal-flex crystal-flex-start">
+        <BalanceCell
+          label="⬅️"
+          value={address.actual?.chain_in}
+          expect={address.expect?.chain_in || 0}
+          displayBtc={displayBtc}
+          error={address.error}
+          pending={!address.actual && !address.error}
+          monitor={address.monitor}
+          type="chain"
+        />
+      </Box>
+      <Box className="crystal-flex crystal-flex-start" sx={{ mt: 1 }}>
+        <BalanceCell
+          label="➡️"
+          value={address.actual?.chain_out}
+          expect={address.expect?.chain_out || 0}
+          displayBtc={displayBtc}
+          error={address.error}
+          pending={!address.actual && !address.error}
+          monitor={address.monitor}
+          type="chain"
+        />
+      </Box>
+    </TableCell>
+    {!isMobile && (
+      <TableCell className="crystal-table-cell">
+        <Box className="crystal-flex crystal-flex-start">
+          <BalanceCell
+            value={address.actual?.mempool_in}
+            expect={address.expect?.mempool_in || 0}
+            displayBtc={displayBtc}
+            error={address.error}
+            pending={!address.actual && !address.error}
+            monitor={address.monitor}
+            type="mempool"
+          />
+        </Box>
+        <Box className="crystal-flex crystal-flex-start" sx={{ mt: 1 }}>
+          <BalanceCell
+            value={address.actual?.mempool_out}
+            expect={address.expect?.mempool_out || 0}
+            displayBtc={displayBtc}
+            error={address.error}
+            pending={!address.actual && !address.error}
+            monitor={address.monitor}
+            type="mempool"
+          />
+        </Box>
+      </TableCell>
+    )}
+    <TableCell>
+      <Box className="crystal-flex crystal-flex-center crystal-gap-1">
+        <IconButton
+          size="small"
+          onClick={() => onEditAddress(collection.name, address)}
+          className="crystal-icon-button"
+        >
+          <EditIcon />
+        </IconButton>
+        {(address.actual?.chain_in !== address.expect?.chain_in ||
+          address.actual?.chain_out !== address.expect?.chain_out ||
+          address.actual?.mempool_in !== address.expect?.mempool_in ||
+          address.actual?.mempool_out !== address.expect?.mempool_out) && (
+          <IconButton
+            size="small"
+            onClick={() =>
+              onSaveExpected({
+                collection: collection.name,
+                address: address.address,
+                actual: address.actual,
+                expect: address.actual,
+              })
+            }
+            className="crystal-action-button crystal-action-button-success"
+          >
+            <CheckIcon />
+          </IconButton>
+        )}
+        <IconButton
+          size="small"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete({
+              collection: collection.name,
+              address: address.address,
+            });
+          }}
+          className="crystal-action-button crystal-action-button-danger"
+        >
+          <DeleteIcon />
+        </IconButton>
+      </Box>
+    </TableCell>
+  </TableRow>
+);
+
+const ExtendedKeyInfo = ({
+  extendedKey,
+  onEdit,
+  collection,
+  onEditAddress,
+  onSaveExpected,
+  onDelete,
+  displayBtc,
+  isMobile,
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <>
+      <TableRow>
+        <TableCell>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <IconButton size="small" onClick={() => setIsExpanded(!isExpanded)}>
+              {isExpanded ? <ExpandLess /> : <ExpandMore />}
+            </IconButton>
+            <KeyIcon sx={{ mr: 1 }} />
+            <Typography variant="body2">
+              {extendedKey.key.slice(0, 8)}...
+            </Typography>
+          </Box>
+        </TableCell>
+        <TableCell>
+          <Typography variant="body2">{extendedKey.derivationPath}</Typography>
+        </TableCell>
+        <TableCell>
+          <Typography variant="body2">Gap: {extendedKey.gapLimit}</Typography>
+        </TableCell>
+        <TableCell></TableCell>
+        <TableCell>
+          <IconButton size="small" onClick={onEdit}>
+            <EditIcon />
+          </IconButton>
+        </TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell colSpan={5} sx={{ padding: 0 }}>
+          <Collapse in={isExpanded}>
+            <Table size="small" sx={{ width: "100%" }}>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Address</TableCell>
+                  <TableCell>On-Chain</TableCell>
+                  <TableCell>Mempool</TableCell>
+                  <TableCell></TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {extendedKey.addresses.map((address) => (
+                  <AddressRow
+                    key={address.address}
+                    address={address}
+                    collection={collection}
+                    onEditAddress={onEditAddress}
+                    onSaveExpected={onSaveExpected}
+                    onDelete={onDelete}
+                    displayBtc={displayBtc}
+                    isMobile={isMobile}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </Collapse>
+        </TableCell>
+      </TableRow>
+    </>
+  );
+};
+
+const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
+  const [name, setName] = useState(extendedKey?.name || "");
+  const [key, setKey] = useState(extendedKey?.key || "");
+  const [gapLimit, setGapLimit] = useState(extendedKey?.gapLimit || 2);
+  const [derivationPath, setDerivationPath] = useState(
+    extendedKey?.derivationPath || "m/0"
+  );
+  const [extendedKeyError, setExtendedKeyError] = useState("");
+  const [derivationPathError, setDerivationPathError] = useState("");
+
+  const handleSave = () => {
+    // Reset errors
+    setExtendedKeyError("");
+    setDerivationPathError("");
+
+    if (!key || !name) {
+      setExtendedKeyError("Name and extended key are required");
+      return;
+    }
+
+    // Validate extended key format
+    if (!key.match(/^[xyz]pub[a-zA-Z0-9]{107,108}$/)) {
+      setExtendedKeyError(
+        "Invalid extended key format. Must be xpub, ypub, or zpub."
+      );
+      return;
+    }
+
+    // Validate derivation path format
+    if (!derivationPath.match(/^m(\/\d+'?)*$/)) {
+      setDerivationPathError(
+        "Invalid derivation path format. Must start with 'm/' and contain only numbers and optional apostrophes."
+      );
+      return;
+    }
+
+    onSave({
+      name,
+      key,
+      gapLimit: parseInt(gapLimit) || 20,
+      derivationPath,
+    });
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <DialogTitle>
+        {extendedKey ? "Edit Extended Key" : "Add Extended Key"}
+      </DialogTitle>
+      <DialogContent>
+        <TextField
+          autoFocus
+          margin="dense"
+          label="Name"
+          fullWidth
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
+        <TextField
+          margin="dense"
+          label="Extended Public Key (xpub/ypub/zpub)"
+          fullWidth
+          value={key}
+          onChange={(e) => setKey(e.target.value)}
+          error={!!extendedKeyError}
+          helperText={
+            extendedKeyError || "Enter a valid xpub, ypub, or zpub key"
+          }
+        />
+        <TextField
+          margin="dense"
+          label="Derivation Path"
+          fullWidth
+          value={derivationPath}
+          onChange={(e) => setDerivationPath(e.target.value)}
+          error={!!derivationPathError}
+          helperText={derivationPathError || "e.g. m/0, m/44'/0'/0', etc."}
+        />
+        <TextField
+          margin="dense"
+          label="Gap Limit"
+          type="number"
+          fullWidth
+          value={gapLimit}
+          onChange={(e) => setGapLimit(e.target.value)}
+          helperText="Number of empty addresses before stopping derivation"
+        />
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={handleSave} variant="contained" color="primary">
+          Save
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
+
 const CollectionRow = ({
   collection,
   onSaveExpected,
   onDelete,
   onAddAddress,
-  autoShowAddForm,
-  displayBtc,
+  onAddExtendedKey,
+  onEditExtendedKey,
   onRenameCollection,
   onEditAddress,
+  autoShowAddForm,
+  displayBtc,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(collection.name);
   const [newAddress, setNewAddress] = useState(null);
-  const [addressSortConfig, setAddressSortConfig] = useState({
-    field: "name",
-    direction: "asc",
-  });
+  const [showExtendedKeyDialog, setShowExtendedKeyDialog] = useState(false);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   // Calculate totals from addresses
   const totals = calculateCollectionTotals(collection.addresses);
-
-  const handleAddressSort = (field) => {
-    setAddressSortConfig((prevConfig) => ({
-      field,
-      direction:
-        prevConfig.field === field && prevConfig.direction === "asc"
-          ? "desc"
-          : "asc",
-    }));
-  };
-
-  const getSortedAddresses = () => {
-    return [...collection.addresses].sort((a, b) => {
-      let comparison = 0;
-      switch (addressSortConfig.field) {
-        case "name":
-          comparison = a.name.localeCompare(b.name);
-          break;
-        case "address":
-          comparison = a.address.localeCompare(b.address);
-          break;
-        case "chain_in":
-          comparison = (a.actual?.chain_in || 0) - (b.actual?.chain_in || 0);
-          break;
-        case "mempool_in":
-          comparison =
-            (a.actual?.mempool_in || 0) - (b.actual?.mempool_in || 0);
-          break;
-        default:
-          comparison = 0;
-      }
-      return addressSortConfig.direction === "asc" ? comparison : -comparison;
-    });
-  };
 
   const handleAddClick = () => {
     setIsExpanded(true);
@@ -393,6 +648,11 @@ const CollectionRow = ({
       onRenameCollection(collection.name, editedName.trim());
     }
     setIsEditingName(false);
+  };
+
+  const handleAddExtendedKey = (data) => {
+    onAddExtendedKey(collection, data);
+    setShowExtendedKeyDialog(false);
   };
 
   return (
@@ -485,8 +745,17 @@ const CollectionRow = ({
               size="small"
               onClick={handleAddClick}
               className="crystal-icon-button"
+              title="Add Address"
             >
               <AddIcon />
+            </IconButton>
+            <IconButton
+              size="small"
+              onClick={() => setShowExtendedKeyDialog(true)}
+              className="crystal-icon-button"
+              title="Add Extended Key"
+            >
+              <KeyIcon />
             </IconButton>
             <IconButton
               size="small"
@@ -495,87 +764,75 @@ const CollectionRow = ({
                 onDelete({ collection: collection.name });
               }}
               className="crystal-icon-button crystal-icon-button-danger"
+              title="Delete Collection (deletes all contents)"
             >
               <DeleteIcon />
             </IconButton>
           </Box>
         </TableCell>
       </TableRow>
-      <TableRow style={{ height: isExpanded ? "auto" : 0 }}>
-        <TableCell
-          colSpan={6}
-          style={{
-            padding: 0,
-            borderBottom: "none",
-            height: isExpanded ? "auto" : 0,
-          }}
-        >
-          <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-            <Box sx={{ margin: 0 }}>
+      <TableRow>
+        <TableCell colSpan={5}>
+          <Collapse in={isExpanded}>
+            <Box sx={{ margin: 1 }}>
+              {collection.extendedKeys?.length > 0 && (
+                <>
+                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                    Extended Keys
+                  </Typography>
+                  <Table
+                    size="small"
+                    className="crystal-table address-subtable"
+                  >
+                    <TableHead>
+                      <TableRow>
+                        <TableCell>Extended Key</TableCell>
+                        <TableCell>Path</TableCell>
+                        <TableCell>Gap</TableCell>
+                        <TableCell></TableCell>
+                        <TableCell></TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {collection.extendedKeys.map((extendedKey, index) => (
+                        <ExtendedKeyInfo
+                          key={extendedKey.key}
+                          extendedKey={extendedKey}
+                          collection={collection}
+                          onEdit={() => {
+                            setShowExtendedKeyDialog(true);
+                          }}
+                          onEditAddress={onEditAddress}
+                          onSaveExpected={onSaveExpected}
+                          onDelete={onDelete}
+                          displayBtc={displayBtc}
+                          isMobile={isMobile}
+                        />
+                      ))}
+                    </TableBody>
+                  </Table>
+                </>
+              )}
+              <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
+                Addresses
+              </Typography>
               <Table size="small" className="crystal-table address-subtable">
                 <TableHead>
                   <TableRow>
-                    <TableCell
-                      className="crystal-table-header"
-                      onClick={() => handleAddressSort("name")}
-                      sx={{ cursor: "pointer" }}
-                    >
-                      <Box className="crystal-flex crystal-flex-start crystal-gap-1">
-                        Name
-                        {addressSortConfig.field === "name" && (
-                          <span>
-                            {addressSortConfig.direction === "asc" ? "↑" : "↓"}
-                          </span>
-                        )}
-                      </Box>
-                    </TableCell>
-                    <TableCell
-                      className="crystal-table-header"
-                      onClick={() => handleAddressSort("address")}
-                      sx={{ cursor: "pointer" }}
-                    >
-                      <Box className="crystal-flex crystal-flex-start crystal-gap-1">
-                        Address
-                        {addressSortConfig.field === "address" && (
-                          <span>
-                            {addressSortConfig.direction === "asc" ? "↑" : "↓"}
-                          </span>
-                        )}
-                      </Box>
-                    </TableCell>
-                    <TableCell
-                      className="crystal-table-header"
-                      onClick={() => handleAddressSort("chain_in")}
-                      sx={{ cursor: "pointer" }}
-                    >
-                      <Box className="crystal-flex crystal-flex-start crystal-gap-1">
-                        On-Chain
-                        {addressSortConfig.field === "chain_in" && (
-                          <span>
-                            {addressSortConfig.direction === "asc" ? "↑" : "↓"}
-                          </span>
-                        )}
-                      </Box>
-                    </TableCell>
-                    {!isMobile && (
-                      <TableCell
-                        className="crystal-table-header"
-                        onClick={() => handleAddressSort("mempool_in")}
-                        sx={{ cursor: "pointer" }}
+                    <TableCell>Name</TableCell>
+                    <TableCell>Address</TableCell>
+                    <TableCell>On-Chain</TableCell>
+                    <TableCell>Mempool</TableCell>
+                    <TableCell>
+                      <IconButton
+                        size="small"
+                        onClick={handleAddClick}
+                        className="crystal-icon-button"
+                        title="Add Address"
                       >
-                        <Box className="crystal-flex crystal-flex-start crystal-gap-1">
-                          Mempool
-                          {addressSortConfig.field === "mempool_in" && (
-                            <span>
-                              {addressSortConfig.direction === "asc"
-                                ? "↑"
-                                : "↓"}
-                            </span>
-                          )}
-                        </Box>
-                      </TableCell>
-                    )}
-                    <TableCell className="crystal-table-header"></TableCell>
+                        <AddIcon />
+                      </IconButton>
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -652,129 +909,17 @@ const CollectionRow = ({
                       </TableCell>
                     </TableRow>
                   )}
-                  {getSortedAddresses().map((address, index) => (
-                    <TableRow
+                  {collection.addresses.map((address, index) => (
+                    <AddressRow
                       key={index}
-                      className="crystal-table-row address-row"
-                    >
-                      <TableCell>
-                        <Box className="crystal-flex crystal-flex-start crystal-gap-1">
-                          <Typography className="crystal-text">
-                            {address.name}
-                          </Typography>
-                        </Box>
-                      </TableCell>
-                      <TableCell className="crystal-table-cell">
-                        <AddressCell address={address.address} />
-                      </TableCell>
-                      <TableCell className="crystal-table-cell">
-                        <Box className="crystal-flex crystal-flex-start">
-                          <BalanceCell
-                            label="⬅️"
-                            value={address.actual?.chain_in}
-                            expect={address.expect?.chain_in || 0}
-                            displayBtc={displayBtc}
-                            error={address.error}
-                            pending={!address.actual && !address.error}
-                            monitor={address.monitor}
-                            type="chain"
-                          />
-                        </Box>
-                        <Box
-                          className="crystal-flex crystal-flex-start"
-                          sx={{ mt: 1 }}
-                        >
-                          <BalanceCell
-                            label="➡️"
-                            value={address.actual?.chain_out}
-                            expect={address.expect?.chain_out || 0}
-                            displayBtc={displayBtc}
-                            error={address.error}
-                            pending={!address.actual && !address.error}
-                            monitor={address.monitor}
-                            type="chain"
-                          />
-                        </Box>
-                      </TableCell>
-                      {!isMobile && (
-                        <TableCell className="crystal-table-cell">
-                          <Box className="crystal-flex crystal-flex-start">
-                            <BalanceCell
-                              value={address.actual?.mempool_in}
-                              expect={address.expect?.mempool_in || 0}
-                              displayBtc={displayBtc}
-                              error={address.error}
-                              pending={!address.actual && !address.error}
-                              monitor={address.monitor}
-                              type="mempool"
-                            />
-                          </Box>
-                          <Box
-                            className="crystal-flex crystal-flex-start"
-                            sx={{ mt: 1 }}
-                          >
-                            <BalanceCell
-                              value={address.actual?.mempool_out}
-                              expect={address.expect?.mempool_out || 0}
-                              displayBtc={displayBtc}
-                              error={address.error}
-                              pending={!address.actual && !address.error}
-                              monitor={address.monitor}
-                              type="mempool"
-                            />
-                          </Box>
-                        </TableCell>
-                      )}
-                      <TableCell>
-                        <Box className="crystal-flex crystal-flex-center crystal-gap-1">
-                          <IconButton
-                            size="small"
-                            onClick={() =>
-                              onEditAddress(collection.name, address)
-                            }
-                            className="crystal-icon-button"
-                          >
-                            <EditIcon />
-                          </IconButton>
-                          {(address.actual?.chain_in !==
-                            address.expect?.chain_in ||
-                            address.actual?.chain_out !==
-                              address.expect?.chain_out ||
-                            address.actual?.mempool_in !==
-                              address.expect?.mempool_in ||
-                            address.actual?.mempool_out !==
-                              address.expect?.mempool_out) && (
-                            <IconButton
-                              size="small"
-                              onClick={() =>
-                                onSaveExpected({
-                                  collection: collection.name,
-                                  address: address.address,
-                                  actual: address.actual,
-                                  expect: address.actual,
-                                })
-                              }
-                              className="crystal-action-button crystal-action-button-success"
-                            >
-                              <CheckIcon />
-                            </IconButton>
-                          )}
-                          <IconButton
-                            size="small"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDelete({
-                                collection: collection.name,
-                                address: address.address,
-                              });
-                            }}
-                            className="crystal-action-button crystal-action-button-danger"
-                          >
-                            <DeleteIcon />
-                          </IconButton>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
+                      address={address}
+                      collection={collection}
+                      onEditAddress={onEditAddress}
+                      onSaveExpected={onSaveExpected}
+                      onDelete={onDelete}
+                      displayBtc={displayBtc}
+                      isMobile={isMobile}
+                    />
                   ))}
                 </TableBody>
               </Table>
@@ -782,6 +927,11 @@ const CollectionRow = ({
           </Collapse>
         </TableCell>
       </TableRow>
+      <ExtendedKeyDialog
+        open={showExtendedKeyDialog}
+        onClose={() => setShowExtendedKeyDialog(false)}
+        onSave={handleAddExtendedKey}
+      />
     </>
   );
 };
@@ -1236,18 +1386,26 @@ export default function Addresses() {
       });
       return;
     }
-    socketIO.emit("add", { collection }, (response) => {
-      if (response.error) {
-        setNotification({
-          open: true,
-          message: response.error,
-          severity: "error",
-        });
-      } else {
-        setJustCreatedCollection(collection);
-        setNewCollection(null);
+    socketIO.emit(
+      "add",
+      {
+        collection,
+        extendedKeys: [],
+        addresses: [],
+      },
+      (response) => {
+        if (response.error) {
+          setNotification({
+            open: true,
+            message: response.error,
+            severity: "error",
+          });
+        } else {
+          setJustCreatedCollection(collection);
+          setNewCollection(null);
+        }
       }
-    });
+    );
   };
 
   const handleAddAddress = (collection, name, address, setNewAddress) => {
@@ -1471,6 +1629,62 @@ export default function Addresses() {
     );
   };
 
+  const handleAddExtendedKey = (collection, data) => {
+    socketIO.emit(
+      "addExtendedKey",
+      {
+        collection,
+        name: data.name,
+        key: data.key,
+        gapLimit: data.gapLimit,
+        derivationPath: data.derivationPath,
+      },
+      (response) => {
+        if (response.error) {
+          setNotification({
+            open: true,
+            message: `Error adding extended key: ${response.error}`,
+            severity: "error",
+          });
+        } else {
+          setNotification({
+            open: true,
+            message: "Extended key added successfully",
+            severity: "success",
+          });
+        }
+      }
+    );
+  };
+
+  const handleEditExtendedKey = (collection, data) => {
+    socketIO.emit(
+      "updateExtendedKey",
+      {
+        collection,
+        name: data.name,
+        key: data.key,
+        gapLimit: data.gapLimit,
+        derivationPath: data.derivationPath,
+      },
+      (response) => {
+        if (response.error) {
+          setNotification({
+            open: true,
+            message: `Error editing extended key: ${response.error}`,
+            severity: "error",
+          });
+        } else {
+          setNotification({
+            open: true,
+            message: "Extended key updated successfully",
+            severity: "success",
+          });
+        }
+      }
+    );
+  };
+
   return (
     <>
       <div className="crystal-panel">
@@ -1480,6 +1694,9 @@ export default function Addresses() {
               flexDirection: isMobile ? "column" : "row",
               gap: isMobile ? 2 : 0,
               alignItems: isMobile ? "stretch" : "center",
+              maxWidth: "1200px",
+              margin: "0 auto",
+              width: "100%",
             }}
           >
             <Typography
@@ -1591,6 +1808,9 @@ export default function Addresses() {
           className="scrollable-container"
           sx={{
             overflowX: "auto",
+            maxWidth: "1200px",
+            margin: "0 auto",
+            width: "100%",
             "&:hover": {
               "&::-webkit-scrollbar-thumb": {
                 boxShadow: "0 0 15px var(--theme-glow-secondary)",
@@ -1733,6 +1953,8 @@ export default function Addresses() {
                   onSaveExpected={saveExpected}
                   onDelete={handleDelete}
                   onAddAddress={handleAddAddress}
+                  onAddExtendedKey={handleAddExtendedKey}
+                  onEditExtendedKey={handleEditExtendedKey}
                   onRenameCollection={handleRenameCollection}
                   onEditAddress={handleEditAddress}
                   autoShowAddForm={name === justCreatedCollection}

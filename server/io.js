@@ -4,7 +4,15 @@ import memory from "./memory.js";
 import telegram from "./telegram.js";
 import engine from "./engine.js";
 import logger from "./logger.js";
+import { BIP32Factory } from 'bip32';
+import * as bip39 from 'bip39';
+import * as bitcoin from 'bitcoinjs-lib';
+import { ECPairFactory } from 'ecpair';
+import * as ecc from 'tiny-secp256k1';
 // const { v4: uuidv4 } = require("uuid");
+
+const ecpair = ECPairFactory(ecc);
+const bip32 = BIP32Factory(ecc);
 
 const socketIO = {
   io: null,
@@ -116,11 +124,14 @@ const socketIO = {
         cb();
       });
 
-      socket.on("add", async ({ collection, name, address }, cb) => {
+      socket.on("add", async ({ collection, name, address, extendedKeys, addresses }, cb) => {
         logger.info(`Adding ${address} to collection ${collection}`);
         // Create collection if it doesn't exist
         if (!memory.db.collections[collection]) {
-          memory.db.collections[collection] = { addresses: [] };
+          memory.db.collections[collection] = { 
+            addresses: addresses || [], 
+            extendedKeys: extendedKeys || [] 
+          };
           memory.saveDb();
           // Emit state update to ALL clients
           socketIO.io.emit("updateState", { collections: memory.db.collections });
@@ -341,9 +352,341 @@ const socketIO = {
         socketIO.io.emit("updateState", { collections: memory.db.collections });
         cb({ status: "ok" });
       });
+
+      socket.on('addExtendedKey', (data, callback) => {
+        const { collection, name, key, gapLimit, derivationPath } = data;
+        
+        if (!collection || !name || !key || !derivationPath) {
+          callback({ error: "Missing required fields" });
+          return;
+        }
+        
+        // Validate extended key format
+        if (!key.match(/^[xyz]pub[a-zA-Z0-9]{107,108}$/)) {
+          callback({ error: "Invalid extended key format" });
+          return;
+        }
+
+        // Validate derivation path format
+        if (!derivationPath.match(/^m(\/\d+'?)*$/)) {
+          callback({ error: "Invalid derivation path format" });
+          return;
+        }
+
+        // Check for hardened derivation
+        if (derivationPath.includes("'")) {
+          callback({ error: "Cannot use hardened derivation with extended public keys" });
+          return;
+        }
+        
+        logger.info(`Adding extended key to collection ${collection} with path ${derivationPath}`);
+        
+        try {
+          // Get initial batch of addresses
+          const initialAddresses = deriveAddresses(key, 0, gapLimit, derivationPath);
+          
+          // Create new extended key object
+          const newExtendedKey = {
+            key,
+            gapLimit: parseInt(gapLimit) || 20,
+            derivationPath,
+            name,
+            addresses: initialAddresses.map(addr => ({
+              address: addr.address,
+              name: `${name} ${addr.index}`,
+              expect: {
+                chain_in: 0,
+                chain_out: 0,
+                mempool_in: 0,
+                mempool_out: 0
+              },
+              monitor: {
+                chain_in: "auto-accept",
+                chain_out: "alert",
+                mempool_in: "auto-accept",
+                mempool_out: "alert"
+              },
+              actual: null,
+              error: false,
+              errorMessage: null
+            }))
+          };
+          
+          // Initialize collections if needed
+          if (!memory.db.collections[collection]) {
+            memory.db.collections[collection] = { addresses: [], extendedKeys: [] };
+          }
+          
+          // Initialize extendedKeys array if needed
+          if (!memory.db.collections[collection].extendedKeys) {
+            memory.db.collections[collection].extendedKeys = [];
+          }
+          
+          // Add the new extended key
+          memory.db.collections[collection].extendedKeys.push(newExtendedKey);
+          
+          // Save state
+          memory.saveDb();
+          
+          // Emit update
+          socketIO.io.emit("updateState", { 
+            collections: memory.db.collections,
+            apiState: "CHECKING"
+          });
+          
+          callback({ success: true });
+
+          // Trigger a refresh to fetch the balances
+          engine();
+        } catch (error) {
+          callback({ error: error.message });
+        }
+      });
+
+      socket.on('editExtendedKey', (data, callback) => {
+        const { collection, name, key, gapLimit, derivationPath, extendedKeyIndex } = data;
+        
+        if (!collection || !name || !key || !derivationPath || extendedKeyIndex === undefined) {
+          callback({ error: "Missing required fields" });
+          return;
+        }
+        
+        // Validate extended key format
+        if (!key.match(/^[xyz]pub[a-zA-Z0-9]{107,108}$/)) {
+          callback({ error: "Invalid extended key format" });
+          return;
+        }
+
+        // Validate derivation path format
+        if (!derivationPath.match(/^m(\/\d+'?)*$/)) {
+          callback({ error: "Invalid derivation path format" });
+          return;
+        }
+
+        // Check for hardened derivation
+        if (derivationPath.includes("'")) {
+          callback({ error: "Cannot use hardened derivation with extended public keys" });
+          return;
+        }
+        
+        logger.info(`Editing extended key in collection ${collection} with path ${derivationPath}`);
+        
+        try {
+          // Get initial batch of addresses
+          const initialAddresses = deriveAddresses(key, 0, gapLimit, derivationPath);
+          
+          // Update the extended key
+          memory.db.collections[collection].extendedKeys[extendedKeyIndex] = {
+            key,
+            gapLimit: parseInt(gapLimit) || 20,
+            derivationPath,
+            name,
+            addresses: initialAddresses.map(addr => ({
+              address: addr.address,
+              name: `${name} ${addr.index}`,
+              expect: {
+                chain_in: 0,
+                chain_out: 0,
+                mempool_in: 0,
+                mempool_out: 0
+              },
+              monitor: {
+                chain_in: "auto-accept",
+                chain_out: "alert",
+                mempool_in: "auto-accept",
+                mempool_out: "alert"
+              },
+              actual: null,
+              error: false,
+              errorMessage: null
+            }))
+          };
+          
+          // Save state
+          memory.saveDb();
+          
+          // Emit update
+          socketIO.io.emit("updateState", { 
+            collections: memory.db.collections,
+            apiState: "CHECKING"
+          });
+          
+          callback({ success: true });
+
+          // Trigger a refresh to fetch the balances
+          engine();
+        } catch (error) {
+          callback({ error: error.message });
+        }
+      });
     });
 
     return socketIO.io;
   },
 };
+
+const deriveAddresses = (extendedKey, startIndex, count, derivationPath) => {
+  const addresses = [];
+  
+  // Create a custom network for zpub
+  const zpubNetwork = {
+    ...bitcoin.networks.bitcoin,
+    bip32: {
+      public: 0x04b24746, // zpub prefix
+      private: 0x04b2430c  // zprv prefix
+    },
+    bech32: 'bc',
+    pubKeyHash: 0x00,
+    scriptHash: 0x05,
+    wif: 0x80
+  };
+  
+  const node = bip32.fromBase58(extendedKey, zpubNetwork);
+  
+  // Parse derivation path and get the base node
+  const pathParts = derivationPath.split('/').slice(1); // Remove 'm'
+  let baseNode = node;
+  for (const part of pathParts) {
+    const isHardened = part.endsWith("'") || part.endsWith('h');
+    if (isHardened) {
+      throw new Error("Cannot derive hardened keys from extended public keys");
+    }
+    const index = parseInt(part.replace(/['h]/g, ''));
+    baseNode = baseNode.derive(index);
+  }
+  
+  for (let i = startIndex; i < startIndex + count; i++) {
+    const child = baseNode.derive(i);
+    const { address } = bitcoin.payments.p2wpkh({ 
+      pubkey: child.publicKey,
+      network: zpubNetwork
+    });
+    addresses.push({
+      name: `Address ${i}`,
+      address,
+      index: i
+    });
+  }
+  
+  return addresses;
+};
+
+const checkGapLimit = (collection, gapLimit) => {
+  const addresses = collection.addresses || [];
+  let emptyCount = 0;
+  let lastUsedIndex = -1;
+  
+  for (const addr of addresses) {
+    if (addr.balance > 0) {
+      lastUsedIndex = addr.index;
+      emptyCount = 0;
+    } else {
+      emptyCount++;
+    }
+  }
+  
+  return {
+    needsMore: emptyCount < gapLimit,
+    lastUsedIndex
+  };
+};
+
+// Modify the checkBalances function to handle gap limit monitoring
+const checkBalances = async () => {
+  for (const [collectionName, collection] of Object.entries(memory.db.collections)) {
+    // Check extended keys
+    if (collection.extendedKeys) {
+      for (const extendedKey of collection.extendedKeys) {
+        const { needsMore, lastUsedIndex } = checkGapLimit(extendedKey, extendedKey.gapLimit);
+        
+        if (needsMore) {
+          // Derive more addresses
+          const newAddresses = deriveAddresses(
+            extendedKey.key,
+            lastUsedIndex + 1,
+            extendedKey.gapLimit,
+            extendedKey.derivationPath
+          );
+          
+          // Add new addresses to extended key
+          extendedKey.addresses = [
+            ...extendedKey.addresses,
+            ...newAddresses.map(addr => ({
+              address: addr.address,
+              name: `${extendedKey.name} ${addr.index}`,
+              expect: {
+                chain_in: 0,
+                chain_out: 0,
+                mempool_in: 0,
+                mempool_out: 0
+              },
+              monitor: {
+                chain_in: "auto-accept",
+                chain_out: "alert",
+                mempool_in: "auto-accept",
+                mempool_out: "alert"
+              },
+              actual: null,
+              error: false,
+              errorMessage: null
+            }))
+          ];
+          
+          // Save state
+          memory.saveDb();
+          
+          // Emit update
+          socketIO.io.emit("updateState", { collections: memory.db.collections });
+        }
+      }
+    }
+    
+    // Check balances for all addresses in the collection
+    for (const address of collection.addresses) {
+      try {
+        const balance = await getAddressBalance(address.address);
+        if (balance.error) {
+          address.error = true;
+          address.errorMessage = balance.message;
+        } else {
+          address.actual = balance.actual;
+          address.error = false;
+          address.errorMessage = null;
+        }
+      } catch (error) {
+        address.error = true;
+        address.errorMessage = error.message;
+      }
+    }
+
+    // Check balances for all extended key addresses
+    if (collection.extendedKeys) {
+      for (const extendedKey of collection.extendedKeys) {
+        for (const address of extendedKey.addresses) {
+          try {
+            const balance = await getAddressBalance(address.address);
+            if (balance.error) {
+              address.error = true;
+              address.errorMessage = balance.message;
+            } else {
+              address.actual = balance.actual;
+              address.error = false;
+              address.errorMessage = null;
+            }
+          } catch (error) {
+            address.error = true;
+            address.errorMessage = error.message;
+          }
+        }
+      }
+    }
+  }
+  
+  // Save state after all balances are checked
+  memory.saveDb();
+  
+  // Emit update
+  socketIO.io.emit("updateState", { collections: memory.db.collections });
+};
+
 export default socketIO;

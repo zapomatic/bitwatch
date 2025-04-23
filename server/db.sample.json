@@ -1,6 +1,7 @@
 {
   "collections": {
     "Satoshi": {
+      "extendedKeys": [],
       "addresses": [
         {
           "address": "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
@@ -53,6 +54,7 @@
       ]
     },
     "Donations": {
+      "extendedKeys": [],
       "addresses": [
         {
           "address": "bc1q67csgqm9muhynyd864tj2p48g8gachyg2nwara",
@@ -73,6 +75,7 @@
       ]
     },
     "Puzzle": {
+      "extendedKeys": [],
       "addresses": [
         {
           "address": "1MVDYgVaSN6iKKEsbzRUAYFrYJadLYZvvZ",

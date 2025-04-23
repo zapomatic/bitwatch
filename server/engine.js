@@ -57,18 +57,35 @@ const updateAddressAndEmit = (addr, balance) => {
   const collection = collections[addr.collection];
   if (!collection) return;
 
-  const index = collection.addresses.findIndex(
-    (a) => a.address === addr.address
-  );
+  // Try to find the address in regular addresses first
+  let index = collection.addresses.findIndex((a) => a.address === addr.address);
+  let addressArray = collection.addresses;
+  let isExtendedKeyAddress = false;
+
+  // If not found in regular addresses, look in extended keys
+  if (index === -1 && collection.extendedKeys) {
+    for (let i = 0; i < collection.extendedKeys.length; i++) {
+      const extendedKey = collection.extendedKeys[i];
+      index = extendedKey.addresses.findIndex(
+        (a) => a.address === addr.address
+      );
+      if (index !== -1) {
+        addressArray = extendedKey.addresses;
+        isExtendedKeyAddress = true;
+        break;
+      }
+    }
+  }
+
   if (index === -1) return;
 
   // Update the address with new balance
-  collection.addresses[index] = {
-    ...collection.addresses[index],
+  addressArray[index] = {
+    ...addressArray[index],
     actual: balance.actual,
     error: balance.error,
     errorMessage: balance.errorMessage,
-    expect: collection.addresses[index].expect || {
+    expect: addressArray[index].expect || {
       chain_in: 0,
       chain_out: 0,
       mempool_in: 0,
@@ -81,26 +98,41 @@ const updateAddressAndEmit = (addr, balance) => {
     addr.address,
     balance.actual,
     addr.collection,
-    collection.addresses[index].name
+    addressArray[index].name
   );
   if (changes) {
     telegram.notifyBalanceChange(
       addr.address,
       changes,
       addr.collection,
-      collection.addresses[index].name
+      addressArray[index].name
     );
   }
 
   // Determine API state based on address data
-  const hasActualData = Object.values(collections).some((col) =>
-    col.addresses.some((addr) => addr.actual !== null)
+  const hasActualData = Object.values(collections).some(
+    (col) =>
+      col.addresses.some((addr) => addr.actual !== null) ||
+      (col.extendedKeys &&
+        col.extendedKeys.some((extKey) =>
+          extKey.addresses.some((addr) => addr.actual !== null)
+        ))
   );
-  const hasErrors = Object.values(collections).some((col) =>
-    col.addresses.some((addr) => addr.error)
+  const hasErrors = Object.values(collections).some(
+    (col) =>
+      col.addresses.some((addr) => addr.error) ||
+      (col.extendedKeys &&
+        col.extendedKeys.some((extKey) =>
+          extKey.addresses.some((addr) => addr.error)
+        ))
   );
-  const hasLoading = Object.values(collections).some((col) =>
-    col.addresses.some((addr) => addr.actual === null && !addr.error)
+  const hasLoading = Object.values(collections).some(
+    (col) =>
+      col.addresses.some((addr) => addr.actual === null && !addr.error) ||
+      (col.extendedKeys &&
+        col.extendedKeys.some((extKey) =>
+          extKey.addresses.some((addr) => addr.actual === null && !addr.error)
+        ))
   );
 
   let apiState = "?";
@@ -130,12 +162,25 @@ const engine = async () => {
   for (const [collectionName, collection] of Object.entries(
     memory.db.collections
   )) {
+    // Add regular addresses
     collection.addresses.forEach((addr) => {
       allAddresses.push({
         ...addr,
         collection: collectionName,
       });
     });
+
+    // Add extended key addresses
+    if (collection.extendedKeys) {
+      collection.extendedKeys.forEach((extendedKey) => {
+        extendedKey.addresses.forEach((addr) => {
+          allAddresses.push({
+            ...addr,
+            collection: collectionName,
+          });
+        });
+      });
+    }
   }
 
   // Set API state to CHECKING when starting a new check
