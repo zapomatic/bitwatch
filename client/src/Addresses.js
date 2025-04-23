@@ -1,16 +1,32 @@
 import React, { useCallback, useEffect, useState } from "react";
-import Button from "@mui/material/Button";
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableCell from "@mui/material/TableCell";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
-import Toolbar from "@mui/material/Toolbar";
-import Typography from "@mui/material/Typography";
+import {
+  Button,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+  Toolbar,
+  Typography,
+  Box,
+  Tooltip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
+  IconButton,
+  Collapse,
+  Alert,
+  TextField,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from "@mui/material";
 import Title from "./Title";
 import socketIO from "./io";
-import Box from "@mui/material/Box";
-import { useTheme } from "@mui/material/styles";
 import AddIcon from "@mui/icons-material/Add";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CheckIcon from "@mui/icons-material/Check";
@@ -18,25 +34,10 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import WarningIcon from "@mui/icons-material/Warning";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import CloseIcon from "@mui/icons-material/Close";
-import Tooltip from "@mui/material/Tooltip";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
-import IconButton from "@mui/material/IconButton";
-import Collapse from "@mui/material/Collapse";
-import Alert from "@mui/material/Alert";
 import "./theme.css";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
-import TextField from "@mui/material/TextField";
-import Grid from "@mui/material/Grid";
-import FormControl from "@mui/material/FormControl";
-import InputLabel from "@mui/material/InputLabel";
-import Select from "@mui/material/Select";
-import MenuItem from "@mui/material/MenuItem";
 import EditIcon from "@mui/icons-material/Edit";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
@@ -381,7 +382,7 @@ const ExtendedKeyInfo = ({
   const handleEditClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    onEdit();
+    onEdit(extendedKey);
   };
 
   const handleDeleteClick = (e) => {
@@ -475,76 +476,60 @@ const ExtendedKeyInfo = ({
 };
 
 const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
-  const [name, setName] = useState("");
-  const [key, setKey] = useState("");
-  const [gapLimit, setGapLimit] = useState(2);
-  const [initialAddresses, setInitialAddresses] = useState(10);
-  const [derivationPath, setDerivationPath] = useState("m/0");
-  const [skip, setSkip] = useState(0);
+  const [formData, setFormData] = useState({
+    name: "",
+    key: "",
+    gapLimit: 2,
+    initialAddresses: 10,
+    derivationPath: "m/0",
+    skip: 0,
+  });
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (extendedKey) {
-      setName(extendedKey.name || "");
-      setKey(extendedKey.key || "");
-      setGapLimit(extendedKey.gapLimit || 2);
-      setInitialAddresses(extendedKey.initialAddresses || 10);
-      setDerivationPath(extendedKey.derivationPath || "m/0");
-      setSkip(extendedKey.skip || 0);
+      setFormData({
+        name: extendedKey.name || "",
+        key: extendedKey.key || "",
+        gapLimit: extendedKey.gapLimit || 2,
+        initialAddresses: extendedKey.initialAddresses || 10,
+        derivationPath: extendedKey.derivationPath || "m/0",
+        skip: extendedKey.skip || 0,
+      });
     } else {
-      setName("");
-      setKey("");
-      setGapLimit(2);
-      setInitialAddresses(10);
-      setDerivationPath("m/0");
-      setSkip(0);
+      setFormData({
+        name: "",
+        key: "",
+        gapLimit: 2,
+        initialAddresses: 10,
+        derivationPath: "m/0",
+        skip: 0,
+      });
     }
   }, [extendedKey, open]);
 
-  // Set default derivation path based on key type
-  const handleKeyChange = (e) => {
-    const newKey = e.target.value;
-    setKey(newKey);
-
-    const keyLower = newKey.toLowerCase();
-    if (keyLower.startsWith("zpub")) {
-      setDerivationPath("m/0");
-    } else if (keyLower.startsWith("ypub")) {
-      setDerivationPath("m/49/0/0");
-    } else if (keyLower.startsWith("xpub")) {
-      setDerivationPath("m/44/0/0");
-    }
-  };
-
   const handleSave = () => {
-    if (!name || !key || !derivationPath) {
+    if (!formData.name || !formData.key || !formData.derivationPath) {
       setError("Name, extended key, and derivation path are required");
       return;
     }
 
-    if (!key.match(/^[xyz]pub[a-zA-Z0-9]{107,108}$/)) {
+    if (!formData.key.match(/^[xyz]pub[a-zA-Z0-9]{107,108}$/)) {
       setError("Invalid extended key format");
       return;
     }
 
-    if (!derivationPath.match(/^m(\/\d+'?)*$/)) {
+    if (!formData.derivationPath.match(/^m(\/\d+'?)*$/)) {
       setError("Invalid derivation path format");
       return;
     }
 
-    if (derivationPath.includes("'")) {
+    if (formData.derivationPath.includes("'")) {
       setError("Cannot use hardened derivation with extended public keys");
       return;
     }
 
-    onSave({
-      name,
-      key,
-      gapLimit: parseInt(gapLimit),
-      initialAddresses: parseInt(initialAddresses),
-      derivationPath,
-      skip: parseInt(skip),
-    });
+    onSave(formData);
     onClose();
   };
 
@@ -558,23 +543,25 @@ const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
           margin="dense"
           label="Name"
           fullWidth
-          value={name}
-          onChange={(e) => setName(e.target.value)}
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
         />
         <TextField
           margin="dense"
           label="Extended Key"
           fullWidth
-          value={key}
-          onChange={handleKeyChange}
+          value={formData.key}
+          onChange={(e) => setFormData({ ...formData, key: e.target.value })}
           helperText="Format: xpub, ypub, or zpub"
         />
         <TextField
           margin="dense"
           label="Derivation Path"
           fullWidth
-          value={derivationPath}
-          onChange={(e) => setDerivationPath(e.target.value)}
+          value={formData.derivationPath}
+          onChange={(e) =>
+            setFormData({ ...formData, derivationPath: e.target.value })
+          }
           helperText="Format: m/0 (native segwit), m/49/0/0 (BIP49), m/44/0/0 (BIP44), etc"
         />
         <TextField
@@ -582,8 +569,13 @@ const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
           label="Initial Addresses to Fetch"
           type="number"
           fullWidth
-          value={initialAddresses}
-          onChange={(e) => setInitialAddresses(e.target.value)}
+          value={formData.initialAddresses}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              initialAddresses: parseInt(e.target.value) || 10,
+            })
+          }
           helperText="Number of addresses to fetch initially"
         />
         <TextField
@@ -591,8 +583,10 @@ const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
           label="Skip Addresses"
           type="number"
           fullWidth
-          value={skip}
-          onChange={(e) => setSkip(e.target.value)}
+          value={formData.skip}
+          onChange={(e) =>
+            setFormData({ ...formData, skip: parseInt(e.target.value) || 0 })
+          }
           helperText="Number of addresses to skip before starting scan"
         />
         <TextField
@@ -600,8 +594,13 @@ const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
           label="Gap Limit"
           type="number"
           fullWidth
-          value={gapLimit}
-          onChange={(e) => setGapLimit(e.target.value)}
+          value={formData.gapLimit}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              gapLimit: parseInt(e.target.value) || 2,
+            })
+          }
           helperText="Number of consecutive empty addresses to maintain"
         />
         {error && <Typography color="error">{error}</Typography>}
@@ -622,11 +621,11 @@ const CollectionRow = ({
   onDelete,
   onAddAddress,
   onAddExtendedKey,
-  onEditExtendedKey,
   onRenameCollection,
   onEditAddress,
   autoShowAddForm,
   displayBtc,
+  setNotification,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [editingExtendedKey, setEditingExtendedKey] = useState(null);
@@ -634,7 +633,6 @@ const CollectionRow = ({
   const [editedName, setEditedName] = useState(collection.name);
   const [newAddress, setNewAddress] = useState(null);
   const [showExtendedKeyDialog, setShowExtendedKeyDialog] = useState(false);
-  const theme = useTheme();
 
   // Calculate totals from addresses
   const totals = calculateCollectionTotals(collection.addresses);
@@ -670,35 +668,78 @@ const CollectionRow = ({
     setIsEditingName(false);
   };
 
-  const handleEditExtendedKey = (extendedKey) => {
-    setEditingExtendedKey(extendedKey);
-    setShowExtendedKeyDialog(true);
-  };
+  const handleEditExtendedKey = useCallback(
+    (extendedKey) => {
+      if (extendedKey) {
+        // If we have an extended key, we're opening the dialog for editing
+        setEditingExtendedKey(extendedKey);
+        setShowExtendedKeyDialog(true);
+      } else {
+        // If no extended key is provided, we're saving the form data
+        socketIO.emit(
+          "editExtendedKey",
+          {
+            collection: collection.name,
+            ...editingExtendedKey,
+            extendedKeyIndex:
+              collection.extendedKeys.indexOf(editingExtendedKey),
+          },
+          (response) => {
+            if (response.error) {
+              setNotification({
+                open: true,
+                message: `Error editing extended key: ${response.error}`,
+                severity: "error",
+              });
+            } else {
+              setNotification({
+                open: true,
+                message: "Extended key updated successfully",
+                severity: "success",
+              });
+              setEditingExtendedKey(null);
+              setShowExtendedKeyDialog(false);
+            }
+          }
+        );
+      }
+    },
+    [
+      collection.name,
+      collection.extendedKeys,
+      editingExtendedKey,
+      setNotification,
+    ]
+  );
 
-  const handleSaveExtendedKey = (data) => {
-    if (editingExtendedKey) {
-      onEditExtendedKey(collection.name, {
-        ...data,
-        initialAddresses: parseInt(data.initialAddresses) || 10,
-        gapLimit: parseInt(data.gapLimit) || 2,
-        skip: parseInt(data.skip) || 0,
-        extendedKeyIndex: collection.extendedKeys.indexOf(editingExtendedKey),
-      });
-    } else {
-      onAddExtendedKey(collection.name, {
-        ...data,
-        initialAddresses: parseInt(data.initialAddresses) || 10,
-        gapLimit: parseInt(data.gapLimit) || 2,
-        skip: parseInt(data.skip) || 0,
-      });
-    }
-    setEditingExtendedKey(null);
-    setShowExtendedKeyDialog(false);
-  };
+  const handleSaveExtendedKey = useCallback(
+    (formData) => {
+      if (editingExtendedKey) {
+        // Update the editingExtendedKey with the form data
+        setEditingExtendedKey({
+          ...editingExtendedKey,
+          ...formData,
+        });
+        // Then save it
+        handleEditExtendedKey(null);
+      } else {
+        onAddExtendedKey(collection.name, formData);
+      }
+    },
+    [
+      collection.name,
+      editingExtendedKey,
+      handleEditExtendedKey,
+      onAddExtendedKey,
+    ]
+  );
 
-  const handleDeleteExtendedKey = (extendedKey) => {
-    onDelete({ collection: collection.name, extendedKey });
-  };
+  const handleDeleteExtendedKey = useCallback(
+    (extendedKey) => {
+      onDelete({ collection: collection.name, extendedKey });
+    },
+    [collection.name, onDelete]
+  );
 
   return (
     <>
@@ -820,8 +861,8 @@ const CollectionRow = ({
                   <ExtendedKeyInfo
                     key={index}
                     extendedKey={extendedKey}
-                    onEdit={() => handleEditExtendedKey(extendedKey)}
-                    onDelete={() => handleDeleteExtendedKey(extendedKey)}
+                    onEdit={handleEditExtendedKey}
+                    onDelete={handleDeleteExtendedKey}
                     collection={collection}
                     onEditAddress={onEditAddress}
                     onSaveExpected={onSaveExpected}
@@ -1334,7 +1375,6 @@ export default function Addresses() {
     collection: null,
     address: null,
   });
-  const theme = useTheme();
 
   const handleSort = (field) => {
     setSortConfig((prevConfig) => ({
@@ -1719,31 +1759,6 @@ export default function Addresses() {
     );
   };
 
-  const handleEditExtendedKey = (collection, data) => {
-    socketIO.emit(
-      "editExtendedKey",
-      {
-        collection,
-        ...data,
-      },
-      (response) => {
-        if (response.error) {
-          setNotification({
-            open: true,
-            message: `Error editing extended key: ${response.error}`,
-            severity: "error",
-          });
-        } else {
-          setNotification({
-            open: true,
-            message: "Extended key updated successfully",
-            severity: "success",
-          });
-        }
-      }
-    );
-  };
-
   return (
     <>
       <div className="crystal-panel">
@@ -2021,11 +2036,11 @@ export default function Addresses() {
                   onDelete={handleDelete}
                   onAddAddress={handleAddAddress}
                   onAddExtendedKey={handleAddExtendedKey}
-                  onEditExtendedKey={handleEditExtendedKey}
                   onRenameCollection={handleRenameCollection}
                   onEditAddress={handleEditAddress}
                   autoShowAddForm={name === justCreatedCollection}
                   displayBtc={displayBtc}
+                  setNotification={setNotification}
                 />
               ))}
             </TableBody>

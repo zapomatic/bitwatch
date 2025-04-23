@@ -537,7 +537,7 @@ const socketIO = {
           return;
         }
         
-        logger.info(`Editing extended key in collection ${collection} with path ${derivationPath}`);
+        logger.info(`Editing extended key in collection ${collection} with path ${derivationPath}, skip ${skip || 0}, gap limit ${gapLimit || 2}, and initial addresses ${initialAddresses || 10}`);
         
         try {
           // Get initial batch of addresses
@@ -554,10 +554,11 @@ const socketIO = {
           // Update the extended key
           memory.db.collections[collection].extendedKeys[extendedKeyIndex] = {
             key,
-            gapLimit: parseInt(gapLimit) || 20,
+            gapLimit: parseInt(gapLimit) || 2,
             derivationPath,
             name,
             skip: parseInt(skip) || 0,
+            initialAddresses: parseInt(initialAddresses) || 10,
             addresses: initialAddressesList.map(addr => ({
               address: addr.address,
               name: `${name} ${addr.index}`,
