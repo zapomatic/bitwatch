@@ -37,11 +37,11 @@ const Configs = {
   },
   apiParallelLimit: {
     label: "API Parallel Requests",
-    help: "If you are using your own local mempool instance, you can increase this number to speed up address monitoring.",
+    help: "If you are using your own local mempool instance, you can increase this number to speed up address monitoring. If you are only watching a few addresses, you can also increase this when using public mempool.space API, but with a lot of addresses, you will hit rate limits and it will slow things down more.",
   },
   apiDelay: {
     label: "API Delay Between Requests (ms)",
-    help: "Delay between API requests to avoid rate limiting. Default is 1000ms (1 second). This is used when we add an extended pub key and initially scan for balances. We will additionally backoff and retry if we get limited.",
+    help: "Delay between API requests to avoid rate limiting. This is used when we add an extended pub key and initially scan for balances and when we poll the API for changes on the interval. We will additionally backoff and retry if we get limited.",
   },
 };
 
