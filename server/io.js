@@ -666,6 +666,13 @@ const deriveAddresses = async (extendedKey, startIndex, count, derivationPath) =
         private: 0x0488ade4  // xprv
       }
     },
+    ypub: {
+      ...bitcoin.networks.bitcoin,
+      bip32: {
+        public: 0x049d7cb2,  // ypub
+        private: 0x049d7878  // yprv
+      }
+    },
     zpub: {
       ...bitcoin.networks.bitcoin,
       bip32: {
@@ -677,7 +684,14 @@ const deriveAddresses = async (extendedKey, startIndex, count, derivationPath) =
 
   // Determine which network to use based on key prefix
   const keyLower = keyString.toLowerCase();
-  const network = keyLower.startsWith('zpub') ? networks.zpub : networks.xpub;
+  let network;
+  if (keyLower.startsWith('zpub')) {
+    network = networks.zpub;
+  } else if (keyLower.startsWith('ypub')) {
+    network = networks.ypub;
+  } else {
+    network = networks.xpub;
+  }
   
   const node = bip32.fromBase58(keyString, network);
   
@@ -701,10 +715,19 @@ const deriveAddresses = async (extendedKey, startIndex, count, derivationPath) =
     const derivationIndex = actualStartIndex + i;
     const child = baseNode.derive(derivationIndex);
     
-    // Use native segwit (P2WPKH) for zpub and legacy (P2PKH) for xpub
-    const { address } = keyLower.startsWith('zpub') 
-      ? bitcoin.payments.p2wpkh({ pubkey: child.publicKey, network })
-      : bitcoin.payments.p2pkh({ pubkey: child.publicKey, network });
+    // Use appropriate address type based on key prefix
+    let address;
+    if (keyLower.startsWith('zpub')) {
+      // Native segwit (P2WPKH)
+      address = bitcoin.payments.p2wpkh({ pubkey: child.publicKey, network }).address;
+    } else if (keyLower.startsWith('ypub')) {
+      // P2SH-wrapped segwit (P2SH-P2WPKH)
+      const p2wpkh = bitcoin.payments.p2wpkh({ pubkey: child.publicKey, network });
+      address = bitcoin.payments.p2sh({ redeem: p2wpkh, network }).address;
+    } else {
+      // Legacy (P2PKH)
+      address = bitcoin.payments.p2pkh({ pubkey: child.publicKey, network }).address;
+    }
     
     addresses.push({
       name: `Address ${derivationIndex}`,

@@ -570,14 +570,13 @@ const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
     const newKey = e.target.value;
     setKey(newKey);
 
-    // Only update derivation path if it's currently at its default value
-    if (derivationPath === "m/0" || derivationPath === "m/44/0/0") {
-      const keyLower = newKey.toLowerCase();
-      if (keyLower.startsWith("zpub")) {
-        setDerivationPath("m/0");
-      } else if (keyLower.startsWith("xpub")) {
-        setDerivationPath("m/44/0/0");
-      }
+    const keyLower = newKey.toLowerCase();
+    if (keyLower.startsWith("zpub")) {
+      setDerivationPath("m/0");
+    } else if (keyLower.startsWith("ypub")) {
+      setDerivationPath("m/49/0/0");
+    } else if (keyLower.startsWith("xpub")) {
+      setDerivationPath("m/44/0/0");
     }
   };
 
@@ -640,7 +639,7 @@ const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
           fullWidth
           value={derivationPath}
           onChange={(e) => setDerivationPath(e.target.value)}
-          helperText="Format: m/0, m/0/0, etc."
+          helperText="Format: m/0 (native segwit), m/49/0/0 (BIP49), m/44/0/0 (BIP44), etc"
         />
         <TextField
           margin="dense"
