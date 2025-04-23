@@ -63,7 +63,9 @@ const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
       return;
     }
 
-    onSave(formData);
+    // If we're editing, include the original extended key data
+    const dataToSave = extendedKey ? { ...extendedKey, ...formData } : formData;
+    onSave(dataToSave);
     onClose();
   };
 

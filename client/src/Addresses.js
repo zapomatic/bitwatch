@@ -18,12 +18,6 @@ import {
   IconButton,
   Collapse,
   Alert,
-  TextField,
-  Grid,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
 } from "@mui/material";
 import Title from "./Title";
 import socketIO from "./io";
@@ -539,11 +533,42 @@ const CollectionRow = ({
         setShowExtendedKeyDialog(true);
       } else {
         // If no extended key is provided, we're saving the form data
+        const dataToSave = {
+          collection: collection.name,
+          ...editingExtendedKey,
+          extendedKeyIndex: collection.extendedKeys.indexOf(editingExtendedKey),
+        };
+
+        socketIO.emit("editExtendedKey", dataToSave, (response) => {
+          if (response.error) {
+            setNotification({
+              open: true,
+              message: `Error editing extended key: ${response.error}`,
+              severity: "error",
+            });
+          } else {
+            setNotification({
+              open: true,
+              message: "Extended key updated successfully",
+              severity: "success",
+            });
+            setShowExtendedKeyDialog(false);
+          }
+        });
+      }
+    },
+    [collection, editingExtendedKey, setNotification]
+  );
+
+  const handleSaveExtendedKey = useCallback(
+    (formData) => {
+      if (editingExtendedKey) {
+        // Send the edit request directly
         socketIO.emit(
           "editExtendedKey",
           {
             collection: collection.name,
-            ...editingExtendedKey,
+            ...formData,
             extendedKeyIndex:
               collection.extendedKeys.indexOf(editingExtendedKey),
           },
@@ -565,6 +590,8 @@ const CollectionRow = ({
             }
           }
         );
+      } else {
+        onAddExtendedKey(collection.name, formData);
       }
     },
     [
@@ -572,27 +599,6 @@ const CollectionRow = ({
       collection.extendedKeys,
       editingExtendedKey,
       setNotification,
-    ]
-  );
-
-  const handleSaveExtendedKey = useCallback(
-    (formData) => {
-      if (editingExtendedKey) {
-        // Update the editingExtendedKey with the form data
-        setEditingExtendedKey({
-          ...editingExtendedKey,
-          ...formData,
-        });
-        // Then save it
-        handleEditExtendedKey(null);
-      } else {
-        onAddExtendedKey(collection.name, formData);
-      }
-    },
-    [
-      collection.name,
-      editingExtendedKey,
-      handleEditExtendedKey,
       onAddExtendedKey,
     ]
   );
@@ -932,7 +938,9 @@ export default function Addresses() {
     // Listen for ongoing state updates
     const handleStateUpdate = (updatedState) => {
       console.log("State update received:", updatedState);
-      setCollections(updatedState.collections || {});
+      if (updatedState.collections) {
+        setCollections(updatedState.collections);
+      }
 
       // If we're in a refresh operation, check for errors
       if (refreshing) {

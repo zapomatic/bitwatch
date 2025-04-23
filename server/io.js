@@ -186,7 +186,7 @@ const socketIO = {
       });
 
       socket.on("delete", async ({ collection, address, extendedKey }, cb) => {
-        logger.info(`Deleting ${address ? `address ${address} from` : extendedKey ? `extended key from` : ''} collection ${collection}`);
+        logger.info(`Deleting ${address ? `address ${address} from` : extendedKey ? `extended key from` : 'entire'} collection: ${collection}`);
         const col = memory.db.collections[collection];
         if (!col) return cb({ error: `collection not found` });
         
@@ -429,7 +429,7 @@ const socketIO = {
           return;
         }
         
-        logger.info(`Adding extended key to collection ${collection} with path ${derivationPath}, skip ${skip || 0}, and initial addresses ${initialAddresses || 10}`);
+        logger.info(`Adding extended key ${key} to collection ${collection} with path ${derivationPath}, skip ${skip || 0}, and initial addresses ${initialAddresses || 10}`);
         
         try {
           // Get initial batch of addresses
@@ -551,8 +551,9 @@ const socketIO = {
             derivationPath
           );
           
-          // Update the extended key
+          // Update the extended key with all provided values
           memory.db.collections[collection].extendedKeys[extendedKeyIndex] = {
+            ...memory.db.collections[collection].extendedKeys[extendedKeyIndex],
             key,
             gapLimit: parseInt(gapLimit) || 2,
             derivationPath,
