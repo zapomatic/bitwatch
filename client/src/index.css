@@ -12,3 +12,39 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Icon Button Styles */
+.crystal-icon-button {
+  background: var(--theme-surface) !important;
+  border-radius: 50% !important;
+  padding: 8px !important;
+  border: 1px solid rgba(77, 244, 255, 0.2) !important;
+}
+
+.crystal-icon-button:hover {
+  background: rgba(77, 244, 255, 0.1) !important;
+  box-shadow: 0 0 10px var(--theme-glow-secondary) !important;
+}
+
+.crystal-icon-button.crystal-action-button-success {
+  border: 1px solid rgba(39, 174, 96, 0.2) !important;
+}
+
+.crystal-icon-button.crystal-action-button-success:hover {
+  background: rgba(39, 174, 96, 0.1) !important;
+  box-shadow: 0 0 10px var(--theme-success) !important;
+}
+
+.crystal-icon-button.crystal-action-button-danger {
+  border: 1px solid rgba(255, 77, 77, 0.2) !important;
+}
+
+.crystal-icon-button.crystal-action-button-danger:hover {
+  background: rgba(255, 77, 77, 0.1) !important;
+  box-shadow: 0 0 10px var(--theme-danger) !important;
+}
+
+/* Small icon size */
+.crystal-icon-button.MuiIconButton-sizeSmall .MuiSvgIcon-root {
+  font-size: 1.2rem;
+}

@@ -127,9 +127,9 @@ function Config() {
                 setConfig({
                   ...config,
                   api: "https://mempool.space",
-                  apiParallelLimit: 3,
+                  apiParallelLimit: 1,
                   interval: 600000,
-                  apiDelay: 3000,
+                  apiDelay: 2000,
                 })
               }
               sx={{

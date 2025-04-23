@@ -18,6 +18,7 @@ import CheckIcon from "@mui/icons-material/Check";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import WarningIcon from "@mui/icons-material/Warning";
 import RefreshIcon from "@mui/icons-material/Refresh";
+import CloseIcon from "@mui/icons-material/Close";
 import Tooltip from "@mui/material/Tooltip";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -378,18 +379,16 @@ const AddressRow = ({
     )}
     <TableCell>
       <Box className="crystal-flex crystal-flex-center crystal-gap-1">
-        <IconButton
+        <IconButtonStyled
           size="small"
           onClick={() => onEditAddress(collection.name, address)}
-          className="crystal-icon-button"
-        >
-          <EditIcon />
-        </IconButton>
+          icon={<EditIcon fontSize="small" />}
+        />
         {(address.actual?.chain_in !== address.expect?.chain_in ||
           address.actual?.chain_out !== address.expect?.chain_out ||
           address.actual?.mempool_in !== address.expect?.mempool_in ||
           address.actual?.mempool_out !== address.expect?.mempool_out) && (
-          <IconButton
+          <IconButtonStyled
             size="small"
             onClick={() =>
               onSaveExpected({
@@ -399,12 +398,12 @@ const AddressRow = ({
                 expect: address.actual,
               })
             }
+            icon={<CheckIcon fontSize="small" />}
+            variant="success"
             className="crystal-action-button crystal-action-button-success"
-          >
-            <CheckIcon />
-          </IconButton>
+          />
         )}
-        <IconButton
+        <IconButtonStyled
           size="small"
           onClick={(e) => {
             e.stopPropagation();
@@ -413,10 +412,10 @@ const AddressRow = ({
               address: address.address,
             });
           }}
+          icon={<DeleteIcon fontSize="small" />}
+          variant="danger"
           className="crystal-action-button crystal-action-button-danger"
-        >
-          <DeleteIcon />
-        </IconButton>
+        />
       </Box>
     </TableCell>
   </TableRow>
@@ -492,12 +491,11 @@ const ExtendedKeyInfo = ({
         </TableCell>
         <TableCell>
           <Box sx={{ display: "flex", gap: 1 }}>
-            <IconButton size="small" onClick={handleEditClick}>
-              <EditIcon />
-            </IconButton>
-            <IconButton size="small" onClick={handleDeleteClick}>
-              <DeleteIcon />
-            </IconButton>
+            <IconButtonStyled onClick={handleEditClick} icon={<EditIcon />} />
+            <IconButtonStyled
+              onClick={handleDeleteClick}
+              icon={<DeleteIcon />}
+            />
           </Box>
         </TableCell>
       </TableRow>
@@ -511,7 +509,7 @@ const ExtendedKeyInfo = ({
                     <TableCell>Name</TableCell>
                     <TableCell>Address</TableCell>
                     <TableCell>On-Chain</TableCell>
-                    {!isMobile && <TableCell>Mempool</TableCell>}
+                    <TableCell>Mempool</TableCell>
                     <TableCell></TableCell>
                   </TableRow>
                 </TableHead>
@@ -793,23 +791,21 @@ const CollectionRow = ({
                   }}
                   style={{ width: "calc(100% - 80px)" }}
                 />
-                <IconButton
+                <IconButtonStyled
                   size="small"
                   onClick={handleRenameCollection}
-                  className="crystal-icon-button crystal-icon-button-success"
-                >
-                  <CheckIcon />
-                </IconButton>
-                <IconButton
-                  size="small"
+                  icon={<CheckIcon />}
+                  variant="success"
+                />
+                <IconButtonStyled
                   onClick={() => {
                     setIsEditingName(false);
                     setEditedName(collection.name);
                   }}
-                  className="crystal-icon-button crystal-icon-button-danger"
-                >
-                  <DeleteIcon />
-                </IconButton>
+                  size="small"
+                  icon={<CloseIcon />}
+                  variant="danger"
+                />
               </Box>
             ) : (
               <Typography
@@ -851,17 +847,14 @@ const CollectionRow = ({
         )}
         <TableCell>
           <Box className="crystal-flex crystal-flex-center crystal-gap-1">
-            <IconButton
-              size="small"
+            <IconButtonStyled
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete({ collection: collection.name });
               }}
-              className="crystal-icon-button crystal-icon-button-danger"
+              icon={<DeleteIcon />}
               title="Delete Collection (deletes all contents)"
-            >
-              <DeleteIcon />
-            </IconButton>
+            />
           </Box>
         </TableCell>
       </TableRow>
@@ -879,14 +872,11 @@ const CollectionRow = ({
                   <TableCell>Initial</TableCell>
                   <TableCell>Addresses</TableCell>
                   <TableCell>
-                    <IconButton
-                      size="small"
+                    <IconButtonStyled
                       onClick={() => setShowExtendedKeyDialog(true)}
-                      className="crystal-icon-button"
+                      icon={<AddIcon />}
                       title="Add Extended Key"
-                    >
-                      <AddIcon />
-                    </IconButton>
+                    />
                   </TableCell>
                 </TableRow>
               </TableHead>
@@ -914,14 +904,12 @@ const CollectionRow = ({
                   <TableCell>On-Chain</TableCell>
                   <TableCell>Mempool</TableCell>
                   <TableCell>
-                    <IconButton
+                    <IconButtonStyled
                       size="small"
                       onClick={handleAddClick}
-                      className="crystal-icon-button"
+                      icon={<AddIcon />}
                       title="Add Address"
-                    >
-                      <AddIcon />
-                    </IconButton>
+                    />
                   </TableCell>
                 </TableRow>
               </TableHead>
@@ -977,23 +965,20 @@ const CollectionRow = ({
                               }
                             }}
                           />
-                          <IconButton
+                          <IconButtonStyled
                             size="small"
                             onClick={handleSubmitAddress}
-                            className="crystal-icon-button crystal-icon-button-success"
-                          >
-                            <CheckIcon />
-                          </IconButton>
-                          <IconButton
+                            icon={<CheckIcon fontSize="small" />}
+                            variant="success"
+                          />
+                          <IconButtonStyled
                             size="small"
                             onClick={() => {
                               setNewAddress(null);
-                              setExpanded(false);
                             }}
-                            className="crystal-icon-button crystal-icon-button-danger"
-                          >
-                            <DeleteIcon />
-                          </IconButton>
+                            icon={<CloseIcon fontSize="small" />}
+                            variant="danger"
+                          />
                         </Box>
                       </Box>
                     </TableCell>
@@ -1354,6 +1339,36 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
         </Button>
       </DialogActions>
     </Dialog>
+  );
+};
+
+const IconButtonStyled = ({
+  onClick,
+  icon,
+  title,
+  variant = "default",
+  className,
+  size = "medium",
+  ...props
+}) => {
+  const buttonClass = `crystal-icon-button ${
+    variant === "success"
+      ? "crystal-action-button-success"
+      : variant === "danger"
+      ? "crystal-action-button-danger"
+      : ""
+  } ${className || ""}`.trim();
+
+  return (
+    <IconButton
+      size={size}
+      onClick={onClick}
+      className={buttonClass}
+      title={title}
+      {...props}
+    >
+      {icon}
+    </IconButton>
   );
 };
 
