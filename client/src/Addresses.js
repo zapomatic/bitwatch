@@ -852,7 +852,7 @@ const CollectionRow = ({
               <TableHead>
                 <TableRow>
                   <TableCell>Name</TableCell>
-                  <TableCell>Address</TableCell>
+                  <TableCell>Single Address</TableCell>
                   <TableCell>On-Chain</TableCell>
                   <TableCell>Mempool</TableCell>
                   <TableCell>
