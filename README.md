@@ -59,6 +59,16 @@ Umbrel Home or greater hardware is recommended for running a sovereign monitorin
 2. Wait for installation to complete
 3. Access Bitwatch through your Umbrel dashboard
 
+### Testing Latest Version on Umbrel (pre-app store release)
+
+```bash
+git clone https://github.com/zapomatic/bitwatch.git
+cd bitwatch
+rsync -av --exclude=".gitkeep" ./umbrel umbrel@umbrel.local:/home/umbrel/umbrel/app-stores/getumbrel-umbrel-apps-github-53f74447/bitwatch
+```
+
+Then go to the Umbrel app store and install/update the "Bitwatch" app.
+
 ### Sovereign Monitoring Mode
 
 If the desire is to run a sovereign monitoring node (for privacy reasons), the following steps can be taken:
