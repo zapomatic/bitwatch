@@ -41,7 +41,6 @@ import MenuItem from "@mui/material/MenuItem";
 import EditIcon from "@mui/icons-material/Edit";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import KeyIcon from "@mui/icons-material/Key";
 
 const CrystalNotification = ({ open, onClose, message, severity = "info" }) => (
   <Snackbar
@@ -426,10 +425,10 @@ const AddressRow = ({
 const ExtendedKeyInfo = ({
   extendedKey,
   onEdit,
+  onDelete,
   collection,
   onEditAddress,
   onSaveExpected,
-  onDelete,
   displayBtc,
   isMobile,
 }) => {
@@ -437,33 +436,46 @@ const ExtendedKeyInfo = ({
 
   return (
     <>
-      <TableRow>
+      <TableRow className="crystal-table-row address-row">
         <TableCell>
           <Box sx={{ display: "flex", alignItems: "center" }}>
             <IconButton size="small" onClick={() => setIsExpanded(!isExpanded)}>
               {isExpanded ? <ExpandLess /> : <ExpandMore />}
             </IconButton>
-            <KeyIcon sx={{ mr: 1 }} />
-            <Typography variant="body2">
-              {extendedKey.key.slice(0, 8)}...
+            <Typography variant="body2" sx={{ ml: 1 }}>
+              {extendedKey.name}
             </Typography>
           </Box>
+        </TableCell>
+        <TableCell>
+          <Typography variant="body2">
+            {extendedKey.key.slice(0, 8)}...
+          </Typography>
         </TableCell>
         <TableCell>
           <Typography variant="body2">{extendedKey.derivationPath}</Typography>
         </TableCell>
         <TableCell>
-          <Typography variant="body2">Gap: {extendedKey.gapLimit}</Typography>
+          <Typography variant="body2">{extendedKey.gapLimit}</Typography>
         </TableCell>
-        <TableCell></TableCell>
         <TableCell>
-          <IconButton size="small" onClick={onEdit}>
-            <EditIcon />
-          </IconButton>
+          <Typography variant="body2">
+            {extendedKey.addresses.length}
+          </Typography>
+        </TableCell>
+        <TableCell>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <IconButton size="small" onClick={onEdit}>
+              <EditIcon />
+            </IconButton>
+            <IconButton size="small" onClick={onDelete}>
+              <DeleteIcon />
+            </IconButton>
+          </Box>
         </TableCell>
       </TableRow>
       <TableRow>
-        <TableCell colSpan={5} sx={{ padding: 0 }}>
+        <TableCell colSpan={6} sx={{ padding: 0 }}>
           <Collapse in={isExpanded}>
             <Table size="small" sx={{ width: "100%" }}>
               <TableHead>
@@ -471,7 +483,7 @@ const ExtendedKeyInfo = ({
                   <TableCell>Name</TableCell>
                   <TableCell>Address</TableCell>
                   <TableCell>On-Chain</TableCell>
-                  <TableCell>Mempool</TableCell>
+                  {!isMobile && <TableCell>Mempool</TableCell>}
                   <TableCell></TableCell>
                 </TableRow>
               </TableHead>
@@ -500,43 +512,51 @@ const ExtendedKeyInfo = ({
 const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
   const [name, setName] = useState(extendedKey?.name || "");
   const [key, setKey] = useState(extendedKey?.key || "");
-  const [gapLimit, setGapLimit] = useState(extendedKey?.gapLimit || 2);
+  const [gapLimit, setGapLimit] = useState(extendedKey?.gapLimit || 20);
+  const [initialAddresses, setInitialAddresses] = useState(
+    extendedKey?.addresses?.length || 20
+  );
   const [derivationPath, setDerivationPath] = useState(
     extendedKey?.derivationPath || "m/0"
   );
-  const [extendedKeyError, setExtendedKeyError] = useState("");
-  const [derivationPathError, setDerivationPathError] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (extendedKey) {
+      setName(extendedKey.name);
+      setKey(extendedKey.key);
+      setGapLimit(extendedKey.gapLimit);
+      setInitialAddresses(extendedKey.addresses?.length || 20);
+      setDerivationPath(extendedKey.derivationPath);
+    }
+  }, [extendedKey]);
 
   const handleSave = () => {
-    // Reset errors
-    setExtendedKeyError("");
-    setDerivationPathError("");
-
-    if (!key || !name) {
-      setExtendedKeyError("Name and extended key are required");
+    if (!name || !key || !derivationPath) {
+      setError("Name, extended key, and derivation path are required");
       return;
     }
 
-    // Validate extended key format
     if (!key.match(/^[xyz]pub[a-zA-Z0-9]{107,108}$/)) {
-      setExtendedKeyError(
-        "Invalid extended key format. Must be xpub, ypub, or zpub."
-      );
+      setError("Invalid extended key format");
       return;
     }
 
-    // Validate derivation path format
     if (!derivationPath.match(/^m(\/\d+'?)*$/)) {
-      setDerivationPathError(
-        "Invalid derivation path format. Must start with 'm/' and contain only numbers and optional apostrophes."
-      );
+      setError("Invalid derivation path format");
+      return;
+    }
+
+    if (derivationPath.includes("'")) {
+      setError("Cannot use hardened derivation with extended public keys");
       return;
     }
 
     onSave({
       name,
       key,
-      gapLimit: parseInt(gapLimit) || 20,
+      gapLimit: parseInt(gapLimit),
+      initialAddresses: parseInt(initialAddresses),
       derivationPath,
     });
     onClose();
@@ -562,10 +582,6 @@ const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
           fullWidth
           value={key}
           onChange={(e) => setKey(e.target.value)}
-          error={!!extendedKeyError}
-          helperText={
-            extendedKeyError || "Enter a valid xpub, ypub, or zpub key"
-          }
         />
         <TextField
           margin="dense"
@@ -573,8 +589,16 @@ const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
           fullWidth
           value={derivationPath}
           onChange={(e) => setDerivationPath(e.target.value)}
-          error={!!derivationPathError}
-          helperText={derivationPathError || "e.g. m/0, m/44'/0'/0', etc."}
+          helperText="Example: m/0 for receiving addresses"
+        />
+        <TextField
+          margin="dense"
+          label="Initial Addresses to Fetch"
+          type="number"
+          fullWidth
+          value={initialAddresses}
+          onChange={(e) => setInitialAddresses(e.target.value)}
+          helperText="Number of addresses to fetch initially"
         />
         <TextField
           margin="dense"
@@ -583,12 +607,17 @@ const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
           fullWidth
           value={gapLimit}
           onChange={(e) => setGapLimit(e.target.value)}
-          helperText="Number of empty addresses before stopping derivation"
+          helperText="Number of consecutive empty addresses to maintain at the end"
         />
+        {error && (
+          <Typography color="error" sx={{ mt: 1 }}>
+            {error}
+          </Typography>
+        )}
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSave} variant="contained" color="primary">
+        <Button onClick={handleSave} variant="contained">
           Save
         </Button>
       </DialogActions>
@@ -608,7 +637,8 @@ const CollectionRow = ({
   autoShowAddForm,
   displayBtc,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [editingExtendedKey, setEditingExtendedKey] = useState(null);
   const [isEditingName, setIsEditingName] = useState(false);
   const [editedName, setEditedName] = useState(collection.name);
   const [newAddress, setNewAddress] = useState(null);
@@ -620,14 +650,14 @@ const CollectionRow = ({
   const totals = calculateCollectionTotals(collection.addresses);
 
   const handleAddClick = () => {
-    setIsExpanded(true);
+    setExpanded(true);
     setNewAddress({ name: "", address: "" });
   };
 
   // Initialize newAddress if autoShowAddForm is true
   useEffect(() => {
     if (autoShowAddForm) {
-      setIsExpanded(true);
+      setExpanded(true);
       setNewAddress({ name: "", address: "" });
     }
   }, [autoShowAddForm]);
@@ -650,9 +680,26 @@ const CollectionRow = ({
     setIsEditingName(false);
   };
 
-  const handleAddExtendedKey = (data) => {
-    onAddExtendedKey(collection, data);
+  const handleEditExtendedKey = (extendedKey) => {
+    setEditingExtendedKey(extendedKey);
+    setShowExtendedKeyDialog(true);
+  };
+
+  const handleSaveExtendedKey = (data) => {
+    if (editingExtendedKey) {
+      onEditExtendedKey(collection.name, {
+        ...data,
+        extendedKeyIndex: collection.extendedKeys.indexOf(editingExtendedKey),
+      });
+    } else {
+      onAddExtendedKey(collection.name, data);
+    }
+    setEditingExtendedKey(null);
     setShowExtendedKeyDialog(false);
+  };
+
+  const handleDeleteExtendedKey = (extendedKey) => {
+    onDelete({ collection: collection.name, extendedKey });
   };
 
   return (
@@ -662,10 +709,10 @@ const CollectionRow = ({
           <Box className="crystal-flex crystal-flex-start crystal-gap-1">
             <IconButton
               size="small"
-              onClick={() => setIsExpanded(!isExpanded)}
+              onClick={() => setExpanded(!expanded)}
               className="crystal-icon-button"
             >
-              {isExpanded ? <ExpandLess /> : <ExpandMore />}
+              {expanded ? <ExpandLess /> : <ExpandMore />}
             </IconButton>
             {isEditingName ? (
               <Box
@@ -743,22 +790,6 @@ const CollectionRow = ({
           <Box className="crystal-flex crystal-flex-center crystal-gap-1">
             <IconButton
               size="small"
-              onClick={handleAddClick}
-              className="crystal-icon-button"
-              title="Add Address"
-            >
-              <AddIcon />
-            </IconButton>
-            <IconButton
-              size="small"
-              onClick={() => setShowExtendedKeyDialog(true)}
-              className="crystal-icon-button"
-              title="Add Extended Key"
-            >
-              <KeyIcon />
-            </IconButton>
-            <IconButton
-              size="small"
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete({ collection: collection.name });
@@ -772,165 +803,162 @@ const CollectionRow = ({
         </TableCell>
       </TableRow>
       <TableRow>
-        <TableCell colSpan={5}>
-          <Collapse in={isExpanded}>
-            <Box sx={{ margin: 1 }}>
-              {collection.extendedKeys?.length > 0 && (
-                <>
-                  <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                    Extended Keys
-                  </Typography>
-                  <Table
-                    size="small"
-                    className="crystal-table address-subtable"
-                  >
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Extended Key</TableCell>
-                        <TableCell>Path</TableCell>
-                        <TableCell>Gap</TableCell>
-                        <TableCell></TableCell>
-                        <TableCell></TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {collection.extendedKeys.map((extendedKey, index) => (
-                        <ExtendedKeyInfo
-                          key={extendedKey.key}
-                          extendedKey={extendedKey}
-                          collection={collection}
-                          onEdit={() => {
-                            setShowExtendedKeyDialog(true);
-                          }}
-                          onEditAddress={onEditAddress}
-                          onSaveExpected={onSaveExpected}
-                          onDelete={onDelete}
-                          displayBtc={displayBtc}
-                          isMobile={isMobile}
-                        />
-                      ))}
-                    </TableBody>
-                  </Table>
-                </>
-              )}
-              <Typography variant="subtitle2" sx={{ mt: 2, mb: 1 }}>
-                Addresses
-              </Typography>
-              <Table size="small" className="crystal-table address-subtable">
-                <TableHead>
-                  <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell>Address</TableCell>
-                    <TableCell>On-Chain</TableCell>
-                    <TableCell>Mempool</TableCell>
-                    <TableCell>
-                      <IconButton
-                        size="small"
-                        onClick={handleAddClick}
-                        className="crystal-icon-button"
-                        title="Add Address"
-                      >
-                        <AddIcon />
-                      </IconButton>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
+          <Collapse in={expanded} timeout="auto" unmountOnExit>
+            <Table size="small" className="crystal-table address-subtable">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>xPub/yPub/zPub</TableCell>
+                  <TableCell>Derivation Path</TableCell>
+                  <TableCell>Gap Limit</TableCell>
+                  <TableCell>Addresses</TableCell>
+                  <TableCell>
+                    <IconButton
+                      size="small"
+                      onClick={() => setShowExtendedKeyDialog(true)}
+                      className="crystal-icon-button"
+                      title="Add Extended Key"
+                    >
+                      <AddIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {collection.extendedKeys?.map((extendedKey, index) => (
+                  <ExtendedKeyInfo
+                    key={index}
+                    extendedKey={extendedKey}
+                    onEdit={() => handleEditExtendedKey(extendedKey)}
+                    onDelete={() => handleDeleteExtendedKey(extendedKey)}
+                    collection={collection}
+                    onEditAddress={onEditAddress}
+                    onSaveExpected={onSaveExpected}
+                    displayBtc={displayBtc}
+                    isMobile={isMobile}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+            <Table size="small" className="crystal-table address-subtable">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Address</TableCell>
+                  <TableCell>On-Chain</TableCell>
+                  <TableCell>Mempool</TableCell>
+                  <TableCell>
+                    <IconButton
+                      size="small"
+                      onClick={handleAddClick}
+                      className="crystal-icon-button"
+                      title="Add Address"
+                    >
+                      <AddIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {newAddress && (
+                  <TableRow className="crystal-table-row">
+                    <TableCell
+                      colSpan={isMobile ? 4 : 5}
+                      className="crystal-table-cell"
+                    >
+                      <Box className="crystal-flex crystal-flex-start crystal-gap-2">
+                        <Box
+                          className="crystal-flex crystal-flex-start crystal-gap-1"
+                          sx={{ flex: 1 }}
+                        >
+                          <input
+                            className="crystal-input"
+                            placeholder="Name"
+                            value={newAddress.name}
+                            onChange={(e) =>
+                              setNewAddress((prev) => ({
+                                ...prev,
+                                name: e.target.value,
+                              }))
+                            }
+                            onKeyPress={(e) => {
+                              if (
+                                e.key === "Enter" &&
+                                newAddress.name &&
+                                newAddress.address
+                              ) {
+                                handleSubmitAddress();
+                              }
+                            }}
+                          />
+                          <input
+                            className="crystal-input"
+                            placeholder="Address"
+                            value={newAddress.address}
+                            onChange={(e) =>
+                              setNewAddress((prev) => ({
+                                ...prev,
+                                address: e.target.value,
+                              }))
+                            }
+                            onKeyPress={(e) => {
+                              if (
+                                e.key === "Enter" &&
+                                newAddress.name &&
+                                newAddress.address
+                              ) {
+                                handleSubmitAddress();
+                              }
+                            }}
+                          />
+                          <IconButton
+                            size="small"
+                            onClick={handleSubmitAddress}
+                            className="crystal-icon-button crystal-icon-button-success"
+                          >
+                            <CheckIcon />
+                          </IconButton>
+                          <IconButton
+                            size="small"
+                            onClick={() => {
+                              setNewAddress(null);
+                              setExpanded(false);
+                            }}
+                            className="crystal-icon-button crystal-icon-button-danger"
+                          >
+                            <DeleteIcon />
+                          </IconButton>
+                        </Box>
+                      </Box>
                     </TableCell>
                   </TableRow>
-                </TableHead>
-                <TableBody>
-                  {newAddress && (
-                    <TableRow className="crystal-table-row">
-                      <TableCell
-                        colSpan={isMobile ? 4 : 5}
-                        className="crystal-table-cell"
-                      >
-                        <Box className="crystal-flex crystal-flex-start crystal-gap-2">
-                          <Box
-                            className="crystal-flex crystal-flex-start crystal-gap-1"
-                            sx={{ flex: 1 }}
-                          >
-                            <input
-                              className="crystal-input"
-                              placeholder="Name"
-                              value={newAddress.name}
-                              onChange={(e) =>
-                                setNewAddress((prev) => ({
-                                  ...prev,
-                                  name: e.target.value,
-                                }))
-                              }
-                              onKeyPress={(e) => {
-                                if (
-                                  e.key === "Enter" &&
-                                  newAddress.name &&
-                                  newAddress.address
-                                ) {
-                                  handleSubmitAddress();
-                                }
-                              }}
-                            />
-                            <input
-                              className="crystal-input"
-                              placeholder="Address"
-                              value={newAddress.address}
-                              onChange={(e) =>
-                                setNewAddress((prev) => ({
-                                  ...prev,
-                                  address: e.target.value,
-                                }))
-                              }
-                              onKeyPress={(e) => {
-                                if (
-                                  e.key === "Enter" &&
-                                  newAddress.name &&
-                                  newAddress.address
-                                ) {
-                                  handleSubmitAddress();
-                                }
-                              }}
-                            />
-                            <IconButton
-                              size="small"
-                              onClick={handleSubmitAddress}
-                              className="crystal-icon-button crystal-icon-button-success"
-                            >
-                              <CheckIcon />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              onClick={() => {
-                                setNewAddress(null);
-                                setIsExpanded(false);
-                              }}
-                              className="crystal-icon-button crystal-icon-button-danger"
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </Box>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {collection.addresses.map((address, index) => (
-                    <AddressRow
-                      key={index}
-                      address={address}
-                      collection={collection}
-                      onEditAddress={onEditAddress}
-                      onSaveExpected={onSaveExpected}
-                      onDelete={onDelete}
-                      displayBtc={displayBtc}
-                      isMobile={isMobile}
-                    />
-                  ))}
-                </TableBody>
-              </Table>
-            </Box>
+                )}
+                {collection.addresses.map((address, index) => (
+                  <AddressRow
+                    key={index}
+                    address={address}
+                    collection={collection}
+                    onEditAddress={onEditAddress}
+                    onSaveExpected={onSaveExpected}
+                    onDelete={onDelete}
+                    displayBtc={displayBtc}
+                    isMobile={isMobile}
+                  />
+                ))}
+              </TableBody>
+            </Table>
           </Collapse>
         </TableCell>
       </TableRow>
       <ExtendedKeyDialog
         open={showExtendedKeyDialog}
-        onClose={() => setShowExtendedKeyDialog(false)}
-        onSave={handleAddExtendedKey}
+        onClose={() => {
+          setShowExtendedKeyDialog(false);
+          setEditingExtendedKey(null);
+        }}
+        onSave={handleSaveExtendedKey}
+        extendedKey={editingExtendedKey}
       />
     </>
   );
@@ -1659,13 +1687,10 @@ export default function Addresses() {
 
   const handleEditExtendedKey = (collection, data) => {
     socketIO.emit(
-      "updateExtendedKey",
+      "editExtendedKey",
       {
         collection,
-        name: data.name,
-        key: data.key,
-        gapLimit: data.gapLimit,
-        derivationPath: data.derivationPath,
+        ...data,
       },
       (response) => {
         if (response.error) {
