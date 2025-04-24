@@ -64,7 +64,7 @@ Umbrel Home or greater hardware is recommended for running a sovereign monitorin
 ```bash
 git clone https://github.com/zapomatic/bitwatch.git
 cd bitwatch
-rsync -av --exclude=".gitkeep" ./umbrel umbrel@umbrel.local:/home/umbrel/umbrel/app-stores/getumbrel-umbrel-apps-github-53f74447/bitwatch
+rsync -av --exclude=".gitkeep" ./umbrel/* umbrel@umbrel.local:/home/umbrel/umbrel/app-stores/getumbrel-umbrel-apps-github-53f74447/bitwatch/
 ```
 
 Then go to the Umbrel app store and install/update the "Bitwatch" app.
