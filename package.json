@@ -1,6 +1,6 @@
 {
   "name": "bitwatch",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "description": "Bitcoin address monitor, using mempool.space api",
   "main": "server/index.js",
   "private": true,

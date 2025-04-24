@@ -208,8 +208,16 @@ const AddressCell = ({ address }) => {
   );
 };
 
-const calculateCollectionTotals = (addresses) => {
-  const totals = addresses.reduce(
+const calculateCollectionTotals = (collection) => {
+  // Get all addresses from both sources
+  const allAddresses = [
+    ...(collection.addresses || []),
+    ...(collection.extendedKeys || []).flatMap(
+      (extKey) => extKey.addresses || []
+    ),
+  ];
+
+  const totals = allAddresses.reduce(
     (totals, addr) => {
       if (!addr.actual || addr.error) return totals;
       return {
@@ -240,8 +248,8 @@ const calculateCollectionTotals = (addresses) => {
   );
 
   // Check if any address has an error or is pending
-  const hasError = addresses.some((addr) => addr.error);
-  const hasPending = addresses.some((addr) => !addr.actual && !addr.error);
+  const hasError = allAddresses.some((addr) => addr.error);
+  const hasPending = allAddresses.some((addr) => !addr.actual && !addr.error);
 
   return {
     ...totals,
@@ -492,7 +500,7 @@ const CollectionRow = ({
   const [showExtendedKeyDialog, setShowExtendedKeyDialog] = useState(false);
 
   // Calculate totals from addresses
-  const totals = calculateCollectionTotals(collection.addresses);
+  const totals = calculateCollectionTotals(collection);
 
   const handleAddClick = () => {
     setExpanded(true);
@@ -901,8 +909,8 @@ export default function Addresses() {
     const collectionEntries = Object.entries(collections);
     return collectionEntries.sort(
       ([nameA, collectionA], [nameB, collectionB]) => {
-        const totalsA = calculateCollectionTotals(collectionA.addresses);
-        const totalsB = calculateCollectionTotals(collectionB.addresses);
+        const totalsA = calculateCollectionTotals(collectionA);
+        const totalsB = calculateCollectionTotals(collectionB);
 
         let comparison = 0;
         switch (sortConfig.field) {
