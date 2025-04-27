@@ -1135,18 +1135,7 @@ export default function Addresses() {
 
   const handleExport = () => {
     const exportData = {
-      collections: Object.fromEntries(
-        Object.entries(collections).map(([name, collection]) => [
-          name,
-          {
-            addresses: collection.addresses.map((addr) => ({
-              address: addr.address,
-              name: addr.name,
-              expect: addr.expect,
-            })),
-          },
-        ])
-      ),
+      collections: collections,
     };
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], {
@@ -1177,6 +1166,45 @@ export default function Addresses() {
             error: "Invalid file format. Expected a collections object.",
           });
           return;
+        }
+
+        // Validate the structure of each collection
+        for (const [name, collection] of Object.entries(data.collections)) {
+          if (!collection.addresses || !Array.isArray(collection.addresses)) {
+            setImportDialog({
+              open: true,
+              file: null,
+              error: `Invalid collection structure for ${name}`,
+            });
+            return;
+          }
+          for (const addr of collection.addresses) {
+            if (!addr.address || !addr.name || !addr.expect) {
+              setImportDialog({
+                open: true,
+                file: null,
+                error: `Invalid address structure in collection ${name}`,
+              });
+              return;
+            }
+          }
+          if (collection.extendedKeys) {
+            for (const extKey of collection.extendedKeys) {
+              if (
+                !extKey.key ||
+                !extKey.name ||
+                !extKey.derivationPath ||
+                !extKey.addresses
+              ) {
+                setImportDialog({
+                  open: true,
+                  file: null,
+                  error: `Invalid extended key structure in collection ${name}`,
+                });
+                return;
+              }
+            }
+          }
         }
 
         setImportDialog({
