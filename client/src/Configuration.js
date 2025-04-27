@@ -23,10 +23,19 @@ const formatInterval = (ms) => {
   }
 };
 
+// Add default config values
+const DEFAULT_CONFIG = {
+  api: "https://mempool.space",
+  apiParallelLimit: 1,
+  interval: 600000,
+  apiDelay: 2000,
+};
+
 const Configs = {
   api: {
     label: "API Endpoint",
     help: "Most users should use https://mempool.space (default) or http://10.21.21.26:3006 (umbrel)",
+    default: DEFAULT_CONFIG.api,
   },
   interval: {
     label: "Update Interval (ms)",
@@ -34,14 +43,17 @@ const Configs = {
       `Updates every ${formatInterval(
         parseInt(value)
       )} (if running local mempool, you can run this much more frequently)`,
+    default: DEFAULT_CONFIG.interval,
   },
   apiParallelLimit: {
     label: "API Parallel Requests",
     help: "If you are using your own local mempool instance, you can increase this number to speed up address monitoring. If you are only watching a few addresses, you can also increase this when using public mempool.space API, but with a lot of addresses, you will hit rate limits and it will slow things down more.",
+    default: DEFAULT_CONFIG.apiParallelLimit,
   },
   apiDelay: {
     label: "API Delay Between Requests (ms)",
     help: "Delay between API requests to avoid rate limiting. This is used when we add an extended pub key and initially scan for balances and when we poll the API for changes on the interval. We will additionally backoff and retry if we get limited.",
+    default: DEFAULT_CONFIG.apiDelay,
   },
 };
 
@@ -57,7 +69,12 @@ function Config() {
   useEffect(() => {
     socketIO.emit("getConfig", {}, (response) => {
       console.log(`getConfig`, response);
-      setConfig(response);
+      // Merge received config with defaults
+      const mergedConfig = Object.keys(Configs).reduce((acc, key) => {
+        acc[key] = response[key] ?? Configs[key].default;
+        return acc;
+      }, {});
+      setConfig(mergedConfig);
     });
   }, []);
 
@@ -69,7 +86,12 @@ function Config() {
     setSaving(true);
     socketIO.emit("saveConfig", config, (response) => {
       if (response) {
-        setConfig(response);
+        // Merge response with defaults for any missing values
+        const mergedConfig = Object.keys(Configs).reduce((acc, key) => {
+          acc[key] = response[key] ?? Configs[key].default;
+          return acc;
+        }, {});
+        setConfig(mergedConfig);
         setNotification({
           open: true,
           message: "Configuration saved successfully!",
@@ -123,15 +145,7 @@ function Config() {
             </Button>
             <Button
               className="crystal-button"
-              onClick={() =>
-                setConfig({
-                  ...config,
-                  api: "https://mempool.space",
-                  apiParallelLimit: 1,
-                  interval: 600000,
-                  apiDelay: 2000,
-                })
-              }
+              onClick={() => setConfig(DEFAULT_CONFIG)}
               sx={{
                 background: "var(--theme-surface)",
                 color: "var(--theme-text)",
@@ -146,7 +160,7 @@ function Config() {
           </div>
         </div>
         <Grid container spacing={3}>
-          {Object.keys(config).map((key) => (
+          {Object.keys(Configs).map((key) => (
             <Grid item xs={12} sm={6} key={key}>
               <div className="data-item">
                 <Typography
@@ -154,18 +168,18 @@ function Config() {
                   htmlFor={key}
                   className="crystal-label"
                 >
-                  {Configs[key]?.label || key}
+                  {Configs[key].label}
                 </Typography>
                 <input
                   id={key}
                   className="crystal-input"
-                  value={config[key]}
+                  value={config[key] ?? Configs[key].default}
                   onChange={(e) =>
                     setConfig({ ...config, [key]: e.target.value })
                   }
                   style={{ width: "100%" }}
                 />
-                {Configs[key]?.help && (
+                {Configs[key].help && (
                   <Typography
                     variant="caption"
                     sx={{
@@ -176,7 +190,7 @@ function Config() {
                     }}
                   >
                     {typeof Configs[key].help === "function"
-                      ? Configs[key].help(config[key])
+                      ? Configs[key].help(config[key] ?? Configs[key].default)
                       : Configs[key].help}
                   </Typography>
                 )}
