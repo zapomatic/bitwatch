@@ -32,6 +32,11 @@ app.get("/manifest.json", (req, res, next) => {
 
 app.use(express.static(memory.dirUI));
 
+// Add catch-all route for client-side routing
+app.get("*", (req, res) => {
+  res.sendFile("index.html", { root: memory.dirUI });
+});
+
 const PORT = process.env.PORT || 3117;
 server.listen(PORT, () => {
   logger.system(`Server listening on port ${PORT}`);
