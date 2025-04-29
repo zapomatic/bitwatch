@@ -33,7 +33,7 @@ const getWebSocketState = (ws) => {
 const updateTrackedAddresses = () => {
   if (!mempoolClient || !ws) {
     logger.warning("Cannot update tracked addresses - no websocket connection");
-    return;
+    return false;
   }
 
   if (ws.readyState !== 1) {
@@ -42,12 +42,12 @@ const updateTrackedAddresses = () => {
         ws
       )})`
     );
-    return;
+    return false;
   }
 
   if (!isReady) {
     logger.warning("Cannot update tracked addresses - connection not ready");
-    return;
+    return false;
   }
 
   const newAddresses = new Set();
@@ -80,29 +80,37 @@ const updateTrackedAddresses = () => {
   // Update tracking
   if (addressesToTrack.length > 0) {
     addressesToTrack.forEach((address) => {
-      try {
-        logger.info(`Tracking address: ${address}`);
-        mempoolClient.bitcoin.websocket.wsTrackAddress(ws, address);
+      logger.info(`Tracking address: ${address}`);
+      const result = mempoolClient.bitcoin.websocket.wsTrackAddress(
+        ws,
+        address
+      );
+      if (result) {
         trackedAddresses.add(address);
         logger.success(`Successfully tracking address: ${address}`);
-      } catch (error) {
-        logger.error(`Error tracking address ${address}: ${error.message}`);
+      } else {
+        logger.error(`Failed to track address ${address}`);
       }
     });
   }
 
   if (addressesToUntrack.length > 0) {
     addressesToUntrack.forEach((address) => {
-      try {
-        logger.info(`Untracking address: ${address}`);
-        mempoolClient.bitcoin.websocket.wsStopTrackingAddress(ws, address);
+      logger.info(`Untracking address: ${address}`);
+      const result = mempoolClient.bitcoin.websocket.wsStopTrackingAddress(
+        ws,
+        address
+      );
+      if (result) {
         trackedAddresses.delete(address);
         logger.success(`Successfully untracked address: ${address}`);
-      } catch (error) {
-        logger.error(`Error untracking address ${address}: ${error.message}`);
+      } else {
+        logger.error(`Failed to untrack address ${address}`);
       }
     });
   }
+
+  return true;
 };
 
 const calculateAddressBalance = (transactions, address) => {
@@ -284,7 +292,7 @@ const updateWebSocketState = (io, state) => {
 const setupWebSocket = (io) => {
   if (isConnecting) {
     logger.warning("Already attempting to connect, skipping...");
-    return;
+    return false;
   }
 
   isConnecting = true;
@@ -298,176 +306,168 @@ const setupWebSocket = (io) => {
       clearTimeout(connectionTimeout);
     }
     if (ws) {
-      // Only remove listeners if the WebSocket exists
-      try {
-        ws.removeAllListeners();
-      } catch (error) {
-        logger.warning("Error removing WebSocket listeners:", error);
-      }
+      ws.removeAllListeners();
     }
     isConnecting = false;
     isReady = false;
   };
 
-  try {
-    logger.info("Creating new mempool websocket...");
-    ws = mempoolClient.bitcoin.websocket.wsInit();
-    logger.success(
-      `Websocket created, initial state: ${getWebSocketState(ws)}`
-    );
-
-    // Add error handler before any other operations
-    ws.on("error", (error) => {
-      logger.error(`WebSocket error during setup: ${error.message}`);
-      cleanup();
-      updateWebSocketState(io, "ERROR");
-      handleDisconnect(io);
-    });
-
-    // Add connection timeout
-    connectionTimeout = setTimeout(() => {
-      if (ws && ws.readyState !== 1) {
-        // 1 = OPEN
-        logger.error("WebSocket connection timeout - no open event received");
-        cleanup();
-        // Don't try to close the WebSocket here, just let the error handler deal with it
-        handleDisconnect(io);
-      }
-    }, 10000); // 10 second timeout
-
-    ws.addEventListener("open", async () => {
-      clearTimeout(connectionTimeout);
-      logger.success(
-        `Connected to mempool.space WebSocket (state: ${getWebSocketState(ws)})`
-      );
-      isConnecting = false;
-      reconnectAttempts = 0;
-      updateWebSocketState(io, "CONNECTED");
-    });
-
-    ws.addEventListener("message", (event) => {
-      try {
-        const res = JSON.parse(event.data);
-        const messageType = Object.keys(res)[0];
-        logger.info(`Received websocket message: ${messageType}`);
-
-        // Handle mempoolInfo message - this indicates the connection is ready
-        if (res.mempoolInfo) {
-          logger.info(`Received mempool info, connection is ready`);
-          isReady = true;
-          // Update tracked addresses now that connection is ready
-          updateTrackedAddresses();
-        }
-
-        // Handle track-addresses-error message
-        if (res["track-addresses-error"]) {
-          logger.error(
-            `Error tracking addresses: ${res["track-addresses-error"]}`
-          );
-          // Don't mark connection as not ready, just log the error
-          return;
-        }
-
-        // Only process other messages if we're ready
-        if (!isReady) {
-          logger.warning(
-            `Ignoring message before connection is ready (state: ${getWebSocketState(
-              ws
-            )})`
-          );
-          return;
-        }
-
-        // Handle multi-address-transactions response after track-addresses
-        if (res["multi-address-transactions"]) {
-          const addressData = res["multi-address-transactions"];
-          logger.mempool(
-            `Processing transactions for ${
-              Object.keys(addressData).length
-            } addresses`
-          );
-
-          // Process each address's transactions
-          for (const [address, data] of Object.entries(addressData)) {
-            logger.mempool(`Processing transactions for address: ${address}`);
-            if (!data) continue;
-
-            // Calculate chain (confirmed) transactions
-            const chainBalance = calculateAddressBalance(
-              data.confirmed || [],
-              address
-            );
-
-            // Calculate mempool transactions
-            const mempoolBalance = calculateAddressBalance(
-              data.mempool || [],
-              address
-            );
-
-            // Update the address with both chain and mempool values
-            updateAddressBalance(
-              address,
-              {
-                chain_in: chainBalance.in,
-                chain_out: chainBalance.out,
-                mempool_in: mempoolBalance.in,
-                mempool_out: mempoolBalance.out,
-              },
-              io
-            );
-          }
-          return;
-        }
-
-        // Handle block updates
-        if (res.block) {
-          logger.block(`New block: ${JSON.stringify(res.block)}`);
-          io.emit("updateState", { collections: memory.db.collections });
-          return;
-        }
-
-        // Handle mempool updates
-        if (res.transactions) {
-          logger.mempool(
-            `Processing ${res.transactions.length} new transactions`
-          );
-          res.transactions.forEach((tx) => processTransaction(tx, io));
-          return;
-        }
-
-        // Log any unhandled message types
-        logger.debug(`ignoring message type: ${messageType}`);
-      } catch (error) {
-        logger.error(`Error processing websocket message: ${error.message}`);
-        logger.error(`Error details:`, error);
-      }
-    });
-
-    ws.addEventListener("error", (error) => {
-      cleanup();
-      logger.error(`Mempool WebSocket error: ${error.message}`);
-      logger.error(`Error details:`, error);
-      logger.error(`Websocket state at error: ${getWebSocketState(ws)}`);
-      updateWebSocketState(io, "ERROR");
-      handleDisconnect(io);
-    });
-
-    ws.addEventListener("close", (event) => {
-      cleanup();
-      logger.websocket(
-        `Mempool WebSocket connection closed (code: ${event.code}, reason: ${event.reason})`
-      );
-      logger.websocket(`Final websocket state: ${getWebSocketState(ws)}`);
-      updateWebSocketState(io, "DISCONNECTED");
-      handleDisconnect(io);
-    });
-  } catch (error) {
+  logger.info("Creating new mempool websocket...");
+  ws = mempoolClient.bitcoin.websocket.wsInit();
+  if (!ws) {
+    logger.error("Failed to create websocket");
     cleanup();
-    logger.error("Error setting up websocket:");
-    logger.error("Error details:", error);
     updateWebSocketState(io, "ERROR");
     handleDisconnect(io);
+    return false;
   }
+
+  logger.success(`Websocket created, initial state: ${getWebSocketState(ws)}`);
+
+  // Add error handler before any other operations
+  ws.on("error", (error) => {
+    logger.error(`WebSocket error during setup: ${error.message}`);
+    cleanup();
+    updateWebSocketState(io, "ERROR");
+    handleDisconnect(io);
+  });
+
+  // Add connection timeout
+  connectionTimeout = setTimeout(() => {
+    if (ws && ws.readyState !== 1) {
+      // 1 = OPEN
+      logger.error("WebSocket connection timeout - no open event received");
+      cleanup();
+      handleDisconnect(io);
+    }
+  }, 10000); // 10 second timeout
+
+  ws.addEventListener("open", async () => {
+    clearTimeout(connectionTimeout);
+    logger.success(
+      `Connected to mempool.space WebSocket (state: ${getWebSocketState(ws)})`
+    );
+    isConnecting = false;
+    reconnectAttempts = 0;
+    updateWebSocketState(io, "CONNECTED");
+  });
+
+  ws.addEventListener("message", (event) => {
+    const data = JSON.parse(event.data);
+    if (!data) {
+      logger.error("Failed to parse websocket message");
+      return;
+    }
+
+    const messageType = Object.keys(data)[0];
+    logger.info(`Received websocket message: ${messageType}`);
+
+    // Handle mempoolInfo message - this indicates the connection is ready
+    if (data.mempoolInfo) {
+      logger.info(`Received mempool info, connection is ready`);
+      isReady = true;
+      // Update tracked addresses now that connection is ready
+      updateTrackedAddresses();
+      return;
+    }
+
+    // Handle track-addresses-error message
+    if (data["track-addresses-error"]) {
+      logger.error(
+        `Error tracking addresses: ${data["track-addresses-error"]}`
+      );
+      return;
+    }
+
+    // Only process other messages if we're ready
+    if (!isReady) {
+      logger.warning(
+        `Ignoring message before connection is ready (state: ${getWebSocketState(
+          ws
+        )})`
+      );
+      return;
+    }
+
+    // Handle multi-address-transactions response after track-addresses
+    if (data["multi-address-transactions"]) {
+      const addressData = data["multi-address-transactions"];
+      logger.mempool(
+        `Processing transactions for ${
+          Object.keys(addressData).length
+        } addresses`
+      );
+
+      // Process each address's transactions
+      for (const [address, txData] of Object.entries(addressData)) {
+        if (!txData) continue;
+        logger.mempool(`Processing transactions for address: ${address}`);
+
+        // Calculate chain (confirmed) transactions
+        const chainBalance = calculateAddressBalance(
+          txData.confirmed || [],
+          address
+        );
+
+        // Calculate mempool transactions
+        const mempoolBalance = calculateAddressBalance(
+          txData.mempool || [],
+          address
+        );
+
+        // Update the address with both chain and mempool values
+        updateAddressBalance(
+          address,
+          {
+            chain_in: chainBalance.in,
+            chain_out: chainBalance.out,
+            mempool_in: mempoolBalance.in,
+            mempool_out: mempoolBalance.out,
+          },
+          io
+        );
+      }
+      return;
+    }
+
+    // Handle block updates
+    if (data.block) {
+      logger.block(`New block: ${JSON.stringify(data.block)}`);
+      io.emit("updateState", { collections: memory.db.collections });
+      return;
+    }
+
+    // Handle mempool updates
+    if (data.transactions) {
+      logger.mempool(`Processing ${data.transactions.length} new transactions`);
+      data.transactions.forEach((tx) => processTransaction(tx, io));
+      return;
+    }
+
+    // Log any unhandled message types
+    logger.debug(`ignoring message type: ${messageType}`);
+  });
+
+  ws.addEventListener("error", (error) => {
+    cleanup();
+    logger.error(`Mempool WebSocket error: ${error.message}`);
+    logger.error(`Error details:`, error);
+    logger.error(`Websocket state at error: ${getWebSocketState(ws)}`);
+    updateWebSocketState(io, "ERROR");
+    handleDisconnect(io);
+  });
+
+  ws.addEventListener("close", (event) => {
+    cleanup();
+    logger.websocket(
+      `Mempool WebSocket connection closed (code: ${event.code}, reason: ${event.reason})`
+    );
+    logger.websocket(`Final websocket state: ${getWebSocketState(ws)}`);
+    updateWebSocketState(io, "DISCONNECTED");
+    handleDisconnect(io);
+  });
+
+  return true;
 };
 
 const handleDisconnect = (io) => {
@@ -502,35 +502,38 @@ const init = async (io) => {
 
   logger.info("Initializing mempool client...");
 
-  try {
-    // Parse the API URL from the database configuration
-    const apiUrl = new URL(memory.db.api);
-    const hostname = apiUrl.hostname + (apiUrl.port ? `:${apiUrl.port}` : "");
-    const protocol = apiUrl.protocol === "https:" ? "wss" : "ws";
+  // Parse the API URL from the database configuration
+  const apiUrl = new URL(memory.db.api);
+  const hostname = apiUrl.hostname + (apiUrl.port ? `:${apiUrl.port}` : "");
+  const protocol = apiUrl.protocol === "https:" ? "wss" : "ws";
 
-    // Construct and log the full WebSocket URL
-    const wsUrl = `${protocol}://${hostname}/api/v1/ws`;
-    logger.network(`Mempool websocket: ${wsUrl}`);
+  // Construct and log the full WebSocket URL
+  const wsUrl = `${protocol}://${hostname}/api/v1/ws`;
+  logger.network(`Mempool websocket: ${wsUrl}`);
 
-    mempoolClient = mempoolJS({
-      hostname,
-      network: "bitcoin",
-      protocol,
-    });
+  mempoolClient = mempoolJS({
+    hostname,
+    network: "bitcoin",
+    protocol,
+  });
 
-    setupWebSocket(io);
-
-    // Update tracked addresses when collections change
-    io.on("updateState", () => {
-      updateTrackedAddresses();
-    });
-
-    return mempoolClient;
-  } catch (error) {
-    logger.error("Failed to initialize mempool client:");
-    logger.error("Error details:", error);
+  if (!mempoolClient) {
+    logger.error("Failed to initialize mempool client");
     return null;
   }
+
+  const wsSetupResult = setupWebSocket(io);
+  if (!wsSetupResult) {
+    logger.error("Failed to setup websocket");
+    return null;
+  }
+
+  // Update tracked addresses when collections change
+  io.on("updateState", () => {
+    updateTrackedAddresses();
+  });
+
+  return mempoolClient;
 };
 
 export default init;

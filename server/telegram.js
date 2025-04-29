@@ -15,13 +15,12 @@ const init = (sendTestMessage = false) => {
     return;
   }
 
-  try {
-    bot = new TelegramBot(memory.db.telegram.token, { polling: true });
+  bot = new TelegramBot(memory.db.telegram.token, { polling: true });
 
-    // Handle /start command
-    bot.onText(/\/start/, async (msg) => {
-      const chatId = msg.chat.id;
-      const message = `👋 Welcome to Bitwatch!
+  // Handle /start command
+  bot.onText(/\/start/, async (msg) => {
+    const chatId = msg.chat.id;
+    const message = `👋 Welcome to Bitwatch!
 
 Your chat ID is: <code>${chatId}</code>
 
@@ -31,62 +30,71 @@ To receive notifications:
 3. Click Save to test the connection
 
 Current status: ${
-        chatId === memory.db.telegram.chatId
-          ? "✅ Configured"
-          : "❌ Not configured"
-      }`;
+      chatId === memory.db.telegram.chatId
+        ? "✅ Configured"
+        : "❌ Not configured"
+    }`;
 
-      await bot.sendMessage(chatId, message, { parse_mode: "HTML" });
+    const result = await bot.sendMessage(chatId, message, {
+      parse_mode: "HTML",
     });
+    if (!result) {
+      logger.error("Failed to send welcome message");
+    }
+  });
 
-    // Handle all other messages
-    bot.on("message", async (msg) => {
-      if (msg.text === "/start") return; // Already handled
-      const chatId = msg.chat.id;
-      if (chatId !== memory.db.telegram.chatId) {
-        await bot.sendMessage(
-          chatId,
-          "❌ This chat is not configured to receive notifications.\nUse /start to get your chat ID and configure it in Bitwatch.",
-          { parse_mode: "HTML" }
-        );
+  // Handle all other messages
+  bot.on("message", async (msg) => {
+    if (msg.text === "/start") return; // Already handled
+    const chatId = msg.chat.id;
+    if (chatId !== memory.db.telegram.chatId) {
+      const result = await bot.sendMessage(
+        chatId,
+        "❌ This chat is not configured to receive notifications.\nUse /start to get your chat ID and configure it in Bitwatch.",
+        { parse_mode: "HTML" }
+      );
+      if (!result) {
+        logger.error("Failed to send configuration message");
+      }
+    }
+  });
+
+  // Only send test message when saving configuration
+  if (sendTestMessage) {
+    sendMessage(
+      "✅ Bitwatch Telegram notifications configured successfully!\n\nYou will receive notifications here when address balances change."
+    ).then((success) => {
+      if (success) {
+        logger.success("Telegram bot initialized and test message sent");
+      } else {
+        logger.error("Failed to send test message");
+        bot = null; // Reset bot if test message fails
       }
     });
-
-    // Only send test message when saving configuration
-    if (sendTestMessage) {
-      sendMessage(
-        "✅ Bitwatch Telegram notifications configured successfully!\n\nYou will receive notifications here when address balances change."
-      )
-        .then(() => {
-          logger.success("Telegram bot initialized and test message sent");
-        })
-        .catch((error) => {
-          logger.error("Failed to send test message: " + error.message);
-          bot = null; // Reset bot if test message fails
-        });
-    } else {
-      logger.success("Telegram bot initialized");
-    }
-  } catch (error) {
-    logger.error("Failed to initialize Telegram bot: " + error.message);
-    bot = null;
+  } else {
+    logger.success("Telegram bot initialized");
   }
+
+  return bot !== null;
 };
 
 const sendMessage = async (message) => {
-  if (!bot || !memory.db.telegram?.chatId) return;
+  if (!bot || !memory.db.telegram?.chatId) return false;
 
-  try {
-    await bot.sendMessage(memory.db.telegram.chatId, message, {
-      parse_mode: "HTML",
-    });
-  } catch (error) {
-    logger.error("Failed to send Telegram message: " + error.message);
+  const result = await bot.sendMessage(memory.db.telegram.chatId, message, {
+    parse_mode: "HTML",
+  });
+
+  if (!result) {
+    logger.error("Failed to send Telegram message");
+    return false;
   }
+
+  return true;
 };
 
 const notifyBalanceChange = async (address, changes, collection, name) => {
-  if (!bot || !memory.db.telegram?.chatId) return;
+  if (!bot || !memory.db.telegram?.chatId) return false;
 
   const changeMessages = [];
   if (changes.chain_in) changeMessages.push(`Chain In: ${changes.chain_in}`);
@@ -96,7 +104,7 @@ const notifyBalanceChange = async (address, changes, collection, name) => {
   if (changes.mempool_out)
     changeMessages.push(`Mempool Out: ${changes.mempool_out}`);
 
-  if (changeMessages.length === 0) return;
+  if (changeMessages.length === 0) return true;
 
   const message = `
 🔔 <b>Balance Change Detected</b>
@@ -104,7 +112,7 @@ ${collection}/${name} (<code>${address}</code>)
 ${changeMessages.join("\n")}
 `;
 
-  await sendMessage(message);
+  return await sendMessage(message);
 };
 
 export default {

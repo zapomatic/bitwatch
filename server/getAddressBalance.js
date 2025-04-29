@@ -29,10 +29,6 @@ const attemptCall = async (addr) => {
     const currentOpt = { ...options };
     currentOpt.path = `${options.path}/${addr}`;
     
-    // Build curl command for logging
-    // const headers = Object.entries(currentOpt.headers)
-    //   .map(([key, value]) => `-H '${key}: ${value}'`)
-    //   .join(' ');
     const fullUrl = `${api.protocol}//${api.hostname}${api.port ? `:${api.port}` : ''}${currentOpt.path}`;
     logger.network(`Fetching balance: ${fullUrl}`);
     
@@ -48,22 +44,28 @@ const attemptCall = async (addr) => {
         res.on("end", function () {
           if (statusCode !== 200) {
             logger.error(`API error for ${addr}: ${statusCode} ${body}`);
-            return reject({ error: true, message: `API error: ${statusCode} ${body}` });
+            reject({ error: true, message: `API error: ${statusCode} ${body}` });
+            return;
           }
-          try {
-            const json = JSON.parse(body);
-            json.actual = {
-              chain_in: json.chain_stats.funded_txo_sum||0,
-              chain_out: json.chain_stats.spent_txo_sum||0,
-              mempool_in: json.mempool_stats.funded_txo_sum || 0,
-              mempool_out: json.mempool_stats.spent_txo_sum || 0,
-            };
-            logger.success(`Balance ${addr}: chain (in=${json.actual.chain_in}, out=${json.actual.chain_out}), mempool (in=${json.actual.mempool_in}, out=${json.actual.mempool_out})`);
-            resolve(json);
-          } catch (error) {
-            logger.error(`JSON parse error for ${addr}: ${error.message}`);
-            reject({ error: true, message: `JSON parse error: ${error.message}` });
+
+          const json = JSON.parse(body);
+          if (!json) {
+            logger.error(`Failed to parse JSON response for ${addr}`);
+            reject({ error: true, message: "Invalid JSON response" });
+            return;
           }
+
+          const result = {
+            actual: {
+              chain_in: json.chain_stats?.funded_txo_sum || 0,
+              chain_out: json.chain_stats?.spent_txo_sum || 0,
+              mempool_in: json.mempool_stats?.funded_txo_sum || 0,
+              mempool_out: json.mempool_stats?.spent_txo_sum || 0,
+            }
+          };
+
+          logger.success(`Balance ${addr}: chain (in=${result.actual.chain_in}, out=${result.actual.chain_out}), mempool (in=${result.actual.mempool_in}, out=${result.actual.mempool_out})`);
+          resolve(result);
         });
       }
     );
@@ -87,8 +89,8 @@ const getAddressBalance = async (addr, onRateLimit) => {
   const baseDelay = 2000; // Start with 2 seconds
 
   while (retryCount < maxRetries) {
-    try {
-      const result = await attemptCall(addr);
+    const result = await attemptCall(addr);
+    if (!result.error) {
       // If we got here after retries, notify that API is good again
       if (retryCount > 0) {
         socketIO.io.emit("updateState", { 
@@ -97,32 +99,32 @@ const getAddressBalance = async (addr, onRateLimit) => {
         });
       }
       return result;
-    } catch (error) {
-      // Check if it's a rate limit error
-      if (error.message?.includes('429') || error.message?.includes('Too Many Requests')) {
-        retryCount++;
-        if (retryCount === maxRetries) {
-          logger.error(`Rate limit exceeded for ${addr} after ${maxRetries} retries`);
-          return { error: true, message: "Rate limit exceeded. Please try again later." };
-        }
-        
-        // Calculate exponential backoff delay
-        const delay = baseDelay * Math.pow(2, retryCount - 1);
-        logger.warning(`Rate limited for ${addr}, retrying in ${delay}ms (attempt ${retryCount}/${maxRetries})`);
+    }
 
-        // Notify about rate limit through callback if provided
-        if (onRateLimit) {
-          onRateLimit(delay, retryCount, maxRetries);
-        }
-
-        await new Promise(resolve => setTimeout(resolve, delay));
-        continue;
+    // Check if it's a rate limit error
+    if (result.message?.includes('429') || result.message?.includes('Too Many Requests')) {
+      retryCount++;
+      if (retryCount === maxRetries) {
+        logger.error(`Rate limit exceeded for ${addr} after ${maxRetries} retries`);
+        return { error: true, message: "Rate limit exceeded. Please try again later." };
       }
       
-      // For other errors, return immediately
-      logger.error(`Failed to fetch balance for ${addr}: ${error.message}`);
-      return { error: true, message: error.message };
+      // Calculate exponential backoff delay
+      const delay = baseDelay * Math.pow(2, retryCount - 1);
+      logger.warning(`Rate limited for ${addr}, retrying in ${delay}ms (attempt ${retryCount}/${maxRetries})`);
+
+      // Notify about rate limit through callback if provided
+      if (onRateLimit) {
+        onRateLimit(delay, retryCount, maxRetries);
+      }
+
+      await new Promise(resolve => setTimeout(resolve, delay));
+      continue;
     }
+    
+    // For other errors, return immediately
+    logger.error(`Failed to fetch balance for ${addr}: ${result.message}`);
+    return { error: true, message: result.message };
   }
   
   return { error: true, message: "Max retries exceeded" };

@@ -8,38 +8,14 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+import { defaultExtendedKeyForm } from "./defaults";
 
 const ExtendedKeyDialog = ({ open, onClose, onSave, extendedKey }) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    key: "",
-    gapLimit: 2,
-    initialAddresses: 10,
-    derivationPath: "m/0",
-    skip: 0,
-  });
+  const [formData, setFormData] = useState(defaultExtendedKeyForm);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (extendedKey) {
-      setFormData({
-        name: extendedKey.name || "",
-        key: extendedKey.key || "",
-        gapLimit: extendedKey.gapLimit || 2,
-        initialAddresses: extendedKey.initialAddresses || 10,
-        derivationPath: extendedKey.derivationPath || "m/0",
-        skip: extendedKey.skip || 0,
-      });
-    } else {
-      setFormData({
-        name: "",
-        key: "",
-        gapLimit: 2,
-        initialAddresses: 10,
-        derivationPath: "m/0",
-        skip: 0,
-      });
-    }
+    setFormData({ ...defaultExtendedKeyForm, ...(extendedKey || {}) });
   }, [extendedKey, open]);
 
   const handleSave = () => {

@@ -15,8 +15,9 @@ const updateAddressAndEmit = (addr, balance) => {
   let index = collection.addresses.findIndex((a) => a.address === addr.address);
   let addressArray = collection.addresses;
   let isExtendedKeyAddress = false;
+  let isDescriptorAddress = false;
 
-  // If not found in regular addresses, look in extended keys
+  // If not found in regular addresses, check extended keys
   if (index === -1 && collection.extendedKeys) {
     for (let i = 0; i < collection.extendedKeys.length; i++) {
       const extendedKey = collection.extendedKeys[i];
@@ -26,6 +27,19 @@ const updateAddressAndEmit = (addr, balance) => {
       if (index !== -1) {
         addressArray = extendedKey.addresses;
         isExtendedKeyAddress = true;
+        break;
+      }
+    }
+  }
+
+  // If not found in extended keys, check descriptors
+  if (index === -1 && collection.descriptors) {
+    for (let i = 0; i < collection.descriptors.length; i++) {
+      const descriptor = collection.descriptors[i];
+      index = descriptor.addresses.findIndex((a) => a.address === addr.address);
+      if (index !== -1) {
+        addressArray = descriptor.addresses;
+        isDescriptorAddress = true;
         break;
       }
     }
@@ -70,6 +84,10 @@ const updateAddressAndEmit = (addr, balance) => {
       (col.extendedKeys &&
         col.extendedKeys.some((extKey) =>
           extKey.addresses.some((addr) => addr.actual !== null)
+        )) ||
+      (col.descriptors &&
+        col.descriptors.some((desc) =>
+          desc.addresses.some((addr) => addr.actual !== null)
         ))
   );
   const hasErrors = Object.values(collections).some(
@@ -78,6 +96,10 @@ const updateAddressAndEmit = (addr, balance) => {
       (col.extendedKeys &&
         col.extendedKeys.some((extKey) =>
           extKey.addresses.some((addr) => addr.error)
+        )) ||
+      (col.descriptors &&
+        col.descriptors.some((desc) =>
+          desc.addresses.some((addr) => addr.error)
         ))
   );
   const hasLoading = Object.values(collections).some(
@@ -86,6 +108,10 @@ const updateAddressAndEmit = (addr, balance) => {
       (col.extendedKeys &&
         col.extendedKeys.some((extKey) =>
           extKey.addresses.some((addr) => addr.actual === null && !addr.error)
+        )) ||
+      (col.descriptors &&
+        col.descriptors.some((desc) =>
+          desc.addresses.some((addr) => addr.actual === null && !addr.error)
         ))
   );
 
@@ -135,6 +161,18 @@ const engine = async () => {
         });
       });
     }
+
+    // Add descriptor addresses
+    if (collection.descriptors) {
+      collection.descriptors.forEach((descriptor) => {
+        descriptor.addresses.forEach((addr) => {
+          allAddresses.push({
+            ...addr,
+            collection: collectionName,
+          });
+        });
+      });
+    }
   }
 
   // Set API state to CHECKING when starting a new check
@@ -150,34 +188,26 @@ const engine = async () => {
 
   // Process addresses in parallel with a limit and delay
   const queue = allAddresses.map((addr) => async () => {
-    try {
-      const balance = await getAddressBalance(addr.address);
-      if (balance.error) {
-        logger.error(
-          `Failed to fetch balance for ${addr.address}: ${balance.message}`
-        );
-        updateAddressAndEmit(addr, {
-          actual: null,
-          error: true,
-          errorMessage: balance.message,
-        });
-        return;
-      }
-      updateAddressAndEmit(addr, {
-        actual: balance.actual,
-        error: false,
-        errorMessage: null,
-      });
-    } catch (error) {
+    const balance = await getAddressBalance(addr.address);
+
+    if (balance.error) {
       logger.error(
-        `Failed to fetch balance for ${addr.address}: ${error.message}`
+        `Failed to fetch balance for ${addr.address}: ${balance.message}`
       );
       updateAddressAndEmit(addr, {
         actual: null,
         error: true,
-        errorMessage: error.message,
+        errorMessage: balance.message,
       });
+      return;
     }
+
+    updateAddressAndEmit(addr, {
+      actual: balance.actual,
+      error: false,
+      errorMessage: null,
+    });
+
     // Add delay between API calls
     await new Promise((resolve) => setTimeout(resolve, memory.db.apiDelay));
   });

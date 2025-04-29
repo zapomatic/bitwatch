@@ -23,6 +23,8 @@
 - Set and manage balance expectations
 - Telegram notifications for balance changes
 - Option to use your own local node for privacy
+- Support for descriptors such as the following:
+  - `wsh(multi(k,[path]xpub1,[path]xpub2,...))`
 
 ## Why?
 

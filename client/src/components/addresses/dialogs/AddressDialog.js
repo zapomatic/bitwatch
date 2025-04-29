@@ -16,61 +16,13 @@ import {
 } from "@mui/material";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { defaultAddressForm } from "./defaults";
 
 const AddressDialog = ({ open, onClose, address, onSave }) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    address: "",
-    expect: {
-      chain_in: 0,
-      chain_out: 0,
-      mempool_in: 0,
-      mempool_out: 0,
-    },
-    monitor: {
-      chain_in: "auto-accept",
-      chain_out: "alert",
-      mempool_in: "auto-accept",
-      mempool_out: "alert",
-    },
-  });
+  const [formData, setFormData] = useState(defaultAddressForm);
 
   useEffect(() => {
-    if (address) {
-      setFormData({
-        name: address.name || "",
-        address: address.address || "",
-        expect: {
-          chain_in: address.expect?.chain_in || 0,
-          chain_out: address.expect?.chain_out || 0,
-          mempool_in: address.expect?.mempool_in || 0,
-          mempool_out: address.expect?.mempool_out || 0,
-        },
-        monitor: address.monitor || {
-          chain_in: "auto-accept",
-          chain_out: "alert",
-          mempool_in: "auto-accept",
-          mempool_out: "alert",
-        },
-      });
-    } else {
-      setFormData({
-        name: "",
-        address: "",
-        expect: {
-          chain_in: 0,
-          chain_out: 0,
-          mempool_in: 0,
-          mempool_out: 0,
-        },
-        monitor: {
-          chain_in: "auto-accept",
-          chain_out: "alert",
-          mempool_in: "auto-accept",
-          mempool_out: "alert",
-        },
-      });
-    }
+    setFormData({ ...defaultAddressForm, ...(address || {}) });
   }, [address, open]);
 
   const handleSave = () => {

@@ -40,6 +40,10 @@ import IconButtonStyled from "./components/IconButtonStyled";
 import ExtendedKeyDialog from "./components/addresses/dialogs/ExtendedKeyDialog";
 import { formatSatoshis } from "./utils/format";
 import AddressDialog from "./components/addresses/dialogs/AddressDialog";
+import DescriptorDialog from "./components/addresses/dialogs/DescriptorDialog";
+import KeyIcon from "@mui/icons-material/Key";
+import VpnKeyIcon from "@mui/icons-material/VpnKey";
+import GroupsIcon from "@mui/icons-material/Groups";
 
 const BalanceCell = ({
   displayBtc,
@@ -159,7 +163,7 @@ const BalanceCell = ({
 const AddressCell = ({ address }) => {
   const [copied, setCopied] = useState(false);
 
-  const handleCopy = async (e) => {
+  const handleCopy = (e) => {
     e.preventDefault();
     e.stopPropagation();
 
@@ -169,18 +173,14 @@ const AddressCell = ({ address }) => {
     textarea.style.opacity = "0";
     document.body.appendChild(textarea);
 
-    try {
-      textarea.select();
-      const successful = document.execCommand("copy");
-      if (successful) {
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
-      }
-    } catch (err) {
-      console.error("Failed to copy address:", err);
-    } finally {
-      document.body.removeChild(textarea);
+    textarea.select();
+    const successful = document.execCommand("copy");
+    if (successful) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
     }
+
+    document.body.removeChild(textarea);
   };
 
   return (
@@ -209,12 +209,13 @@ const AddressCell = ({ address }) => {
 };
 
 const calculateCollectionTotals = (collection) => {
-  // Get all addresses from both sources
+  // Get all addresses from all sources
   const allAddresses = [
     ...(collection.addresses || []),
     ...(collection.extendedKeys || []).flatMap(
       (extKey) => extKey.addresses || []
     ),
+    ...(collection.descriptors || []).flatMap((desc) => desc.addresses || []),
   ];
 
   const totals = allAddresses.reduce(
@@ -480,12 +481,129 @@ const ExtendedKeyInfo = ({
   );
 };
 
+const DescriptorInfo = ({
+  descriptor,
+  onEdit,
+  onDelete,
+  collection,
+  onEditAddress,
+  onSaveExpected,
+  displayBtc,
+}) => {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  const handleExpandClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsExpanded(!isExpanded);
+  };
+
+  const handleEditClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onEdit(descriptor);
+  };
+
+  const handleDeleteClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onDelete(descriptor);
+  };
+
+  return (
+    <>
+      <TableRow
+        className="crystal-table-row address-row"
+        sx={{ "& > *": { borderBottom: "unset" } }}
+      >
+        <TableCell>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            <IconButton size="small" onClick={handleExpandClick} sx={{ mr: 1 }}>
+              {isExpanded ? <ExpandLess /> : <ExpandMore />}
+            </IconButton>
+            <Typography variant="body2">{descriptor.name}</Typography>
+          </Box>
+        </TableCell>
+        <TableCell>
+          <Typography variant="body2">
+            {descriptor.type} ({descriptor.scriptType})
+          </Typography>
+        </TableCell>
+        <TableCell>
+          <Typography variant="body2">
+            {descriptor.requiredSignatures} of {descriptor.totalSignatures}
+          </Typography>
+        </TableCell>
+        <TableCell>
+          <Typography variant="body2">{descriptor.gapLimit}</Typography>
+        </TableCell>
+        <TableCell>
+          <Typography variant="body2">{descriptor.skip || 0}</Typography>
+        </TableCell>
+        <TableCell>
+          <Typography variant="body2">
+            {descriptor.initialAddresses || 10}
+          </Typography>
+        </TableCell>
+        <TableCell>
+          <Typography variant="body2">{descriptor.addresses.length}</Typography>
+        </TableCell>
+        <TableCell>
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <IconButtonStyled
+              onClick={handleEditClick}
+              icon={<EditIcon />}
+              title="Edit Descriptor"
+            />
+            <IconButtonStyled
+              onClick={handleDeleteClick}
+              icon={<DeleteIcon />}
+              title="Delete Descriptor"
+            />
+          </Box>
+        </TableCell>
+      </TableRow>
+      <TableRow>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
+          <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+            <Table size="small" className="crystal-table address-subtable">
+              <TableHead>
+                <TableRow>
+                  <TableCell>Name</TableCell>
+                  <TableCell>Address</TableCell>
+                  <TableCell>On-Chain</TableCell>
+                  <TableCell>Mempool</TableCell>
+                  <TableCell>Actions</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {descriptor.addresses.map((address, index) => (
+                  <AddressRow
+                    key={index}
+                    address={address}
+                    collection={collection}
+                    onEditAddress={onEditAddress}
+                    onSaveExpected={onSaveExpected}
+                    onDelete={() => onDelete({ collection, address })}
+                    displayBtc={displayBtc}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </Collapse>
+        </TableCell>
+      </TableRow>
+    </>
+  );
+};
+
 const CollectionRow = ({
   collection,
   onSaveExpected,
   onDelete,
   onAddAddress,
   onAddExtendedKey,
+  onAddDescriptor,
   onRenameCollection,
   onEditAddress,
   autoShowAddForm,
@@ -498,6 +616,8 @@ const CollectionRow = ({
   const [editedName, setEditedName] = useState(collection.name);
   const [newAddress, setNewAddress] = useState(null);
   const [showExtendedKeyDialog, setShowExtendedKeyDialog] = useState(false);
+  const [editingDescriptor, setEditingDescriptor] = useState(null);
+  const [showDescriptorDialog, setShowDescriptorDialog] = useState(false);
 
   // Calculate totals from addresses
   const totals = calculateCollectionTotals(collection);
@@ -618,6 +738,93 @@ const CollectionRow = ({
     [collection.name, onDelete]
   );
 
+  const handleEditDescriptor = useCallback(
+    (descriptor) => {
+      if (descriptor) {
+        // If we have a descriptor, we're opening the dialog for editing
+        setEditingDescriptor(descriptor);
+        setShowDescriptorDialog(true);
+      } else {
+        // If no descriptor is provided, we're saving the form data
+        const dataToSave = {
+          collection: collection.name,
+          ...editingDescriptor,
+          descriptorIndex: collection.descriptors.indexOf(editingDescriptor),
+        };
+
+        socketIO.emit("editDescriptor", dataToSave, (response) => {
+          if (response.error) {
+            setNotification({
+              open: true,
+              message: `Error editing descriptor: ${response.error}`,
+              severity: "error",
+            });
+          } else {
+            setNotification({
+              open: true,
+              message: "Descriptor updated successfully",
+              severity: "success",
+            });
+            setShowDescriptorDialog(false);
+          }
+        });
+      }
+    },
+    [collection, editingDescriptor, setNotification]
+  );
+
+  const handleSaveDescriptor = useCallback(
+    (formData) => {
+      if (editingDescriptor) {
+        // Send the edit request directly
+        socketIO.emit(
+          "editDescriptor",
+          {
+            ...formData,
+            collection: collection.name,
+            descriptorIndex: collection.descriptors.indexOf(editingDescriptor),
+          },
+          (response) => {
+            if (response.error) {
+              setNotification({
+                open: true,
+                message: `Error editing descriptor: ${response.error}`,
+                severity: "error",
+              });
+            } else {
+              setNotification({
+                open: true,
+                message: "Descriptor updated successfully",
+                severity: "success",
+              });
+              setEditingDescriptor(null);
+              setShowDescriptorDialog(false);
+            }
+          }
+        );
+      } else {
+        onAddDescriptor(collection.name, formData);
+      }
+    },
+    [
+      collection.name,
+      collection.descriptors,
+      editingDescriptor,
+      setNotification,
+      onAddDescriptor,
+    ]
+  );
+
+  const handleDeleteDescriptor = useCallback(
+    (descriptor) => {
+      onDelete({
+        collection: collection.name,
+        descriptor: descriptor,
+      });
+    },
+    [collection.name, onDelete]
+  );
+
   return (
     <>
       <TableRow className="crystal-table-row collection-row">
@@ -718,18 +925,47 @@ const CollectionRow = ({
               <TableHead>
                 <TableRow>
                   <TableCell>Name</TableCell>
-                  <TableCell>xPub/yPub/zPub</TableCell>
-                  <TableCell>Derivation Path</TableCell>
+                  <TableCell>Type</TableCell>
+                  <TableCell>Details</TableCell>
                   <TableCell>Gap Limit</TableCell>
                   <TableCell>Skip</TableCell>
                   <TableCell>Initial</TableCell>
                   <TableCell>Addresses</TableCell>
                   <TableCell>
-                    <IconButtonStyled
-                      onClick={() => setShowExtendedKeyDialog(true)}
-                      icon={<AddIcon />}
-                      title="Add Extended Key"
-                    />
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      <Tooltip title="Add Extended Key (xpub/ypub/zpub)">
+                        <span>
+                          <IconButtonStyled
+                            onClick={() => setShowExtendedKeyDialog(true)}
+                            icon={<KeyIcon />}
+                            sx={{
+                              background:
+                                "linear-gradient(135deg, var(--theme-primary), var(--theme-secondary))",
+                              "&:hover": {
+                                background:
+                                  "linear-gradient(135deg, var(--theme-secondary), var(--theme-primary))",
+                              },
+                            }}
+                          />
+                        </span>
+                      </Tooltip>
+                      <Tooltip title="Add Output Descriptor (multi-sig)">
+                        <span>
+                          <IconButtonStyled
+                            onClick={() => setShowDescriptorDialog(true)}
+                            icon={<GroupsIcon />}
+                            sx={{
+                              background:
+                                "linear-gradient(135deg, var(--theme-warning), var(--theme-success))",
+                              "&:hover": {
+                                background:
+                                  "linear-gradient(135deg, var(--theme-success), var(--theme-warning))",
+                              },
+                            }}
+                          />
+                        </span>
+                      </Tooltip>
+                    </Box>
                   </TableCell>
                 </TableRow>
               </TableHead>
@@ -746,6 +982,18 @@ const CollectionRow = ({
                     displayBtc={displayBtc}
                   />
                 ))}
+                {collection.descriptors?.map((descriptor, index) => (
+                  <DescriptorInfo
+                    key={index}
+                    descriptor={descriptor}
+                    onEdit={handleEditDescriptor}
+                    onDelete={handleDeleteDescriptor}
+                    collection={collection}
+                    onEditAddress={onEditAddress}
+                    onSaveExpected={onSaveExpected}
+                    displayBtc={displayBtc}
+                  />
+                ))}
               </TableBody>
             </Table>
             <Table size="small" className="crystal-table address-subtable">
@@ -756,19 +1004,24 @@ const CollectionRow = ({
                   <TableCell>On-Chain</TableCell>
                   <TableCell>Mempool</TableCell>
                   <TableCell>
-                    <IconButtonStyled
-                      size="small"
-                      onClick={handleAddClick}
-                      icon={<AddIcon />}
-                      title="Add Address"
-                    />
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      <Tooltip title="Add Single Address">
+                        <span>
+                          <IconButtonStyled
+                            size="small"
+                            onClick={handleAddClick}
+                            icon={<VpnKeyIcon />}
+                          />
+                        </span>
+                      </Tooltip>
+                    </Box>
                   </TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {newAddress && (
                   <TableRow className="crystal-table-row">
-                    <TableCell colSpan={4} className="crystal-table-cell">
+                    <TableCell colSpan={8} className="crystal-table-cell">
                       <Box className="crystal-flex crystal-flex-start crystal-gap-2">
                         <Box
                           className="crystal-flex crystal-flex-start crystal-gap-1"
@@ -858,6 +1111,15 @@ const CollectionRow = ({
         onSave={handleSaveExtendedKey}
         extendedKey={editingExtendedKey}
       />
+      <DescriptorDialog
+        open={showDescriptorDialog}
+        onClose={() => {
+          setShowDescriptorDialog(false);
+          setEditingDescriptor(null);
+        }}
+        onSave={handleSaveDescriptor}
+        descriptor={editingDescriptor}
+      />
     </>
   );
 };
@@ -871,6 +1133,7 @@ export default function Addresses() {
     address: null,
     collection: null,
     extendedKey: null,
+    descriptor: null,
     message: "",
   });
   const [displayBtc, setDisplayBtc] = useState(true);
@@ -1052,39 +1315,54 @@ export default function Addresses() {
     });
   }, []);
 
-  const handleDelete = useCallback(({ address, collection, extendedKey }) => {
-    if (address) {
-      setDeleteDialog({
-        open: true,
-        address,
-        collection,
-        extendedKey: null,
-        message: "Remove this address from the collection?",
-      });
-    } else if (extendedKey) {
-      setDeleteDialog({
-        open: true,
-        collection,
-        address: null,
-        extendedKey,
-        message: "Delete this extended key and all its derived addresses?",
-      });
-    } else {
-      setDeleteDialog({
-        open: true,
-        collection,
-        address: null,
-        extendedKey: null,
-        message: "Delete this collection and all its addresses?",
-      });
-    }
-  }, []);
+  const handleDelete = useCallback(
+    ({ address, collection, extendedKey, descriptor }) => {
+      if (address) {
+        setDeleteDialog({
+          open: true,
+          address,
+          collection,
+          extendedKey: null,
+          descriptor: null,
+          message: "Remove this address from the collection?",
+        });
+      } else if (extendedKey) {
+        setDeleteDialog({
+          open: true,
+          collection,
+          address: null,
+          extendedKey,
+          descriptor: null,
+          message: "Delete this extended key and all its derived addresses?",
+        });
+      } else if (descriptor) {
+        setDeleteDialog({
+          open: true,
+          collection,
+          address: null,
+          extendedKey: null,
+          descriptor,
+          message: "Delete this descriptor and all its derived addresses?",
+        });
+      } else {
+        setDeleteDialog({
+          open: true,
+          collection,
+          address: null,
+          extendedKey: null,
+          descriptor: null,
+          message: "Delete this collection and all its addresses?",
+        });
+      }
+    },
+    []
+  );
 
   const confirmDelete = useCallback(() => {
-    const { address, collection, extendedKey } = deleteDialog;
+    const { address, collection, extendedKey, descriptor } = deleteDialog;
     socketIO.emit(
       "delete",
-      { address, collection, extendedKey },
+      { address, collection, extendedKey, descriptor },
       (response) => {
         if (response.error) {
           setNotification({
@@ -1098,6 +1376,7 @@ export default function Addresses() {
           address: null,
           collection: null,
           extendedKey: null,
+          descriptor: null,
           message: "",
         });
       }
@@ -1157,69 +1436,77 @@ export default function Addresses() {
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      try {
-        const data = JSON.parse(e.target.result);
-        if (!data.collections || typeof data.collections !== "object") {
+      const parseResult = JSON.parse(e.target.result);
+
+      if (
+        !parseResult ||
+        !parseResult.collections ||
+        typeof parseResult.collections !== "object"
+      ) {
+        setImportDialog({
+          open: true,
+          file: null,
+          error: "Invalid file format. Expected a collections object.",
+        });
+        return;
+      }
+
+      // Validate the structure of each collection
+      for (const [name, collection] of Object.entries(
+        parseResult.collections
+      )) {
+        if (!collection.addresses || !Array.isArray(collection.addresses)) {
           setImportDialog({
             open: true,
             file: null,
-            error: "Invalid file format. Expected a collections object.",
+            error: `Invalid collection structure for ${name}`,
           });
           return;
         }
-
-        // Validate the structure of each collection
-        for (const [name, collection] of Object.entries(data.collections)) {
-          if (!collection.addresses || !Array.isArray(collection.addresses)) {
+        for (const addr of collection.addresses) {
+          if (!addr.address || !addr.name || !addr.expect) {
             setImportDialog({
               open: true,
               file: null,
-              error: `Invalid collection structure for ${name}`,
+              error: `Invalid address structure in collection ${name}`,
             });
             return;
           }
-          for (const addr of collection.addresses) {
-            if (!addr.address || !addr.name || !addr.expect) {
+        }
+        if (collection.extendedKeys) {
+          for (const extKey of collection.extendedKeys) {
+            if (
+              !extKey.key ||
+              !extKey.name ||
+              !extKey.derivationPath ||
+              !extKey.addresses
+            ) {
               setImportDialog({
                 open: true,
                 file: null,
-                error: `Invalid address structure in collection ${name}`,
+                error: `Invalid extended key structure in collection ${name}`,
               });
               return;
             }
           }
-          if (collection.extendedKeys) {
-            for (const extKey of collection.extendedKeys) {
-              if (
-                !extKey.key ||
-                !extKey.name ||
-                !extKey.derivationPath ||
-                !extKey.addresses
-              ) {
-                setImportDialog({
-                  open: true,
-                  file: null,
-                  error: `Invalid extended key structure in collection ${name}`,
-                });
-                return;
-              }
-            }
-          }
         }
-
-        setImportDialog({
-          open: true,
-          file: data,
-          error: null,
-        });
-      } catch (err) {
-        setImportDialog({
-          open: true,
-          file: null,
-          error: "Failed to parse JSON file.",
-        });
       }
+
+      setImportDialog({
+        open: true,
+        file: parseResult,
+        error: null,
+      });
     };
+
+    reader.onerror = () => {
+      setImportDialog({
+        open: true,
+        file: null,
+        error: "Failed to read file.",
+      });
+    };
+
     reader.readAsText(file);
   };
 
@@ -1301,6 +1588,35 @@ export default function Addresses() {
           setNotification({
             open: true,
             message: "Extended key added successfully",
+            severity: "success",
+          });
+        }
+      }
+    );
+  };
+
+  const handleAddDescriptor = (collection, data) => {
+    socketIO.emit(
+      "addDescriptor",
+      {
+        collection,
+        name: data.name,
+        descriptor: data.descriptor,
+        gapLimit: parseInt(data.gapLimit) || 2,
+        initialAddresses: parseInt(data.initialAddresses) || 10,
+        skip: parseInt(data.skip) || 0,
+      },
+      (response) => {
+        if (response.error) {
+          setNotification({
+            open: true,
+            message: `Error adding descriptor: ${response.error}`,
+            severity: "error",
+          });
+        } else {
+          setNotification({
+            open: true,
+            message: "Descriptor added successfully",
             severity: "success",
           });
         }
@@ -1585,6 +1901,7 @@ export default function Addresses() {
                   onDelete={handleDelete}
                   onAddAddress={handleAddAddress}
                   onAddExtendedKey={handleAddExtendedKey}
+                  onAddDescriptor={handleAddDescriptor}
                   onRenameCollection={handleRenameCollection}
                   onEditAddress={handleEditAddress}
                   autoShowAddForm={name === justCreatedCollection}
@@ -1605,6 +1922,7 @@ export default function Addresses() {
               address: null,
               collection: null,
               extendedKey: null,
+              descriptor: null,
               message: "",
             })
           }
@@ -1631,6 +1949,7 @@ export default function Addresses() {
                   address: null,
                   collection: null,
                   extendedKey: null,
+                  descriptor: null,
                   message: "",
                 })
               }

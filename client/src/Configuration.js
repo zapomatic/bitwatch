@@ -1,5 +1,5 @@
 import socketIO from "./io";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
@@ -7,6 +7,7 @@ import Title from "./Title";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import "./theme.css";
+import { FormControlLabel, Switch } from "@mui/material";
 
 const formatInterval = (ms) => {
   if (!ms) return "";
@@ -29,6 +30,7 @@ const DEFAULT_CONFIG = {
   apiParallelLimit: 1,
   interval: 600000,
   apiDelay: 2000,
+  debugLogging: false,
 };
 
 const Configs = {
@@ -55,11 +57,21 @@ const Configs = {
     help: "Delay between API requests to avoid rate limiting. This is used when we add an extended pub key and initially scan for balances and when we poll the API for changes on the interval. We will additionally backoff and retry if we get limited.",
     default: DEFAULT_CONFIG.apiDelay,
   },
+  debugLogging: {
+    label: "Enable Debug Logging",
+    help: "Show detailed debug logs in the server console",
+    default: DEFAULT_CONFIG.debugLogging,
+  },
 };
 
 function Config() {
-  const [config, setConfig] = useState({});
-  const [saving, setSaving] = useState(false);
+  const [config, setConfig] = useState({
+    api: "",
+    apiDelay: 2000,
+    apiParallelLimit: 1,
+    interval: 600000,
+    debugLogging: false,
+  });
   const [notification, setNotification] = useState({
     open: false,
     message: "",
@@ -82,31 +94,95 @@ function Config() {
     setNotification({ ...notification, open: false });
   };
 
-  const saveConfig = useCallback(() => {
-    setSaving(true);
-    socketIO.emit("saveConfig", config, (response) => {
-      if (response) {
-        // Merge response with defaults for any missing values
-        const mergedConfig = Object.keys(Configs).reduce((acc, key) => {
-          acc[key] = response[key] ?? Configs[key].default;
-          return acc;
-        }, {});
-        setConfig(mergedConfig);
-        setNotification({
-          open: true,
-          message: "Configuration saved successfully!",
-          severity: "success",
-        });
-      } else {
-        setNotification({
-          open: true,
-          message: "Failed to save configuration. Please try again.",
-          severity: "error",
-        });
+  const handleSave = () => {
+    socketIO.emit(
+      "saveConfig",
+      {
+        api: config.api,
+        apiDelay: parseInt(config.apiDelay),
+        apiParallelLimit: parseInt(config.apiParallelLimit),
+        interval: parseInt(config.interval),
+        debugLogging: config.debugLogging,
+      },
+      (response) => {
+        if (response.error) {
+          alert(response.error);
+        }
       }
-      setSaving(false);
-    });
-  }, [config]);
+    );
+  };
+
+  const renderConfigField = (key) => {
+    if (key === "debugLogging") {
+      return (
+        <div
+          className="data-item"
+          style={{
+            display: "flex",
+            alignItems: "flex-start",
+            flexDirection: "column",
+          }}
+        >
+          <FormControlLabel
+            control={
+              <Switch
+                checked={config[key] ?? Configs[key].default}
+                onChange={(e) =>
+                  setConfig({ ...config, [key]: e.target.checked })
+                }
+              />
+            }
+            label={Configs[key].label}
+          />
+          {Configs[key].help && (
+            <Typography
+              variant="caption"
+              sx={{
+                color: "var(--theme-accent)",
+                marginTop: "0.25rem",
+                display: "block",
+                fontSize: "0.75rem",
+              }}
+            >
+              {typeof Configs[key].help === "function"
+                ? Configs[key].help(config[key] ?? Configs[key].default)
+                : Configs[key].help}
+            </Typography>
+          )}
+        </div>
+      );
+    }
+
+    return (
+      <div className="data-item">
+        <Typography component="label" htmlFor={key} className="crystal-label">
+          {Configs[key].label}
+        </Typography>
+        <input
+          id={key}
+          className="crystal-input"
+          value={config[key] ?? Configs[key].default}
+          onChange={(e) => setConfig({ ...config, [key]: e.target.value })}
+          style={{ width: "100%" }}
+        />
+        {Configs[key].help && (
+          <Typography
+            variant="caption"
+            sx={{
+              color: "var(--theme-accent)",
+              marginTop: "0.25rem",
+              display: "block",
+              fontSize: "0.75rem",
+            }}
+          >
+            {typeof Configs[key].help === "function"
+              ? Configs[key].help(config[key] ?? Configs[key].default)
+              : Configs[key].help}
+          </Typography>
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -162,48 +238,15 @@ function Config() {
         <Grid container spacing={3}>
           {Object.keys(Configs).map((key) => (
             <Grid item xs={12} sm={6} key={key}>
-              <div className="data-item">
-                <Typography
-                  component="label"
-                  htmlFor={key}
-                  className="crystal-label"
-                >
-                  {Configs[key].label}
-                </Typography>
-                <input
-                  id={key}
-                  className="crystal-input"
-                  value={config[key] ?? Configs[key].default}
-                  onChange={(e) =>
-                    setConfig({ ...config, [key]: e.target.value })
-                  }
-                  style={{ width: "100%" }}
-                />
-                {Configs[key].help && (
-                  <Typography
-                    variant="caption"
-                    sx={{
-                      color: "var(--theme-accent)",
-                      marginTop: "0.25rem",
-                      display: "block",
-                      fontSize: "0.75rem",
-                    }}
-                  >
-                    {typeof Configs[key].help === "function"
-                      ? Configs[key].help(config[key] ?? Configs[key].default)
-                      : Configs[key].help}
-                  </Typography>
-                )}
-              </div>
+              {renderConfigField(key)}
             </Grid>
           ))}
           <Grid item xs={12} sx={{ textAlign: "right", marginTop: 2 }}>
             <Button
               className="crystal-button crystal-button-primary"
-              onClick={saveConfig}
-              disabled={saving}
+              onClick={handleSave}
             >
-              {saving ? "Saving..." : "Save Configuration"}
+              Save Configuration
             </Button>
           </Grid>
         </Grid>
