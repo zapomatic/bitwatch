@@ -76,6 +76,7 @@ const test = base.extend({
     // Add window-related code in page context
     await page.addInitScript(() => {
       // Set the server port for socket.io
+      process.env.SERVER_PORT = 3119;
       window.process = { env: { SERVER_PORT: 3119 } };
       
       // Mock fetch for mempool API
