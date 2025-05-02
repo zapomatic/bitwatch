@@ -257,6 +257,7 @@ function AppContent() {
               onClick={() => navigate("/integrations")}
               className="header-nav-icon"
               size="small"
+              aria-label="Integrations"
             >
               <IntegrationIcon />
             </IconButton>

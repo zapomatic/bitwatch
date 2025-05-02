@@ -67,13 +67,23 @@ const test = base.extend({
         on: (event, listener) => {},
         emit: (event, data, cb) => {
           if (event === 'client' && cb) {
-            cb({
-              version: '1.0.0',
-              collections: {},
-              websocketState: 'CONNECTED',
-              apiState: 'GOOD',
-              interval: 60000
-            });
+            setTimeout(() => {
+              cb({
+                version: '1.0.0',
+                collections: {},
+                websocketState: 'CONNECTED',
+                apiState: 'GOOD',
+                interval: 60000
+              });
+            }, 100);
+          } else if (event === 'saveIntegrations' && cb) {
+            setTimeout(() => {
+              cb({ success: true });
+            }, 100);
+          } else if (event === 'getIntegrations' && cb) {
+            setTimeout(() => {
+              cb({});
+            }, 100);
           }
         }
       });

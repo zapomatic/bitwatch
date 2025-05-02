@@ -2,7 +2,7 @@ import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import ExtendedKeyDialog from "../ExtendedKeyDialog";
 import { jest } from "@jest/globals";
-import testData from "../../../../test-data/keys.json";
+import testData from "../../../../test-data/keys.json" with { type: "json" };
 import {
   DEFAULT_GAP_LIMIT,
   DEFAULT_INITIAL_ADDRESSES,

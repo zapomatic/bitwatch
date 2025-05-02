@@ -3,7 +3,7 @@ import { render, screen, fireEvent, within } from "@testing-library/react";
 import AddressDialog from "../AddressDialog";
 import { defaultAddressForm } from "../defaults";
 import { jest } from "@jest/globals";
-import testData from "../../../../test-data/keys.json";
+import testData from "../../../../test-data/keys.json" with { type: "json" };
 
 describe("AddressDialog", () => {
   const mockOnClose = jest.fn();

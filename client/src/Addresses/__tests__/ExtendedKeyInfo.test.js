@@ -1,7 +1,7 @@
 import React from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { jest } from "@jest/globals";
-import testData from "../../../../test-data/keys.json";
+import testData from "../../../../test-data/keys.json" with { type: "json" };
 import ExtendedKeyInfo from "../ExtendedKeyInfo";
 
 describe("ExtendedKeyInfo", () => {

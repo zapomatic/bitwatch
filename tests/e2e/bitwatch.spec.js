@@ -20,7 +20,13 @@ test.describe("Bitwatch", () => {
     await page.getByLabel("Chat ID").fill("123456789");
 
     // Save configuration
-    await page.getByRole("button", { name: "Save Integrations" }).click();
+    const saveButton = page.getByRole("button", { name: "Save Integrations" });
+    await saveButton.click();
+    await page.waitForLoadState("networkidle");
+    
+    // Wait for the button to be visible and enabled again
+    await expect(saveButton).toBeVisible();
+    await expect(saveButton).not.toBeDisabled();
 
     // Wait for success message
     await expect(page.getByText("Settings saved successfully!")).toBeVisible();

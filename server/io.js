@@ -80,6 +80,19 @@ const socketIO = {
           });
         },
 
+        getIntegrations: async (data, cb) => {
+          logger.info(`Integrations requested by client ${socketID}`);
+          cb({ telegram: memory.db.telegram || {} });
+        },
+
+        saveIntegrations: async (data, cb) => {
+          logger.processing(`Saving integrations configuration`);
+          memory.db.telegram = data.telegram;
+          memory.saveDb();
+          telegram.init(true); // Pass true to send test message when saving
+          cb({ success: true, data });
+        },
+
         add: async (data, cb) => {
           logger.info(`Adding ${data.name || 'collection'} to ${data.collection || 'root'}`);
           
