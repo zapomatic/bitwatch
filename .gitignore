@@ -3,3 +3,4 @@ server/data/db.json
 client/build
 .DS_Store
 *.log
+test-results

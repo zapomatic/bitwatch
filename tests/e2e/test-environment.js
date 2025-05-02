@@ -10,6 +10,7 @@ import testData from "../../test-data/keys.json" with { type: 'json' };
 const createMockServices = () => {
   const addressBalances = new Map();
   const wsListeners = new Map();
+  const telegramMessages = [];
 
   return {
     mempool: {
@@ -31,6 +32,18 @@ const createMockServices = () => {
         wsListeners.set(event, listeners);
       },
       clearListeners: () => wsListeners.clear()
+    },
+    telegram: {
+      token: null,
+      chatId: null,
+      messages: telegramMessages,
+      sendMessage: (message) => {
+        telegramMessages.push(message);
+        return true;
+      },
+      clearMessages: () => {
+        telegramMessages.length = 0;
+      }
     }
   };
 };
@@ -44,6 +57,7 @@ const test = base.extend({
     // Cleanup after each test
     services.mempool.clearBalances();
     services.websocket.clearListeners();
+    services.telegram.clearMessages();
   },
   page: async ({ page }, use) => {
     // Add socket.io mock and other window-related code in page context
