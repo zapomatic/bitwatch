@@ -171,21 +171,25 @@ const CollectionRow = ({
               onClick={handleAddClick}
               icon={<VpnKeyIcon />}
               title="Add Address"
+              data-testid={`${collection.name}-add-address`}
             />
             <IconButtonStyled
               onClick={() => setExtendedKeyDialogOpen(true)}
               icon={<KeyIcon />}
               title="Add Extended Key"
+              data-testid={`${collection.name}-add-extended-key`}
             />
             <IconButtonStyled
               onClick={() => setDescriptorDialogOpen(true)}
               icon={<GroupsIcon />}
               title="Add Descriptor"
+              data-testid={`${collection.name}-add-descriptor`}
             />
             <IconButtonStyled
               onClick={() => onDelete(collection.name)}
               icon={<DeleteIcon />}
               title="Delete Collection"
+              data-testid={`${collection.name}-delete`}
             />
           </Box>
         </TableCell>

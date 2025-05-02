@@ -1,0 +1,24 @@
+- clean tests by deleting server/data/db.json
+- load telegram bot page
+  - configure fake telegram bot
+  - save config
+- load Address page
+  - add collection, give it a name and save it
+    - add single address to collection
+      - see loading state on chain and mempool
+      - then get event from socket that there is a balance change (the mock mempool api will send this event shortly after a new address is added)
+      - see balance change on chain and mempool in UI
+      - get an alert of balance change on mock telegram bot
+      - accept balance change with accept button
+      - see balance is confirmed
+      - delete address (collection should remain)
+    - add extended key to collection repeat this 3 times (xpub, ypub, zpub)
+      - give it a name, set derivation path, set skip to 2, gap to 3, initial addresses to 3
+      - see addresses loading in UI as they are generated
+      - see values on chain and mempool in UI
+      - get an alert of balance change on mock telegram bot
+      - accept balance change with accept button
+      - see balance is confirmed
+      - delete extended key (collection should remain)
+    - add descriptor to collection (for each descriptor type in test keys.json)
+      - verify the same behaviors as extended key sets

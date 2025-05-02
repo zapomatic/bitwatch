@@ -1,6 +1,9 @@
 const io = require("socket.io-client");
 
-const socketIO = io(`ws://${window.location.hostname}:3117`, {
+// Use environment variable for server port, fallback to 3117
+const SERVER_PORT = process.env.SERVER_PORT || 3119;
+
+const socketIO = io(`ws://${window.location.hostname}:${SERVER_PORT}`, {
   reconnection: true,
   reconnectionDelay: 1000,
   reconnectionDelayMax: 5000,
