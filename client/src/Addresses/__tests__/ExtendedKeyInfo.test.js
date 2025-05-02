@@ -34,7 +34,7 @@ describe("ExtendedKeyInfo", () => {
     const deleteButton = screen.getByTestId("delete-button");
     fireEvent.click(deleteButton);
 
-    expect(mockOnDelete).toHaveBeenCalledWith(extendedKey);
+    expect(mockOnDelete).toHaveBeenCalledWith({ extendedKey });
   });
 
   test("expanding and collapsing works correctly", () => {

@@ -44,7 +44,7 @@ const ExtendedKeyInfo = ({
   const handleDeleteClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    onDelete(extendedKey);
+    onDelete({ extendedKey });
   };
 
   const handleCopy = (e) => {

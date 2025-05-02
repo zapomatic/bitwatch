@@ -279,9 +279,7 @@ const CollectionRow = ({
                           key={extendedKey.key}
                           extendedKey={extendedKey}
                           collection={collection}
-                          onEdit={onEditAddress}
-                          onDelete={onDelete}
-                          onEditAddress={onEditAddress}
+                          onDelete={() => onDelete({ extendedKey })}
                           onSaveExpected={onSaveExpected}
                           displayBtc={displayBtc}
                         />

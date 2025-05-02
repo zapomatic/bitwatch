@@ -1,15 +1,8 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import DescriptorDialog from "../DescriptorDialog";
-import { defaultDescriptorForm } from "../defaults";
 import { jest } from "@jest/globals";
 import testData from "../../../../test-data/keys.json";
-
-// Use test keys and descriptors from the shared test data
-const TEST_KEYS = {
-  xpub1: testData.keys.xpub1,
-  xpub2: testData.keys.xpub2,
-};
 
 describe("DescriptorDialog", () => {
   const mockOnSave = jest.fn();

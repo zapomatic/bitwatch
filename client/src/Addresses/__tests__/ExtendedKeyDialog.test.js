@@ -1,7 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import ExtendedKeyDialog from "../ExtendedKeyDialog";
-import { defaultExtendedKeyForm } from "../defaults";
 import { jest } from "@jest/globals";
 import testData from "../../../../test-data/keys.json";
 
