@@ -89,7 +89,13 @@ const socketIO = {
           logger.processing(`Saving integrations configuration`);
           memory.db.telegram = data.telegram;
           memory.saveDb();
-          telegram.init(true); // Pass true to send test message when saving
+          
+          // Initialize telegram and wait for test message
+          const result = await telegram.init(true);
+          if (!result.success) {
+            return cb({ success: false, error: result.error });
+          }
+          
           cb({ success: true, data });
         },
 

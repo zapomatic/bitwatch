@@ -4,18 +4,45 @@ import logger from "./logger.js";
 
 let bot = null;
 
-const init = (sendTestMessage = false) => {
+const init = async (sendTestMessage = false) => {
   // Clear existing bot instance if it exists
   if (bot) {
+    bot.stopPolling();
     bot = null;
   }
 
   if (!memory.db.telegram?.token || !memory.db.telegram?.chatId) {
     logger.warning("Telegram not configured - missing token or chat ID");
-    return;
+    return { success: false, error: "Missing token or chat ID" };
   }
 
-  bot = new TelegramBot(memory.db.telegram.token, { polling: true });
+  // Create bot with error handling
+  const createBot = async () => {
+    try {
+      const newBot = new TelegramBot(memory.db.telegram.token, {
+        polling: false, // Don't start polling yet
+      });
+
+      // Test the token by making a simple API call
+      return newBot
+        .getMe()
+        .then(() => {
+          // If getMe succeeds, start polling
+          newBot.startPolling();
+          return newBot;
+        })
+        .catch((error) => {
+          logger.error(`Failed to validate Telegram token: ${error.message}`);
+          return null;
+        });
+    } catch (error) {
+      logger.error(`Failed to create Telegram bot: ${error.message}`);
+      return null;
+    }
+  };
+
+  bot = await createBot();
+  if (!bot) return { success: false, error: "Invalid Telegram token" };
 
   // Handle /start command
   bot.onText(/\/start/, async (msg) => {
@@ -59,23 +86,40 @@ Current status: ${
     }
   });
 
+  // Handle polling errors
+  bot.on("polling_error", (error) => {
+    logger.error(`[polling_error] ${JSON.stringify(error)}`);
+    if (bot) {
+      bot.stopPolling();
+      bot = null;
+    }
+    return {
+      success: false,
+      error: "Telegram polling error: " + error.message,
+    };
+  });
+
   // Only send test message when saving configuration
   if (sendTestMessage) {
-    sendMessage(
+    return sendMessage(
       "✅ Bitwatch Telegram notifications configured successfully!\n\nYou will receive notifications here when address balances change."
     ).then((success) => {
       if (success) {
         logger.success("Telegram bot initialized and test message sent");
+        return { success: true };
       } else {
         logger.error("Failed to send test message");
-        bot = null; // Reset bot if test message fails
+        if (bot) {
+          bot.stopPolling();
+          bot = null;
+        }
+        return { success: false, error: "Failed to send test message" };
       }
     });
   } else {
     logger.success("Telegram bot initialized");
+    return { success: true };
   }
-
-  return bot !== null;
 };
 
 const sendMessage = async (message) => {
