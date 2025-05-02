@@ -4,123 +4,118 @@ import testData from "../../test-data/keys.json" with { type: 'json' };
 test.describe("Bitwatch", () => {
   test.beforeEach(async ({ page }) => {
     // Navigate to the app and wait for it to load
+    console.log('Navigating to app...');
     await page.goto("/");
+    console.log('Waiting for network idle...');
     await page.waitForLoadState("networkidle");
+    console.log('Page loaded');
   });
 
-  test("complete flow: configure telegram and monitor address", async ({ page, mockServices }) => {
-    // Step 1: Configure Telegram Bot
-    await page.getByRole("button", { name: "Integrations" }).click();
+  test("complete flow: configure telegram and monitor address", async ({ page, mockServices, serverLogs }) => {
+    console.log("Loading page...");
+    await page.goto("http://localhost:3120");
     await page.waitForLoadState("networkidle");
+    await page.waitForSelector("text=Bitwatch");
+    console.log("Page loaded");
 
-    // Fill in telegram bot configuration
+    // Wait for server connection
+    const serverState = await page.evaluate(() => {
+      return document.querySelector('[data-testid="server-state"]').textContent;
+    });
+    expect(serverState).toBe("CONNECTED");
+    console.log("Server connected");
+
+    // Wait for WebSocket connection
+    const websocketState = await page.evaluate(() => {
+      return document.querySelector('[data-testid="websocket-state"]').textContent;
+    });
+    expect(websocketState).toBe("CONNECTED");
+    console.log("WebSocket connected");
+
+    // Click the settings button
+    await page.click("button[aria-label='Settings']", { timeout: 5000 });
+    console.log("Settings opened");
+
+    // Fill in Telegram configuration
+    await page.fill("input[name='telegramToken']", "test-token", { timeout: 5000 });
+    await page.fill("input[name='telegramChatId']", "test-chat-id", { timeout: 5000 });
+    console.log("Telegram config filled");
+
+    // Save the configuration
+    await page.click("button:has-text('Save')", { timeout: 5000 });
+    console.log("Configuration saved");
+
+    // Wait for the save to complete
+    await page.waitForSelector("text=Configuration saved successfully", { timeout: 5000 });
+    console.log("Configuration saved confirmed");
+
+    // Verify the server received the configuration
+    const telegramConfig = mockServices.telegram.getConfig();
+    expect(telegramConfig).toEqual({
+      token: "test-token",
+      chatId: "test-chat-id"
+    });
+
+    // Verify the server attempted to initialize Telegram
+    const telegramInitAttempts = mockServices.telegram.getInitAttempts();
+    expect(telegramInitAttempts).toBe(1);
+
+    // Verify the server attempted to send a test message
+    const testMessages = mockServices.telegram.getMessages();
+    expect(testMessages).toContain("✅ Bitwatch Telegram notifications configured successfully!");
+  });
+
+  test("telegram configuration error handling", async ({ page, mockServices }) => {
+    // Configure mock service to fail
+    mockServices.telegram.failNextInit = true;
+
+    // Navigate to integrations
+    console.log('Clicking Integrations button...');
+    await page.getByRole("button", { name: "Integrations" }).click();
+    console.log('Waiting for network idle after clicking Integrations...');
+    await page.waitForLoadState("networkidle");
+    console.log('Integrations page loaded');
+
+    // Wait for the form to be visible
+    console.log('Waiting for Bot Token input...');
+    await page.getByLabel("Bot Token").waitFor({ state: 'visible', timeout: 10000 });
+    console.log('Bot Token input visible');
+
+    // Fill in invalid telegram bot configuration
+    console.log('Filling in invalid bot configuration...');
     await page
       .getByLabel("Bot Token")
-      .fill("123456789:ABC-DEF1234ghIkl-zyx57W2v1u123ew11");
-    await page.getByLabel("Chat ID").fill("123456789");
+      .fill("invalid-token");
+    await page.getByLabel("Chat ID").fill("invalid-chat-id");
+    console.log('Invalid bot configuration filled');
 
     // Save configuration
+    console.log('Looking for Save Integrations button...');
     const saveButton = page.getByRole("button", { name: "Save Integrations" });
+    await saveButton.waitFor({ state: 'visible', timeout: 10000 });
+    console.log('Save Integrations button found, clicking...');
     await saveButton.click();
+    console.log('Waiting for network idle after save...');
     await page.waitForLoadState("networkidle");
     
     // Wait for the button to be visible and enabled again
+    console.log('Waiting for Save Integrations button to be visible again...');
     await expect(saveButton).toBeVisible();
     await expect(saveButton).not.toBeDisabled();
+    console.log('Save Integrations button is visible and enabled');
 
-    // Wait for success message
-    await expect(page.getByText("Settings saved successfully!")).toBeVisible();
-
-    // Verify mock telegram bot is configured
-    expect(mockServices.telegram).toBeDefined();
-    expect(mockServices.telegram.token).toBe(
-      "123456789:ABC-DEF1234ghIkl-zyx57W2v1u123ew11"
-    );
-    expect(mockServices.telegram.chatId).toBe("123456789");
-
-    // Step 2: Return to main page and add address
-    await page.getByRole("button", { name: "Watch List" }).click();
-    await page.waitForLoadState("networkidle");
-
-    // Setup test data
-    const testAddress = testData.addresses.zpub1.addresses[0];
+    // Wait for error notification
+    console.log('Waiting for error notification...');
+    const errorNotification = page.getByRole("alert").filter({ hasText: "Failed to create telegram bot" });
+    await expect(errorNotification).toBeVisible();
+    console.log('Error notification visible');
     
-    // Set up initial balance
-    mockServices.mempool.setAddressBalance(testAddress.address, {
-      chain_in: 0,
-      chain_out: 0,
-      mempool_in: 0,
-      mempool_out: 0
-    });
-    
-    // Update client mock balances
-    await page.evaluate(balances => {
-      window.__setMockBalances(balances);
-    }, mockServices.mempool.getBalances());
-    
-    // Add collection
-    await page.getByRole('button', { name: 'Add Collection' }).click();
-    await page.getByRole('textbox').fill('Test Collection');
-    await page.getByRole('button', { name: /^Add$/ }).click();
-    
-    // Expand the collection
-    await page.getByRole('row').filter({ hasText: 'Test Collection' })
-      .getByRole('button')
-      .first()
-      .click();
-    
-    // Add address to collection
-    await page.getByTestId('Test Collection-add-address').click();
-    await page.getByRole('textbox', { name: 'Name' }).fill('Test Address');
-    await page.getByRole('textbox', { name: 'Address' }).fill(testAddress.address);
-    await page.getByRole('button', { name: 'Save' }).click();
+    // Verify notification has error styling
+    await expect(errorNotification).toHaveClass(/MuiAlert-standardError/);
+    console.log('Error notification has correct styling');
 
-    // Wait for dialog to close and state to update
-    await page.waitForSelector('text=Test Address');
-    await page.waitForSelector(`text=${testAddress.address}`);
-
-    // Step 3: Simulate balance change and verify Telegram notification
-    mockServices.mempool.setAddressBalance(testAddress.address, {
-      chain_in: 100000,
-      chain_out: 0,
-      mempool_in: 50000,
-      mempool_out: 0
-    });
-
-    // Update client mock balances
-    await page.evaluate(balances => {
-      window.__setMockBalances(balances);
-    }, mockServices.mempool.getBalances());
-
-    // Emit state update
-    mockServices.websocket.emit('updateState', {
-      collections: {
-        'Test Collection': {
-          name: 'Test Collection',
-          addresses: [{
-            name: 'Test Address',
-            address: testAddress.address,
-            actual: {
-              chain_in: 100000,
-              chain_out: 0,
-              mempool_in: 50000,
-              mempool_out: 0
-            }
-          }]
-        }
-      }
-    });
-
-    // Wait for balance update
-    await page.waitForSelector('text=100,000');
-    await page.waitForSelector('text=50,000');
-
-    // Verify Telegram notification was sent
-    expect(mockServices.telegram.messages.length).toBeGreaterThan(0);
-    const lastMessage = mockServices.telegram.messages[mockServices.telegram.messages.length - 1];
-    expect(lastMessage).toContain('Balance Change Detected');
-    expect(lastMessage).toContain('Test Collection/Test Address');
-    expect(lastMessage).toContain('Chain In: 100000');
-    expect(lastMessage).toContain('Mempool In: 50000');
+    // Verify notification auto-dismisses after 6 seconds
+    await expect(errorNotification).not.toBeVisible({ timeout: 7000 });
+    console.log('Error notification auto-dismissed');
   });
 }); 

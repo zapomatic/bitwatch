@@ -27,9 +27,14 @@ function Integrations() {
   };
 
   const saveConfig = useCallback(() => {
+    console.log("Saving config:", config);
     setSaving(true);
     socketIO.emit("saveIntegrations", config, (response) => {
-      console.log(response);
+      console.log("Save response received:", response);
+      if (!response) {
+        console.error("No response received from saveIntegrations");
+        return;
+      }
       setNotification({
         open: true,
         message: response.success

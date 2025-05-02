@@ -91,11 +91,16 @@ const socketIO = {
           memory.saveDb();
           
           // Initialize telegram and wait for test message
+          logger.info('Initializing Telegram with test message');
           const result = await telegram.init(true);
+          logger.info('Telegram initialization result:', result);
+          
           if (!result.success) {
+            logger.error('Telegram initialization failed:', result.error);
             return cb({ success: false, error: result.error });
           }
           
+          logger.success('Telegram initialized successfully');
           cb({ success: true, data });
         },
 

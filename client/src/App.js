@@ -100,6 +100,7 @@ function AppContent() {
   const [version, setVersion] = useState("");
   const [websocketState, setWebsocketState] = useState("DISCONNECTED");
   const [apiState, setApiState] = useState("UNKNOWN");
+  const [serverState, setServerState] = useState("DISCONNECTED");
   const [interval, setInterval] = useState(0);
   const intervalRef = React.useRef(0);
   const navigate = useNavigate();
@@ -118,6 +119,7 @@ function AppContent() {
         setVersion(version);
         setWebsocketState(websocketState);
         setApiState(apiState);
+        setServerState("CONNECTED");
         if (interval) {
           intervalRef.current = interval;
           setInterval(interval);
@@ -137,6 +139,9 @@ function AppContent() {
     });
     socketIO.on("connect", onSocketConnect);
     socketIO.on("reconnect", onSocketConnect);
+    socketIO.on("disconnect", () => {
+      setServerState("DISCONNECTED");
+    });
     socketIO.on("updateState", (state) => {
       console.log("Received state update:", state);
       if (state.websocketState) {
@@ -158,6 +163,7 @@ function AppContent() {
       socketIO.removeAllListeners("info");
       socketIO.removeAllListeners("connect");
       socketIO.removeAllListeners("reconnect");
+      socketIO.removeAllListeners("disconnect");
       socketIO.removeAllListeners("reload");
       socketIO.removeAllListeners("updateState");
     };
@@ -188,6 +194,7 @@ function AppContent() {
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         <Tooltip title={state} arrow>
           <Box
+            data-testid={`${label.toLowerCase()}-state`}
             sx={{
               width: 8,
               height: 8,
@@ -331,6 +338,7 @@ function AppContent() {
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <StatusIndicator label="Server" state={serverState} />
           <StatusIndicator label="WebSocket" state={websocketState} />
           <StatusIndicator label="API" state={apiState} />
           {interval > 0 && (

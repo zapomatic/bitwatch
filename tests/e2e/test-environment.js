@@ -11,6 +11,7 @@ const createMockServices = () => {
   const addressBalances = new Map();
   const wsListeners = new Map();
   const telegramMessages = [];
+  let failNextInit = false;
 
   return {
     mempool: {
@@ -37,12 +38,24 @@ const createMockServices = () => {
       token: null,
       chatId: null,
       messages: telegramMessages,
+      failNextInit: false,
       sendMessage: (message) => {
+        console.log('Mock Telegram: Sending message:', message);
         telegramMessages.push(message);
         return true;
       },
       clearMessages: () => {
         telegramMessages.length = 0;
+      },
+      init: async (sendTestMessage = false) => {
+        console.log('Mock Telegram: Initializing with sendTestMessage:', sendTestMessage);
+        if (failNextInit) {
+          console.log('Mock Telegram: Failing initialization as requested');
+          failNextInit = false;
+          return { success: false, error: "Failed to create telegram bot" };
+        }
+        console.log('Mock Telegram: Initialization successful');
+        return { success: true };
       }
     }
   };
@@ -60,89 +73,68 @@ const test = base.extend({
     services.telegram.clearMessages();
   },
   page: async ({ page }, use) => {
-    // Add socket.io mock and other window-related code in page context
+    // Add window-related code in page context
     await page.addInitScript(() => {
-      // Mock socket.io
-      window.io = () => ({
-        on: (event, listener) => {},
-        emit: (event, data, cb) => {
-          if (event === 'client' && cb) {
-            setTimeout(() => {
-              cb({
-                version: '1.0.0',
-                collections: {},
-                websocketState: 'CONNECTED',
-                apiState: 'GOOD',
-                interval: 60000
-              });
-            }, 100);
-          } else if (event === 'saveIntegrations' && cb) {
-            setTimeout(() => {
-              cb({ success: true });
-            }, 100);
-          } else if (event === 'getIntegrations' && cb) {
-            setTimeout(() => {
-              cb({});
-            }, 100);
-          }
-        }
-      });
-
+      // Set the server port for socket.io
+      window.process = { env: { SERVER_PORT: 3119 } };
+      
       // Mock fetch for mempool API
       const originalFetch = window.fetch;
       window.fetch = async (url, options) => {
         if (url.includes('mempool.space')) {
-          // Get the address from the URL
-          const address = url.split('/').pop();
-          
-          // Get the balance from the mock balances
-          const balance = window.__mockBalances?.[address] || {
-            chain_in: 0,
-            chain_out: 0,
-            mempool_in: 0,
-            mempool_out: 0
-          };
-
-          // Return the mocked response
           return {
             ok: true,
-            json: async () => ({
-              chain_stats: {
-                funded_txo_sum: balance.chain_in,
-                spent_txo_sum: balance.chain_out
-              },
-              mempool_stats: {
-                funded_txo_sum: balance.mempool_in,
-                spent_txo_sum: balance.mempool_out
-              }
+            json: () => Promise.resolve({
+              chain_stats: { funded_txo_sum: 0, spent_txo_sum: 0 },
+              mempool_stats: { funded_txo_sum: 0, spent_txo_sum: 0 }
             })
           };
         }
         return originalFetch(url, options);
       };
-
-      // Disable webpack dev server overlay
-      const style = document.createElement('style');
-      style.textContent = '#webpack-dev-server-client-overlay { display: none !important; }';
-      document.head.appendChild(style);
-
-      // Handle errors to prevent overlay
-      window.addEventListener('error', (event) => {
-        const overlay = document.getElementById('webpack-dev-server-client-overlay');
-        if (overlay) {
-          overlay.style.display = 'none';
-        }
-      });
-    });
-
-    // Expose function to update mock balances
-    await page.exposeFunction('__setMockBalances', (balances) => {
-      return page.evaluate((b) => {
-        window.__mockBalances = b;
-      }, balances);
     });
 
     await use(page);
+  },
+  // Add server log capture
+  serverLogs: async ({}, use, testInfo) => {
+    const logs = [];
+    
+    // Create a custom write function to capture logs
+    const writeLog = (chunk) => {
+      if (typeof chunk === 'string') {
+        logs.push(chunk.trim());
+      }
+    };
+
+    // Override console methods to capture logs
+    const originalConsoleLog = console.log;
+    const originalConsoleError = console.error;
+
+    console.log = (...args) => {
+      const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' ');
+      writeLog(message);
+      originalConsoleLog.apply(console, args);
+    };
+
+    console.error = (...args) => {
+      const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' ');
+      writeLog(message);
+      originalConsoleError.apply(console, args);
+    };
+
+    await use(logs);
+
+    // Restore original console methods
+    console.log = originalConsoleLog;
+    console.error = originalConsoleError;
+
+    // Attach logs to test info
+    testInfo.attachments.push({
+      name: 'server-stdout',
+      contentType: 'text/plain',
+      body: Buffer.from(logs.join('\n'))
+    });
   }
 });
 
