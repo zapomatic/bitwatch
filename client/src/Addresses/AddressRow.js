@@ -77,24 +77,24 @@ const AddressRow = ({
         <BalanceCell
           label="⬅️"
           value={address.actual?.chain_in}
-          expect={address.expect?.chain_in || 0}
+          expect={address.expect?.chain_in}
           displayBtc={displayBtc}
           error={address.error}
           pending={!address.actual && !address.error}
           monitor={address.monitor}
-          type="chain"
+          type="chain_in"
         />
       </Box>
       <Box className="crystal-flex crystal-flex-start" sx={{ mt: 1 }}>
         <BalanceCell
           label="➡️"
           value={address.actual?.chain_out}
-          expect={address.expect?.chain_out || 0}
+          expect={address.expect?.chain_out}
           displayBtc={displayBtc}
           error={address.error}
           pending={!address.actual && !address.error}
           monitor={address.monitor}
-          type="chain"
+          type="chain_out"
         />
       </Box>
     </TableCell>
@@ -102,23 +102,23 @@ const AddressRow = ({
       <Box className="crystal-flex crystal-flex-start">
         <BalanceCell
           value={address.actual?.mempool_in}
-          expect={address.expect?.mempool_in || 0}
+          expect={address.expect?.mempool_in}
           displayBtc={displayBtc}
           error={address.error}
           pending={!address.actual && !address.error}
           monitor={address.monitor}
-          type="mempool"
+          type="mempool_in"
         />
       </Box>
       <Box className="crystal-flex crystal-flex-start" sx={{ mt: 1 }}>
         <BalanceCell
           value={address.actual?.mempool_out}
-          expect={address.expect?.mempool_out || 0}
+          expect={address.expect?.mempool_out}
           displayBtc={displayBtc}
           error={address.error}
           pending={!address.actual && !address.error}
           monitor={address.monitor}
-          type="mempool"
+          type="mempool_out"
         />
       </Box>
     </TableCell>

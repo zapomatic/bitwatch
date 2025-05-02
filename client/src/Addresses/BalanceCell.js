@@ -5,12 +5,11 @@ import WarningIcon from "@mui/icons-material/Warning";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { formatSatoshis } from "../utils/format";
-import { DEFAULT_EXPECTED_BALANCES } from "../config";
 
 const BalanceCell = ({
   displayBtc,
   error,
-  expect = DEFAULT_EXPECTED_BALANCES,
+  expect,
   label,
   monitor,
   pending,
@@ -43,7 +42,10 @@ const BalanceCell = ({
     );
   }
 
-  const diff = value - (expect[type] || 0);
+  // Convert values to numbers and handle undefined/null
+  const actualValue = Number(value) || 0;
+  const expectedValue = Number(expect) || 0;
+  const diff = actualValue - expectedValue;
   const isVerified = diff === 0;
 
   return (
@@ -59,7 +61,7 @@ const BalanceCell = ({
       )}
       <Box className="crystal-flex crystal-flex-start crystal-gap-1">
         <Typography className="crystal-text">
-          {formatSatoshis(value, displayBtc)}
+          {formatSatoshis(actualValue, displayBtc)}
         </Typography>
         {!isVerified && (
           <Typography
