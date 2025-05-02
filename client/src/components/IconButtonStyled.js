@@ -1,33 +1,42 @@
 import { IconButton } from "@mui/material";
+import React from "react";
 
-const IconButtonStyled = ({
-  onClick,
-  icon,
-  title,
-  variant = "default",
-  className,
-  size = "medium",
-  ...props
-}) => {
-  const buttonClass = `crystal-icon-button ${
-    variant === "success"
-      ? "crystal-action-button-success"
-      : variant === "danger"
-      ? "crystal-action-button-danger"
-      : ""
-  } ${className || ""}`.trim();
+const IconButtonStyled = React.forwardRef(
+  (
+    {
+      onClick,
+      icon,
+      title,
+      variant = "default",
+      className,
+      size = "medium",
+      ...props
+    },
+    ref
+  ) => {
+    const buttonClass = `crystal-icon-button ${
+      variant === "success"
+        ? "crystal-action-button-success"
+        : variant === "danger"
+        ? "crystal-action-button-danger"
+        : ""
+    } ${className || ""}`.trim();
 
-  return (
-    <IconButton
-      size={size}
-      onClick={onClick}
-      className={buttonClass}
-      title={title}
-      {...props}
-    >
-      {icon}
-    </IconButton>
-  );
-};
+    return (
+      <IconButton
+        ref={ref}
+        size={size}
+        onClick={onClick}
+        className={buttonClass}
+        title={title}
+        {...props}
+      >
+        {icon}
+      </IconButton>
+    );
+  }
+);
+
+IconButtonStyled.displayName = "IconButtonStyled";
 
 export default IconButtonStyled;

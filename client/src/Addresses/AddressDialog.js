@@ -41,6 +41,7 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
       <Select
         value={value}
         onChange={onChange}
+        aria-label={label}
         sx={{
           "& .MuiOutlinedInput-notchedOutline": {
             borderColor: "rgba(77, 244, 255, 0.3)",
@@ -86,6 +87,7 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
           fullWidth
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          helperText="A friendly name for this address"
         />
         <TextField
           margin="dense"
@@ -95,6 +97,7 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
           onChange={(e) =>
             setFormData({ ...formData, address: e.target.value })
           }
+          helperText="The Bitcoin address to watch"
         />
         <Typography variant="subtitle1" sx={{ mt: 0, mb: 1 }}>
           Expected Balances
@@ -116,6 +119,7 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
                   },
                 })
               }
+              helperText="Expected on-chain incoming balance"
             />
           </Grid>
           <Grid item xs={6}>
@@ -134,6 +138,7 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
                   },
                 })
               }
+              helperText="Expected on-chain outgoing balance"
             />
           </Grid>
           <Grid item xs={6}>
@@ -152,6 +157,7 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
                   },
                 })
               }
+              helperText="Expected mempool incoming balance"
             />
           </Grid>
           <Grid item xs={6}>
@@ -170,6 +176,7 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
                   },
                 })
               }
+              helperText="Expected mempool outgoing balance"
             />
           </Grid>
         </Grid>

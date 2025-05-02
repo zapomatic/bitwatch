@@ -450,12 +450,6 @@ const socketIO = {
           callback({ error: "Missing required fields" });
           return;
         }
-        
-        // Validate extended key format
-        if (!key.match(/^[xyz]pub[a-zA-Z0-9]{107,108}$/)) {
-          callback({ error: "Invalid extended key format" });
-          return;
-        }
 
         // Validate derivation path format
         if (!derivationPath.match(/^m(\/\d+'?)*$/)) {
@@ -483,7 +477,7 @@ const socketIO = {
         );
 
         if (!initialAddressesList) {
-          callback({ error: "Failed to derive addresses" });
+          callback({ error: "Invalid extended key - unable to derive addresses" });
           return;
         }
         
@@ -568,7 +562,7 @@ const socketIO = {
         }
         
         // Validate extended key format
-        if (!key.match(/^[xyz]pub[a-zA-Z0-9]{107,108}$/)) {
+        if (!key.match(/^[xyz]pub[a-zA-Z0-9]+$/)) {
           callback({ error: "Invalid extended key format" });
           return;
         }
@@ -1105,7 +1099,14 @@ const deriveExtendedKeyAddresses = async (extendedKey, startIndex, count, deriva
     network = networks.xpub;
   }
   
-  const node = bip32.fromBase58(keyString, network);
+  // Decode the extended key
+  let node;
+  // fromBase58 will throw if invalid, we'll let it return undefined
+  node = bip32.fromBase58(keyString, network);
+  if (!node) {
+    logger.error('Failed to decode extended key');
+    return null;
+  }
   
   // Parse derivation path and get the base node
   const pathParts = derivationPath.split('/').slice(1); // Remove 'm'
@@ -1113,10 +1114,19 @@ const deriveExtendedKeyAddresses = async (extendedKey, startIndex, count, deriva
   for (const part of pathParts) {
     const isHardened = part.endsWith("'") || part.endsWith('h');
     if (isHardened) {
-      throw new Error("Cannot derive hardened keys from extended public keys");
+      logger.error('Cannot derive hardened keys from extended public keys');
+      return null;
     }
     const index = parseInt(part.replace(/['h]/g, ''));
+    if (isNaN(index)) {
+      logger.error('Invalid derivation path index');
+      return null;
+    }
     baseNode = baseNode.derive(index);
+    if (!baseNode) {
+      logger.error('Failed to derive path');
+      return null;
+    }
   }
   
   // Calculate the actual start index including skip
@@ -1126,6 +1136,10 @@ const deriveExtendedKeyAddresses = async (extendedKey, startIndex, count, deriva
   for (let i = 0; i < count; i++) {
     const derivationIndex = actualStartIndex + i;
     const child = baseNode.derive(derivationIndex);
+    if (!child) {
+      logger.error(`Failed to derive child at index ${derivationIndex}`);
+      return null;
+    }
     
     // Use appropriate address type based on key prefix
     let address;
@@ -1139,6 +1153,11 @@ const deriveExtendedKeyAddresses = async (extendedKey, startIndex, count, deriva
     } else {
       // Legacy (P2PKH)
       address = bitcoin.payments.p2pkh({ pubkey: child.publicKey, network }).address;
+    }
+    
+    if (!address) {
+      logger.error(`Failed to generate address at index ${derivationIndex}`);
+      return null;
     }
     
     addresses.push({

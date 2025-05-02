@@ -1,0 +1,44 @@
+{
+  "presets": [
+    [
+      "@babel/preset-env",
+      {
+        "targets": { "node": "current" },
+        "modules": "auto"
+      }
+    ],
+    [
+      "@babel/preset-react",
+      {
+        "runtime": "automatic"
+      }
+    ]
+  ],
+  "plugins": [
+    "@babel/plugin-transform-modules-commonjs",
+    "@babel/plugin-transform-runtime"
+  ],
+  "env": {
+    "test": {
+      "presets": [
+        [
+          "@babel/preset-env",
+          {
+            "targets": { "node": "current" },
+            "modules": "auto"
+          }
+        ],
+        [
+          "@babel/preset-react",
+          {
+            "runtime": "automatic"
+          }
+        ]
+      ],
+      "plugins": [
+        "@babel/plugin-transform-modules-commonjs",
+        "@babel/plugin-transform-runtime"
+      ]
+    }
+  }
+}

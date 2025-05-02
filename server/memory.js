@@ -75,11 +75,55 @@ const saveDb = () => {
               mempool_out: "alert",
             },
           })),
+          extendedKeys: collection.extendedKeys?.map((extKey) => ({
+            key: extKey.key,
+            name: extKey.name,
+            derivationPath: extKey.derivationPath,
+            gapLimit: extKey.gapLimit,
+            skip: extKey.skip,
+            initialAddresses: extKey.initialAddresses,
+            addresses: extKey.addresses.map((addr) => ({
+              address: addr.address,
+              name: addr.name,
+              index: addr.index,
+              expect: addr.expect,
+              monitor: addr.monitor || {
+                chain_in: "auto-accept",
+                chain_out: "alert",
+                mempool_in: "auto-accept",
+                mempool_out: "alert",
+              },
+            })),
+          })),
+          descriptors: collection.descriptors?.map((desc) => ({
+            descriptor: desc.descriptor,
+            name: desc.name,
+            gapLimit: desc.gapLimit,
+            skip: desc.skip,
+            initialAddresses: desc.initialAddresses,
+            type: desc.type,
+            scriptType: desc.scriptType,
+            requiredSignatures: desc.requiredSignatures,
+            totalSignatures: desc.totalSignatures,
+            addresses: desc.addresses.map((addr) => ({
+              address: addr.address,
+              name: addr.name,
+              index: addr.index,
+              expect: addr.expect,
+              monitor: addr.monitor || {
+                chain_in: "auto-accept",
+                chain_out: "alert",
+                mempool_in: "auto-accept",
+                mempool_out: "alert",
+              },
+            })),
+          })),
         },
       ])
     ),
   };
   fs.writeFileSync(dbFile, JSON.stringify(cleanDb, null, 2));
+  return true;
 };
 
 const memory = {
