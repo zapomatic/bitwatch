@@ -44,7 +44,15 @@ const DescriptorInfo = ({
   const handleDeleteClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    onDelete(descriptor);
+    onDelete({ descriptor });
+  };
+
+  const handleAddressDelete = (address) => {
+    onDelete({
+      collection: collection.name,
+      address: address.address,
+      descriptor: descriptor,
+    });
   };
 
   const handleCopy = (e) => {
@@ -121,7 +129,7 @@ const DescriptorInfo = ({
                       collection={collection}
                       onEditAddress={onEditAddress}
                       onSaveExpected={onSaveExpected}
-                      onDelete={onDelete}
+                      onDelete={handleAddressDelete}
                       displayBtc={displayBtc}
                     />
                   ))}

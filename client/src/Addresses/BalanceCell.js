@@ -5,11 +5,12 @@ import WarningIcon from "@mui/icons-material/Warning";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { formatSatoshis } from "../utils/format";
+import { DEFAULT_EXPECTED_BALANCES } from "../config";
 
 const BalanceCell = ({
   displayBtc,
   error,
-  expect,
+  expect = DEFAULT_EXPECTED_BALANCES,
   label,
   monitor,
   pending,
@@ -42,7 +43,7 @@ const BalanceCell = ({
     );
   }
 
-  const diff = value - (expect || 0);
+  const diff = value - (expect[type] || 0);
   const isVerified = diff === 0;
 
   return (

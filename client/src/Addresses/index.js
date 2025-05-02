@@ -221,7 +221,25 @@ export default function Addresses() {
 
   const handleDelete = useCallback(
     ({ address, collection, extendedKey, descriptor }) => {
-      if (address) {
+      if (address && extendedKey) {
+        setDeleteDialog({
+          open: true,
+          address,
+          collection,
+          extendedKey,
+          descriptor: null,
+          message: "Remove this address from the extended key set?",
+        });
+      } else if (address && descriptor) {
+        setDeleteDialog({
+          open: true,
+          address,
+          collection,
+          extendedKey: null,
+          descriptor,
+          message: "Remove this address from the descriptor set?",
+        });
+      } else if (address) {
         setDeleteDialog({
           open: true,
           address,

@@ -3,6 +3,11 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import ExtendedKeyDialog from "../ExtendedKeyDialog";
 import { jest } from "@jest/globals";
 import testData from "../../../../test-data/keys.json";
+import {
+  DEFAULT_GAP_LIMIT,
+  DEFAULT_INITIAL_ADDRESSES,
+  DEFAULT_SKIP_ADDRESSES,
+} from "../../config";
 
 // Use test keys from the shared test data
 const TEST_KEYS = {
@@ -132,9 +137,9 @@ describe("ExtendedKeyDialog", () => {
       name: "Test Key",
       key: TEST_KEYS.xpub,
       derivationPath: "m/44/0/0",
-      gapLimit: "20",
-      initialAddresses: "10",
-      skip: "0",
+      gapLimit: DEFAULT_GAP_LIMIT,
+      initialAddresses: DEFAULT_INITIAL_ADDRESSES,
+      skip: DEFAULT_SKIP_ADDRESSES,
     };
 
     mockOnSave.mockResolvedValueOnce(undefined);

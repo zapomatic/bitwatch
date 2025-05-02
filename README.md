@@ -55,8 +55,6 @@ docker stop bitwatch
 
 Umbrel Home or greater hardware is recommended for running a sovereign monitoring node.
 
-> COMING SOON
-
 1. Click the "Install" button in the Umbrel app store
 2. Wait for installation to complete
 3. Access Bitwatch through your Umbrel dashboard

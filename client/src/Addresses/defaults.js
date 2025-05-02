@@ -1,33 +1,31 @@
+import {
+  DEFAULT_GAP_LIMIT,
+  DEFAULT_INITIAL_ADDRESSES,
+  DEFAULT_SKIP_ADDRESSES,
+  DEFAULT_MONITOR_SETTINGS,
+  DEFAULT_EXPECTED_BALANCES,
+} from "../config";
+
 export const defaultAddressForm = {
   name: "",
   address: "",
-  expect: {
-    chain_in: 0,
-    chain_out: 0,
-    mempool_in: 0,
-    mempool_out: 0,
-  },
-  monitor: {
-    chain_in: "auto-accept",
-    chain_out: "alert",
-    mempool_in: "auto-accept",
-    mempool_out: "alert",
-  },
+  expect: DEFAULT_EXPECTED_BALANCES,
+  monitor: DEFAULT_MONITOR_SETTINGS,
 };
 
 export const defaultExtendedKeyForm = {
   name: "",
   key: "",
-  gapLimit: 2,
-  initialAddresses: 5,
+  gapLimit: DEFAULT_GAP_LIMIT,
+  initialAddresses: DEFAULT_INITIAL_ADDRESSES,
   derivationPath: "m/0",
-  skip: 0,
+  skip: DEFAULT_SKIP_ADDRESSES,
 };
 
 export const defaultDescriptorForm = {
   name: "",
   descriptor: "",
-  gapLimit: 20,
-  initialAddresses: 10,
-  skip: 0,
+  gapLimit: DEFAULT_GAP_LIMIT,
+  initialAddresses: DEFAULT_INITIAL_ADDRESSES,
+  skip: DEFAULT_SKIP_ADDRESSES,
 };

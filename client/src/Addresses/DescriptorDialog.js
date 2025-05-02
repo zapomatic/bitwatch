@@ -9,6 +9,11 @@ import {
   Box,
   Alert,
 } from "@mui/material";
+import {
+  DEFAULT_GAP_LIMIT,
+  DEFAULT_INITIAL_ADDRESSES,
+  DEFAULT_SKIP_ADDRESSES,
+} from "../config";
 
 const DescriptorDialog = ({
   open,
@@ -20,15 +25,21 @@ const DescriptorDialog = ({
   const [formData, setFormData] = useState({
     name: "",
     descriptor: "",
-    gapLimit: "20",
-    initialAddresses: "10",
-    skip: "0",
+    gapLimit: DEFAULT_GAP_LIMIT,
+    initialAddresses: DEFAULT_INITIAL_ADDRESSES,
+    skip: DEFAULT_SKIP_ADDRESSES,
   });
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (descriptor) {
-      setFormData(descriptor);
+      setFormData({
+        name: descriptor.name,
+        descriptor: descriptor.descriptor,
+        gapLimit: descriptor.gapLimit,
+        initialAddresses: descriptor.initialAddresses,
+        skip: descriptor.skip,
+      });
     }
   }, [descriptor]);
 

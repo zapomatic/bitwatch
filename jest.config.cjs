@@ -23,7 +23,10 @@ module.exports = {
         presets: [
           [
             "@babel/preset-env",
-            { targets: { node: "current" }, modules: "commonjs" },
+            {
+              targets: { node: "current" },
+              modules: "commonjs",
+            },
           ],
           ["@babel/preset-react", { runtime: "automatic" }],
         ],
@@ -32,7 +35,6 @@ module.exports = {
             "@babel/plugin-transform-runtime",
             { regenerator: true, helpers: true },
           ],
-          "@babel/plugin-transform-modules-commonjs",
         ],
       },
     ],
@@ -77,7 +79,6 @@ module.exports = {
                 "@babel/plugin-transform-runtime",
                 { regenerator: true, helpers: true },
               ],
-              "@babel/plugin-transform-modules-commonjs",
             ],
           },
         ],
@@ -102,7 +103,10 @@ module.exports = {
             presets: [
               [
                 "@babel/preset-env",
-                { targets: { node: "current" }, modules: "commonjs" },
+                {
+                  targets: { node: "current" },
+                  modules: "commonjs",
+                },
               ],
             ],
             plugins: [
@@ -110,12 +114,12 @@ module.exports = {
                 "@babel/plugin-transform-runtime",
                 { regenerator: true, helpers: true },
               ],
-              "@babel/plugin-transform-modules-commonjs",
             ],
           },
         ],
       },
       setupFilesAfterEnv: ["<rootDir>/server/__tests__/setup.js"],
+      setupFiles: ["<rootDir>/server/__tests__/setup.js"],
     },
   ],
 

@@ -1,7 +1,6 @@
 import { BIP32Factory } from "bip32";
 import * as ecc from "tiny-secp256k1";
 import * as bitcoin from "bitcoinjs-lib";
-import logger from "./logger.js";
 
 const bip32 = BIP32Factory(ecc);
 
@@ -53,11 +52,8 @@ const cleanPath = (path) => {
 // Parse a multi-sig descriptor like "wsh(multi(k,key1,key2,...))" or single key descriptor like "pkh(key)", "sh(wpkh(key))", or "wpkh(key)"
 const parseMultiSigDescriptor = (descriptor) => {
   if (!descriptor) {
-    logger.error("Descriptor is undefined");
     return { success: false, error: "Descriptor is undefined" };
   }
-
-  logger.info(`Parsing descriptor: ${descriptor}`);
 
   // Single key descriptor patterns
   const pkhRegex = /^pkh\(([^)]+)\)$/;
@@ -75,7 +71,6 @@ const parseMultiSigDescriptor = (descriptor) => {
     descriptor.match(wpkhRegex);
   if (singleKeyMatch) {
     const [, keyStr] = singleKeyMatch;
-    logger.info(`Found single key in descriptor: ${keyStr}`);
 
     // Parse the key and its derivation path
     const parsedKey = parseKey(keyStr);
@@ -90,9 +85,6 @@ const parseMultiSigDescriptor = (descriptor) => {
       scriptType = "wpkh";
     }
 
-    logger.debug(
-      `Successfully parsed single key descriptor with script type: ${scriptType}`
-    );
     return {
       success: true,
       data: {
@@ -107,15 +99,11 @@ const parseMultiSigDescriptor = (descriptor) => {
   let match =
     descriptor.match(wshmultiRegex) || descriptor.match(sortedmultiRegex);
   if (!match) {
-    logger.error(`Failed to match descriptor format: ${descriptor}`);
     return { success: false, error: "Invalid descriptor format" };
   }
 
   const [, requiredSigs, keysStr] = match;
-  logger.info(`Required signatures: ${requiredSigs}`);
-
   const keys = keysStr.split(",").map((k) => k.trim());
-  logger.info(`Found ${keys.length} keys in descriptor`);
 
   // Parse each key and its derivation path
   const parsedKeys = keys.map((key, index) => parseKey(key, index));
@@ -126,7 +114,6 @@ const parseMultiSigDescriptor = (descriptor) => {
     return failedKey;
   }
 
-  logger.debug(`Successfully parsed all ${parsedKeys.length} keys`);
   return {
     success: true,
     data: {
@@ -144,9 +131,7 @@ const parseMultiSigDescriptor = (descriptor) => {
 };
 
 // Helper function to parse a key and its derivation path
-const parseKey = (key, index = 0) => {
-  logger.info(`Parsing key ${index + 1}: ${key}`);
-
+const parseKey = (key) => {
   // Try to match both formats:
   // 1. [fingerprint/path]xpub.../remaining
   // 2. xpub.../path
@@ -158,10 +143,6 @@ const parseKey = (key, index = 0) => {
   if (fingerprintFormat) {
     // Format with fingerprint
     const [, originPath, xpub, remainingPath] = fingerprintFormat;
-    logger.info(`Fingerprint format - Origin path: ${originPath}`);
-    logger.info(`Extended key: ${xpub.slice(0, 8)}...`);
-    logger.info(`Remaining path: ${remainingPath}`);
-
     const [fingerprint, ...originComponents] = originPath.split("/");
     const fullPath = [...originComponents];
     if (remainingPath) {
@@ -169,7 +150,6 @@ const parseKey = (key, index = 0) => {
     }
 
     const finalPath = cleanPath(fullPath.join("/"));
-    logger.debug(`Final derivation path: ${finalPath}`);
 
     return {
       success: true,
@@ -180,10 +160,7 @@ const parseKey = (key, index = 0) => {
   } else if (simpleFormat) {
     // Simple format without fingerprint
     const [, xpub, path] = simpleFormat;
-    logger.debug(`Simple format - Extended key: ${xpub.slice(0, 8)}...`);
-
     const cleanedPath = cleanPath(path);
-    logger.debug(`Final derivation path: ${cleanedPath}`);
 
     return {
       success: true,
@@ -192,7 +169,6 @@ const parseKey = (key, index = 0) => {
       xpub,
     };
   } else {
-    logger.error(`Failed to parse key format: ${key}`);
     return {
       success: false,
       error: `Invalid key format in descriptor: ${key}`,
@@ -209,17 +185,11 @@ export const deriveAddresses = async (
   const addresses = [];
   const parsed = parseMultiSigDescriptor(descriptor);
   if (!parsed.success) {
-    logger.error(`Failed to parse descriptor: ${parsed.error}`);
     return { success: false, error: parsed.error };
   }
 
   // Calculate the actual start index including skip
   const actualStartIndex = startIndex + skip;
-  logger.debug(
-    `Deriving addresses from index ${actualStartIndex} to ${
-      actualStartIndex + count - 1
-    }`
-  );
 
   // For each index, derive public keys from all xpubs and create the address
   for (let i = 0; i < count; i++) {
@@ -227,62 +197,53 @@ export const deriveAddresses = async (
 
     // Derive public keys for each xpub at this index
     const pubkeyResults = await Promise.all(
-      parsed.data.keys.map(async ({ path, xpub }, keyIndex) => {
-        logger.debug(
-          `Deriving key ${keyIndex + 1} at index ${derivationIndex}`
-        );
-        logger.debug(`Using path: ${path}`);
-        logger.debug(`Using xpub: ${xpub.slice(0, 8)}...`);
-
+      parsed.data.keys.map(async ({ path, xpub }) => {
         const network = getKeyNetwork(xpub);
         const node = bip32.fromBase58(xpub, network);
         if (!node) {
-          logger.error(`Failed to create BIP32 node for key ${keyIndex + 1}`);
           return {
             success: false,
-            error: `Invalid xpub format for key ${keyIndex + 1}`,
+            error: `Invalid xpub format`,
           };
         }
-        logger.debug(`Successfully created BIP32 node`);
 
         let derivedNode = node;
         const pathParts = path.split("/").filter((p) => p !== ""); // Remove empty parts
 
+        // Derive each path component
         for (const part of pathParts) {
           if (part === "*") {
-            logger.debug(`Deriving index ${derivationIndex} for wildcard`);
             derivedNode = derivedNode.derive(derivationIndex);
           } else {
             const index = parseInt(part);
             if (isNaN(index)) {
-              logger.error(`Invalid path component: ${part}`);
               return {
                 success: false,
                 error: `Invalid path component: ${part}`,
               };
             }
-            logger.debug(`Deriving index ${index}`);
             derivedNode = derivedNode.derive(index);
           }
         }
 
-        return { success: true, pubkey: derivedNode.publicKey };
+        return {
+          success: true,
+          data: derivedNode.publicKey,
+        };
       })
     );
 
     // Check if any key derivation failed
-    const failedDerivation = pubkeyResults.find((r) => !r.success);
+    const failedDerivation = pubkeyResults.find((result) => !result.success);
     if (failedDerivation) {
       return failedDerivation;
     }
 
-    // Get all public keys
-    const pubkeys = pubkeyResults.map((r) => r.pubkey);
-
-    // Create address based on descriptor type
+    // Create the address based on script type
+    const pubkeys = pubkeyResults.map((result) => result.data);
     let address;
+
     if (parsed.data.type === "multi-sig") {
-      // Create P2WSH address for multi-sig
       const p2wsh = bitcoin.payments.p2wsh({
         redeem: bitcoin.payments.p2ms({
           m: parsed.data.requiredSignatures,
@@ -291,43 +252,38 @@ export const deriveAddresses = async (
       });
       address = p2wsh.address;
     } else {
-      // Single key descriptor
-      switch (parsed.data.scriptType) {
-        case "pkh":
-          address = bitcoin.payments.p2pkh({ pubkey: pubkeys[0] }).address;
-          break;
-        case "sh-wpkh":
-          address = bitcoin.payments.p2sh({
+      const payment = {
+        pkh: () => bitcoin.payments.p2pkh({ pubkey: pubkeys[0] }),
+        "sh-wpkh": () =>
+          bitcoin.payments.p2sh({
             redeem: bitcoin.payments.p2wpkh({ pubkey: pubkeys[0] }),
-          }).address;
-          break;
-        case "wpkh":
-          address = bitcoin.payments.p2wpkh({ pubkey: pubkeys[0] }).address;
-          break;
-        default:
-          return {
-            success: false,
-            error: `Unsupported script type: ${parsed.data.scriptType}`,
-          };
+          }),
+        wpkh: () => bitcoin.payments.p2wpkh({ pubkey: pubkeys[0] }),
+      }[parsed.data.scriptType];
+
+      if (!payment) {
+        return {
+          success: false,
+          error: `Unsupported script type: ${parsed.data.scriptType}`,
+        };
       }
+
+      address = payment().address;
     }
 
     if (!address) {
-      logger.error(`Failed to generate address for index ${derivationIndex}`);
       return {
         success: false,
         error: `Failed to generate address for index ${derivationIndex}`,
       };
     }
 
-    logger.info(`Generated address at index ${derivationIndex}: ${address}`);
     addresses.push({
       index: derivationIndex,
       address,
     });
   }
 
-  logger.debug(`Successfully derived ${addresses.length} addresses`);
   return { success: true, data: addresses };
 };
 

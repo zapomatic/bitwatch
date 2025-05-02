@@ -47,6 +47,14 @@ const ExtendedKeyInfo = ({
     onDelete({ extendedKey });
   };
 
+  const handleAddressDelete = (address) => {
+    onDelete({
+      collection: collection.name,
+      address: address.address,
+      extendedKey: extendedKey,
+    });
+  };
+
   const handleCopy = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -131,7 +139,7 @@ const ExtendedKeyInfo = ({
                       collection={collection}
                       onEditAddress={onEditAddress}
                       onSaveExpected={onSaveExpected}
-                      onDelete={onDelete}
+                      onDelete={handleAddressDelete}
                       displayBtc={displayBtc}
                     />
                   ))}

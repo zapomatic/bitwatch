@@ -17,6 +17,7 @@ import {
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { defaultAddressForm } from "./defaults";
+import { COLLAPSE_ANIMATION_DURATION } from "../config";
 
 const AddressDialog = ({ open, onClose, address, onSave }) => {
   const [formData, setFormData] = useState(defaultAddressForm);
@@ -77,7 +78,13 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
   );
 
   return (
-    <Dialog open={open} onClose={onClose}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      TransitionProps={{
+        timeout: COLLAPSE_ANIMATION_DURATION,
+      }}
+    >
       <DialogTitle>{address ? "Edit Address" : "Add Address"}</DialogTitle>
       <DialogContent>
         <TextField

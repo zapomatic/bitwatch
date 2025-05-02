@@ -3,6 +3,11 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import DescriptorDialog from "../DescriptorDialog";
 import { jest } from "@jest/globals";
 import testData from "../../../../test-data/keys.json";
+import {
+  DEFAULT_GAP_LIMIT,
+  DEFAULT_INITIAL_ADDRESSES,
+  DEFAULT_SKIP_ADDRESSES,
+} from "../../config";
 
 describe("DescriptorDialog", () => {
   const mockOnSave = jest.fn();
@@ -54,9 +59,9 @@ describe("DescriptorDialog", () => {
     const formData = {
       name: "Test Descriptor",
       descriptor: testData.descriptors.xpubSingle,
-      gapLimit: "20",
-      initialAddresses: "10",
-      skip: "0",
+      gapLimit: DEFAULT_GAP_LIMIT,
+      initialAddresses: DEFAULT_INITIAL_ADDRESSES,
+      skip: DEFAULT_SKIP_ADDRESSES,
     };
 
     mockOnSave.mockResolvedValueOnce(undefined);
@@ -99,9 +104,9 @@ describe("DescriptorDialog", () => {
     const existingDescriptor = {
       name: "Existing Descriptor",
       descriptor: testData.descriptors.xpubSingle,
-      gapLimit: "20",
-      initialAddresses: "10",
-      skip: "0",
+      gapLimit: DEFAULT_GAP_LIMIT,
+      initialAddresses: DEFAULT_INITIAL_ADDRESSES,
+      skip: DEFAULT_SKIP_ADDRESSES,
     };
 
     render(
@@ -114,7 +119,6 @@ describe("DescriptorDialog", () => {
       />
     );
 
-    // Convert string values to numbers for comparison since the input fields are type="number"
     expect(screen.getByLabelText("Name")).toHaveValue(existingDescriptor.name);
     expect(screen.getByLabelText("Descriptor")).toHaveValue(
       existingDescriptor.descriptor

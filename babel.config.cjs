@@ -6,7 +6,7 @@ module.exports = {
         targets: {
           node: "current",
         },
-        modules: false,
+        modules: "commonjs",
       },
     ],
     ["@babel/preset-react", { runtime: "automatic" }],
@@ -17,7 +17,6 @@ module.exports = {
       {
         regenerator: true,
         helpers: true,
-        useESModules: true,
       },
     ],
   ],
@@ -33,7 +32,6 @@ module.exports = {
             modules: "commonjs",
           },
         ],
-        ["@babel/preset-react", { runtime: "automatic" }],
       ],
       plugins: [
         [
@@ -41,10 +39,8 @@ module.exports = {
           {
             regenerator: true,
             helpers: true,
-            useESModules: false,
           },
         ],
-        "@babel/plugin-transform-modules-commonjs",
       ],
     },
   },
