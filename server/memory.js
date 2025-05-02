@@ -13,7 +13,10 @@ if (!fs.existsSync(dataDir)) {
 }
 
 const dbFile = path.join(dataDir, "db.json");
-const sampleDbFile = path.join(dataDir, "../db.sample.json");
+const sampleDbFile = path.join(
+  dataDir,
+  process.env.NODE_ENV === "test" ? "../db.test.json" : "../db.sample.json"
+);
 
 // Initialize db.json if it doesn't exist
 if (!fs.existsSync(dbFile)) {

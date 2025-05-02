@@ -194,7 +194,7 @@ function AppContent() {
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         <Tooltip title={state} arrow>
           <Box
-            data-testid={`${label.toLowerCase()}-state`}
+            aria-label={`${label} status: ${state}`}
             sx={{
               width: 8,
               height: 8,
@@ -273,6 +273,7 @@ function AppContent() {
               onClick={() => navigate("/config")}
               className="header-nav-icon"
               size="small"
+              aria-label="Settings"
             >
               <SettingsIcon />
             </IconButton>
