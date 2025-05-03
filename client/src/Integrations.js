@@ -147,6 +147,13 @@ function Integrations() {
         onClose={handleCloseNotification}
         message={notification.message}
         severity={notification.severity}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        sx={{
+          position: "fixed",
+          bottom: "80px",
+          right: "16px",
+          zIndex: 9999,
+        }}
       />
     </>
   );

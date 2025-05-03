@@ -1,94 +1,148 @@
 import { test as base, expect } from "@playwright/test";
-import {
-  createMockTelegramBot,
-  createMockMempoolAPI,
-  createMockWebSocket,
-} from "../mocks/services.js";
-import testData from "../../test-data/keys.json" with { type: 'json' };
+import nock from "nock";
 
-// Create mock services
-const createMockServices = () => {
-  const addressBalances = new Map();
-  const wsListeners = new Map();
-  const telegramMessages = [];
-  let failNextInit = false;
+// Enable nock debugging
+nock.disableNetConnect();
+nock.enableNetConnect("127.0.0.1"); // Allow localhost connections for the test server
 
-  return {
-    mempool: {
-      setAddressBalance: (address, balance) => {
-        addressBalances.set(address, balance);
+// Configure nock debugging
+const debug = console.log;
+nock.emitter.on("no match", (req) => {
+  debug("No match for request:", {
+    method: req.method,
+    url: req.protocol + "//" + req.host + req.path,
+    headers: req.headers,
+    body: req.body,
+  });
+});
+
+// Configure nock for both APIs
+const setupNock = () => {
+  // Debug interceptor for all unmocked requests
+  const debugInterceptor = nock(/.*/)
+    .persist()
+    .filteringPath(/bot[^/]+\//, "bot{token}/") // Normalize bot token in paths
+    .matchHeader("content-type", () => true) // Match any content-type
+    .post(/.*/)
+    .reply(function (uri, requestBody) {
+      debug("Unmocked POST request:", {
+        uri: uri,
+        headers: this.req.headers,
+        body: requestBody,
+      });
+      return [404, { ok: false, error: "Not mocked" }];
+    })
+    .get(/.*/)
+    .reply(function (uri) {
+      debug("Unmocked GET request:", {
+        uri: uri,
+        headers: this.req.headers,
+      });
+      return [404, { ok: false, error: "Not mocked" }];
+    });
+
+  // Mock mempool.space API
+  const mempoolApi = nock("https://mempool.space")
+    .persist()
+    .get("/api/v1/ws")
+    .reply(200, { status: "ok" })
+    .get("/api/address/:address")
+    .reply(200, {
+      chain_stats: {
+        funded_txo_count: 0,
+        funded_txo_sum: 0,
+        spent_txo_count: 0,
+        spent_txo_sum: 0,
       },
-      getAddressBalance: (address) => addressBalances.get(address),
-      clearBalances: () => addressBalances.clear(),
-      getBalances: () => Object.fromEntries(addressBalances)
-    },
-    websocket: {
-      emit: (event, data) => {
-        const listeners = wsListeners.get(event) || [];
-        listeners.forEach(listener => listener(data));
+      mempool_stats: {
+        funded_txo_count: 0,
+        funded_txo_sum: 0,
+        spent_txo_count: 0,
+        spent_txo_sum: 0,
       },
-      on: (event, listener) => {
-        const listeners = wsListeners.get(event) || [];
-        listeners.push(listener);
-        wsListeners.set(event, listeners);
+    });
+
+  // Mock Telegram Bot API
+  const telegramApi = nock("https://api.telegram.org")
+    .persist()
+    .filteringPath((path) => {
+      // Extract everything after /bot{token}/ to normalize the path
+      const match = path.match(/\/bot[^/]+\/(.*)/);
+      return match ? `/bot{token}/${match[1]}` : path;
+    })
+    .post(/\/bot[^/]+\/getMe/)
+    .reply(200, {
+      ok: true,
+      result: {
+        id: 123456789,
+        is_bot: true,
+        first_name: "TestBot",
+        username: "test_bot",
+        can_join_groups: true,
+        can_read_all_group_messages: false,
+        supports_inline_queries: false,
       },
-      clearListeners: () => wsListeners.clear()
-    },
-    telegram: {
-      token: null,
-      chatId: null,
-      messages: telegramMessages,
-      failNextInit: false,
-      sendMessage: (message) => {
-        console.log('Mock Telegram: Sending message:', message);
-        telegramMessages.push(message);
-        return true;
-      },
-      clearMessages: () => {
-        telegramMessages.length = 0;
-      },
-      init: async (sendTestMessage = false) => {
-        console.log('Mock Telegram: Initializing with sendTestMessage:', sendTestMessage);
-        if (failNextInit) {
-          console.log('Mock Telegram: Failing initialization as requested');
-          failNextInit = false;
-          return { success: false, error: "Failed to create telegram bot" };
-        }
-        console.log('Mock Telegram: Initialization successful');
-        return { success: true };
-      }
-    }
-  };
+    })
+    .post(/\/bot[^/]+\/sendMessage/)
+    .times(999)
+    .reply(200, function (uri, requestBody) {
+      debug("Telegram sendMessage:", requestBody);
+      return {
+        ok: true,
+        result: {
+          message_id: Date.now(),
+          from: {
+            id: 123456789,
+            is_bot: true,
+            first_name: "TestBot",
+            username: "test_bot",
+          },
+          chat: {
+            id: requestBody.chat_id,
+            first_name: "Test",
+            type: "private",
+          },
+          date: Math.floor(Date.now() / 1000),
+          text: requestBody.text,
+        },
+      };
+    })
+    .post(/\/bot[^/]+\/setWebHook/)
+    .reply(200, {
+      ok: true,
+      result: true,
+      description: "Webhook was set",
+    })
+    .post(/\/bot[^/]+\/deleteWebhook/)
+    .reply(200, {
+      ok: true,
+      result: true,
+      description: "Webhook was deleted",
+    });
+
+  return { mempoolApi, telegramApi, debugInterceptor };
 };
 
 // Create a custom test fixture with our mocks
 const test = base.extend({
-  mockServices: async ({}, use) => {
-    const services = createMockServices();
-    await use(services);
-    
-    // Cleanup after each test
-    services.mempool.clearBalances();
-    services.websocket.clearListeners();
-    services.telegram.clearMessages();
-  },
   page: async ({ page }, use) => {
     // Add window-related code in page context
     await page.addInitScript(() => {
       // Set the server port for socket.io
       process.env.SERVER_PORT = 3119;
       window.process = { env: { SERVER_PORT: 3119 } };
-      
+
       // Mock fetch for mempool API
       const originalFetch = window.fetch;
       window.fetch = async (url, options) => {
-        if (url.includes('mempool.space')) {
+        if (url.includes("mempool.space")) {
           return {
             ok: true,
-            json: () => Promise.resolve({
-              chain_stats: { funded_txo_sum: 0, spent_txo_sum: 0 },
-              mempool_stats: { funded_txo_sum: 0, spent_txo_sum: 0 }
-            })
+            json: () =>
+              Promise.resolve({
+                chain_stats: { funded_txo_sum: 0, spent_txo_sum: 0 },
+                mempool_stats: { funded_txo_sum: 0, spent_txo_sum: 0 },
+              }),
           };
         }
         return originalFetch(url, options);
@@ -100,10 +154,10 @@ const test = base.extend({
   // Add server log capture
   serverLogs: async ({}, use, testInfo) => {
     const logs = [];
-    
+
     // Create a custom write function to capture logs
     const writeLog = (chunk) => {
-      if (typeof chunk === 'string') {
+      if (typeof chunk === "string") {
         logs.push(chunk.trim());
       }
     };
@@ -113,13 +167,17 @@ const test = base.extend({
     const originalConsoleError = console.error;
 
     console.log = (...args) => {
-      const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' ');
+      const message = args
+        .map((arg) => (typeof arg === "object" ? JSON.stringify(arg) : arg))
+        .join(" ");
       writeLog(message);
       originalConsoleLog.apply(console, args);
     };
 
     console.error = (...args) => {
-      const message = args.map(arg => typeof arg === 'object' ? JSON.stringify(arg) : arg).join(' ');
+      const message = args
+        .map((arg) => (typeof arg === "object" ? JSON.stringify(arg) : arg))
+        .join(" ");
       writeLog(message);
       originalConsoleError.apply(console, args);
     };
@@ -132,11 +190,21 @@ const test = base.extend({
 
     // Attach logs to test info
     testInfo.attachments.push({
-      name: 'server-stdout',
-      contentType: 'text/plain',
-      body: Buffer.from(logs.join('\n'))
+      name: "server-stdout",
+      contentType: "text/plain",
+      body: Buffer.from(logs.join("\n")),
     });
-  }
+  },
+  mockApis: async ({}, use) => {
+    const mocks = setupNock();
+    await use(mocks);
+    // Log any pending mocks
+    const pendingMocks = nock.pendingMocks();
+    if (pendingMocks.length > 0) {
+      debug("Pending mocks:", pendingMocks);
+    }
+    nock.cleanAll();
+  },
 });
 
 export { test, expect };

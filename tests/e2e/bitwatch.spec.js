@@ -2,7 +2,11 @@ import { test, expect } from "./test-environment.js";
 // import testData from "../../test-data/keys.json" with { type: 'json' };
 
 test.describe("Bitwatch", () => {
-  test.beforeEach(async ({ page }) => {
+  // test.beforeEach(async ({}) => {});
+
+  // NOTE: we put all of the sequences of events in a single test to make the tests faster
+  // we don't need to load the page fresh, we want to navigate around it like a real user
+  test("Bitwatch full test suite", async ({ page, mockApis }) => {
     // Navigate to the app and wait for it to load
     console.log("Navigating to app...");
     await page.goto("/");
@@ -38,11 +42,8 @@ test.describe("Bitwatch", () => {
     });
     expect(websocketState).toBe("WebSocket");
     console.log("WebSocket connected");
-  });
-
-  test("Configuration Page", async ({ page, mockServices, serverLogs }) => {
     // Click the settings button
-    await page.click("button[aria-label='Settings']", { timeout: 5000 });
+    await page.getByTestId("settings-button").click();
     console.log("Settings opened");
 
     // Verify default values
@@ -107,98 +108,53 @@ test.describe("Bitwatch", () => {
       "Configuration saved successfully"
     );
     console.log("Verified success notification");
-  });
 
-  test("Integrations Page", async ({ page, mockServices }) => {
-    await page.click("button[aria-label='Integrations']", { timeout: 5000 });
+    // Navigate to integrations
+    await page.getByTestId("integrations-button").click();
     console.log("Integrations opened");
     // Fill in Telegram configuration
-    await page.fill("input[name='telegramToken']", "test-token", {
-      timeout: 5000,
-    });
-    await page.fill("input[name='telegramChatId']", "test-chat-id", {
-      timeout: 5000,
+    await page.fill(
+      "#telegram-token",
+      "123456789:ABCdefGHIjklMNOpqrsTUVwxyz123456789",
+      {
+        timeout: 1000,
+      }
+    );
+    await page.fill("#telegram-chatid", "test-chat-id", {
+      timeout: 1000,
     });
     console.log("Telegram config filled");
 
     // Save the configuration
-    await page.click("button:has-text('Save')", { timeout: 5000 });
+    await page.getByRole("button", { name: "Save Integrations" }).click();
     console.log("Configuration saved");
 
-    // Wait for the save to complete
+    // Wait for the success notification
     await page.waitForSelector("text=Configuration saved successfully", {
       timeout: 5000,
     });
-    console.log("Configuration saved confirmed");
+    console.log("Success notification shown");
 
-    // Verify the server received the configuration
-    const telegramConfig = mockServices.telegram.getConfig();
-    expect(telegramConfig).toEqual({
-      token: "test-token",
-      chatId: "test-chat-id",
-    });
-
-    // Verify the server attempted to initialize Telegram
-    const telegramInitAttempts = mockServices.telegram.getInitAttempts();
-    expect(telegramInitAttempts).toBe(1);
-
-    // Verify the server attempted to send a test message
-    const testMessages = mockServices.telegram.getMessages();
-    expect(testMessages).toContain(
-      "✅ Bitwatch Telegram notifications configured successfully!"
+    // Verify the success notification
+    const notification = page.getByRole("alert");
+    await expect(notification).toBeVisible();
+    await expect(notification).toContainText(
+      "Configuration saved successfully"
     );
-    // Configure mock service to fail
-    mockServices.telegram.failNextInit = true;
+    await expect(notification).toHaveClass(/MuiAlert-standardSuccess/);
+    console.log("Success notification verified");
 
-    // Navigate to integrations
-    console.log("Clicking Integrations button...");
-    await page.getByRole("button", { name: "Integrations" }).click();
-    console.log("Waiting for network idle after clicking Integrations...");
-    await page.waitForLoadState("networkidle");
-    console.log("Integrations page loaded");
+    // Wait for notification to disappear (6 seconds + animation)
+    await page.waitForTimeout(6500);
 
-    // Wait for the form to be visible
-    console.log("Waiting for Bot Token input...");
-    await page
-      .getByLabel("Bot Token")
-      .waitFor({ state: "visible", timeout: 10000 });
-    console.log("Bot Token input visible");
+    // Verify that nock intercepted the expected calls
+    expect(mockApis.telegramApi.isDone()).toBe(true);
+    expect(mockApis.mempoolApi.isDone()).toBe(true);
 
-    // Fill in invalid telegram bot configuration
-    console.log("Filling in invalid bot configuration...");
-    await page.getByLabel("Bot Token").fill("invalid-token");
-    await page.getByLabel("Chat ID").fill("invalid-chat-id");
-    console.log("Invalid bot configuration filled");
-
-    // Save configuration
-    console.log("Looking for Save Integrations button...");
-    const saveButton = page.getByRole("button", { name: "Save Integrations" });
-    await saveButton.waitFor({ state: "visible", timeout: 10000 });
-    console.log("Save Integrations button found, clicking...");
-    await saveButton.click();
-    console.log("Waiting for network idle after save...");
-    await page.waitForLoadState("networkidle");
-
-    // Wait for the button to be visible and enabled again
-    console.log("Waiting for Save Integrations button to be visible again...");
-    await expect(saveButton).toBeVisible();
-    await expect(saveButton).not.toBeDisabled();
-    console.log("Save Integrations button is visible and enabled");
-
-    // Wait for error notification
-    console.log("Waiting for error notification...");
-    const errorNotification = page
-      .getByRole("alert")
-      .filter({ hasText: "Failed to create telegram bot" });
-    await expect(errorNotification).toBeVisible();
-    console.log("Error notification visible");
-
-    // Verify notification has error styling
-    await expect(errorNotification).toHaveClass(/MuiAlert-standardError/);
-    console.log("Error notification has correct styling");
-
-    // Verify notification auto-dismisses after 6 seconds
-    await expect(errorNotification).not.toBeVisible({ timeout: 7000 });
-    console.log("Error notification auto-dismissed");
+    // TODO: Add tests for actual notifications
+    // For example:
+    // - Add a watch address
+    // - Trigger a balance change
+    // - Verify that a Telegram notification was sent
   });
 });

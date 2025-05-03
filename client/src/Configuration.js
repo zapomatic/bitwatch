@@ -252,10 +252,10 @@ function Config() {
         open={notification.open}
         autoHideDuration={6000}
         onClose={handleCloseNotification}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
         sx={{
           position: "fixed",
-          top: "16px",
+          bottom: "80px",
           right: "16px",
           zIndex: 9999,
         }}

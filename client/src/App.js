@@ -256,6 +256,8 @@ function AppContent() {
               onClick={() => navigate("/")}
               className="header-nav-icon"
               size="small"
+              aria-label="Watch List"
+              data-testid="watch-list-button"
             >
               <WatchListIcon />
             </IconButton>
@@ -265,6 +267,7 @@ function AppContent() {
               className="header-nav-icon"
               size="small"
               aria-label="Integrations"
+              data-testid="integrations-button"
             >
               <IntegrationIcon />
             </IconButton>
@@ -274,6 +277,7 @@ function AppContent() {
               className="header-nav-icon"
               size="small"
               aria-label="Settings"
+              data-testid="settings-button"
             >
               <SettingsIcon />
             </IconButton>
