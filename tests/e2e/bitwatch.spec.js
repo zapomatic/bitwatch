@@ -45,10 +45,73 @@ test.describe("Bitwatch", () => {
     await page.click("button[aria-label='Settings']", { timeout: 5000 });
     console.log("Settings opened");
 
-    // see that we have the appropriate settings
+    // Verify default values
+    await expect(page.getByTestId("config-api")).toHaveValue(
+      "https://mempool.space"
+    );
+    await expect(page.getByTestId("config-interval")).toHaveValue("600000");
+    await expect(page.getByTestId("config-apiDelay")).toHaveValue("2000");
+    await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue("1");
+    await expect(page.getByTestId("config-debugLogging")).not.toBeChecked();
+
+    // Switch to private mode
+    await page.getByTestId("use-local-node").click();
+    console.log("Switched to private mode");
+
+    // Verify private mode values
+    await expect(page.getByTestId("config-api")).toHaveValue(
+      "http://10.21.21.26:3006"
+    );
+    await expect(page.getByTestId("config-interval")).toHaveValue("60000");
+    await expect(page.getByTestId("config-apiDelay")).toHaveValue("100");
+    await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue(
+      "100"
+    );
+
+    // Toggle debug logging
+    await page.getByTestId("config-debugLogging").click();
+    await expect(page.getByTestId("config-debugLogging")).toBeChecked();
+    console.log("Toggled debug logging");
+
+    // Save configuration
+    await page.getByTestId("save-configuration").click();
+    console.log("Saved configuration");
+
+    // Verify success notification
+    await expect(page.getByTestId("config-notification")).toBeVisible();
+    await expect(page.getByTestId("config-notification")).toContainText(
+      "Configuration saved successfully"
+    );
+    console.log("Verified success notification");
+
+    // Switch back to public mode
+    await page.getByTestId("use-public-api").click();
+    console.log("Switched back to public mode");
+
+    // Verify public mode values
+    await expect(page.getByTestId("config-api")).toHaveValue(
+      "https://mempool.space"
+    );
+    await expect(page.getByTestId("config-interval")).toHaveValue("600000");
+    await expect(page.getByTestId("config-apiDelay")).toHaveValue("2000");
+    await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue("1");
+    await expect(page.getByTestId("config-debugLogging")).not.toBeChecked();
+
+    // Save configuration again
+    await page.getByTestId("save-configuration").click();
+    console.log("Saved public configuration");
+
+    // Verify success notification
+    await expect(page.getByTestId("config-notification")).toBeVisible();
+    await expect(page.getByTestId("config-notification")).toContainText(
+      "Configuration saved successfully"
+    );
+    console.log("Verified success notification");
   });
 
-  test("Telegram Page", async ({ page, mockServices }) => {
+  test("Integrations Page", async ({ page, mockServices }) => {
+    await page.click("button[aria-label='Integrations']", { timeout: 5000 });
+    console.log("Integrations opened");
     // Fill in Telegram configuration
     await page.fill("input[name='telegramToken']", "test-token", {
       timeout: 5000,

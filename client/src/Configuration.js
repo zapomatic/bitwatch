@@ -9,6 +9,8 @@ import Alert from "@mui/material/Alert";
 import "./theme.css";
 import { FormControlLabel, Switch } from "@mui/material";
 
+import { DEFAULT_CONFIG, PRIVATE_CONFIG } from "./config";
+
 const formatInterval = (ms) => {
   if (!ms) return "";
   const seconds = Math.floor(ms / 1000);
@@ -22,15 +24,6 @@ const formatInterval = (ms) => {
   } else {
     return `${seconds} second${seconds > 1 ? "s" : ""}`;
   }
-};
-
-// Add default config values
-const DEFAULT_CONFIG = {
-  api: "https://mempool.space",
-  apiParallelLimit: 1,
-  interval: 600000,
-  apiDelay: 2000,
-  debugLogging: false,
 };
 
 const Configs = {
@@ -65,13 +58,7 @@ const Configs = {
 };
 
 function Config() {
-  const [config, setConfig] = useState({
-    api: "",
-    apiDelay: 2000,
-    apiParallelLimit: 1,
-    interval: 600000,
-    debugLogging: false,
-  });
+  const [config, setConfig] = useState(DEFAULT_CONFIG);
   const [notification, setNotification] = useState({
     open: false,
     message: "",
@@ -79,13 +66,9 @@ function Config() {
   });
 
   useEffect(() => {
-    socketIO.emit("getConfig", {}, (response) => {
-      console.log(`getConfig`, response);
-      // Merge received config with defaults
-      const mergedConfig = Object.keys(Configs).reduce((acc, key) => {
-        acc[key] = response[key] ?? Configs[key].default;
-        return acc;
-      }, {});
+    socketIO.emit("getConfig", (response) => {
+      const mergedConfig = { ...DEFAULT_CONFIG, ...response };
+      console.log(`getConfig`, { response, mergedConfig });
       setConfig(mergedConfig);
     });
   }, []);
@@ -106,8 +89,17 @@ function Config() {
       },
       (response) => {
         if (response.error) {
-          alert(response.error);
+          return setNotification({
+            open: true,
+            message: response.error,
+            severity: "error",
+          });
         }
+        setNotification({
+          open: true,
+          message: "Configuration saved successfully",
+          severity: "success",
+        });
       }
     );
   };
@@ -130,6 +122,10 @@ function Config() {
                 onChange={(e) =>
                   setConfig({ ...config, [key]: e.target.checked })
                 }
+                inputProps={{
+                  "aria-label": Configs[key].label,
+                  "data-testid": `config-${key}`,
+                }}
               />
             }
             label={Configs[key].label}
@@ -164,6 +160,8 @@ function Config() {
           value={config[key] ?? Configs[key].default}
           onChange={(e) => setConfig({ ...config, [key]: e.target.value })}
           style={{ width: "100%" }}
+          aria-label={Configs[key].label}
+          data-testid={`config-${key}`}
         />
         {Configs[key].help && (
           <Typography
@@ -199,15 +197,7 @@ function Config() {
           <div className="crystal-toggle-group">
             <Button
               className="crystal-button"
-              onClick={() =>
-                setConfig({
-                  ...config,
-                  api: "http://10.21.21.26:3006",
-                  apiParallelLimit: 100,
-                  interval: 60000,
-                  apiDelay: 100,
-                })
-              }
+              onClick={() => setConfig(PRIVATE_CONFIG)}
               sx={{
                 background: "var(--theme-surface)",
                 color: "var(--theme-text)",
@@ -216,6 +206,8 @@ function Config() {
                   boxShadow: "0 0 10px var(--theme-glow-secondary)",
                 },
               }}
+              aria-label="Use Local Node"
+              data-testid="use-local-node"
             >
               Use Local Node
             </Button>
@@ -230,6 +222,8 @@ function Config() {
                   boxShadow: "0 0 10px var(--theme-glow-secondary)",
                 },
               }}
+              aria-label="Use Public API"
+              data-testid="use-public-api"
             >
               Use Public API
             </Button>
@@ -245,6 +239,8 @@ function Config() {
             <Button
               className="crystal-button crystal-button-primary"
               onClick={handleSave}
+              aria-label="Save Configuration"
+              data-testid="save-configuration"
             >
               Save Configuration
             </Button>
@@ -263,6 +259,7 @@ function Config() {
           right: "16px",
           zIndex: 9999,
         }}
+        data-testid="config-notification"
       >
         <Alert
           onClose={handleCloseNotification}

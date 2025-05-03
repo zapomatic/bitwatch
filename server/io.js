@@ -80,8 +80,27 @@ const socketIO = {
           });
         },
 
-        getIntegrations: async (data, cb) => {
-          logger.info(`Integrations requested by client ${socketID}`);
+        getConfig: async (cb) => {
+          cb({
+            interval: memory.db.interval,
+            api: memory.db.api,
+            apiDelay: memory.db.apiDelay,
+            apiParallelLimit: memory.db.apiParallelLimit,
+            debugLogging: memory.db.debugLogging,
+          });
+        },
+        saveConfig: async (data, cb) => {
+          logger.info(`Saving config ${data.api} at ${data.interval}ms, delay ${data.apiDelay}ms, parallel ${data.apiParallelLimit}, debug=${data.debugLogging}`);
+          memory.db.interval = data.interval;
+          memory.db.api = data.api;
+          memory.db.apiDelay = data.apiDelay;
+          memory.db.apiParallelLimit = data.apiParallelLimit;
+          memory.db.debugLogging = data.debugLogging;
+          memory.saveDb();
+          cb({ success: true });
+        },
+
+        getIntegrations: async (cb) => {
           cb({ telegram: memory.db.telegram || {} });
         },
 
