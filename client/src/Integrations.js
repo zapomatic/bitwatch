@@ -38,7 +38,7 @@ function Integrations() {
       setNotification({
         open: true,
         message: response.success
-          ? "Settings saved successfully!"
+          ? "Integrations saved successfully!"
           : "Failed to create telegram bot. Check credentials and try again.",
         severity: response.success ? "success" : "error",
       });
