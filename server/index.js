@@ -41,7 +41,12 @@ const PORT = process.env.PORT || 3117;
 server.listen(PORT, () => {
   logger.system(`Server listening on port ${PORT}`);
   socketIO.init(server);
-  telegram.init();
+
+  // Only initialize Telegram if not in test mode
+  if (process.env.NODE_ENV !== "test") {
+    telegram.init();
+  }
+
   engine();
 
   // Initialize mempool after socket.io is set up

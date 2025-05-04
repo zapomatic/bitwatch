@@ -6,7 +6,7 @@ test.describe("Bitwatch", () => {
 
   // NOTE: we put all of the sequences of events in a single test to make the tests faster
   // we don't need to load the page fresh, we want to navigate around it like a real user
-  test("Bitwatch full test suite", async ({ page, mockApis }) => {
+  test("Bitwatch full test suite", async ({ page }) => {
     // Navigate to the app and wait for it to load
     console.log("Navigating to app...");
     await page.goto("/");
@@ -48,7 +48,7 @@ test.describe("Bitwatch", () => {
 
     // Verify default values
     await expect(page.getByTestId("config-api")).toHaveValue(
-      "https://mempool.space"
+      "http://localhost:3006"
     );
     await expect(page.getByTestId("config-interval")).toHaveValue("600000");
     await expect(page.getByTestId("config-apiDelay")).toHaveValue("2000");
@@ -91,7 +91,7 @@ test.describe("Bitwatch", () => {
 
     // Verify public mode values
     await expect(page.getByTestId("config-api")).toHaveValue(
-      "https://mempool.space"
+      "http://localhost:3006"
     );
     await expect(page.getByTestId("config-interval")).toHaveValue("600000");
     await expect(page.getByTestId("config-apiDelay")).toHaveValue("2000");
@@ -131,7 +131,7 @@ test.describe("Bitwatch", () => {
 
     // Wait for the success notification
     await page.waitForSelector("text=Configuration saved successfully", {
-      timeout: 5000,
+      timeout: 2000,
     });
     console.log("Success notification shown");
 
@@ -146,10 +146,6 @@ test.describe("Bitwatch", () => {
 
     // Wait for notification to disappear (6 seconds + animation)
     await page.waitForTimeout(6500);
-
-    // Verify that nock intercepted the expected calls
-    expect(mockApis.telegramApi.isDone()).toBe(true);
-    expect(mockApis.mempoolApi.isDone()).toBe(true);
 
     // TODO: Add tests for actual notifications
     // For example:

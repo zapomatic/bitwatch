@@ -1,7 +1,7 @@
 {
   "collections": {},
   "interval": 600000,
-  "api": "https://mempool.space",
+  "api": "http://localhost:3006",
   "apiDelay": 2000,
   "apiParallelLimit": 1,
   "debugLogging": false,

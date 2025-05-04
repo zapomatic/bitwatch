@@ -1,9 +1,9 @@
-import mempoolJS from "@mempool/mempool.js";
 import memory from "./memory.js";
 import logger from "./logger.js";
 import { detectBalanceChanges } from "./balance.js";
 import { checkAddressBalance } from "./balance.js";
 import telegram from "./telegram.js";
+import mempoolJS from "@mempool/mempool.js";
 
 let mempoolClient = null;
 let trackedAddresses = new Set();

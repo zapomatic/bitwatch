@@ -10,21 +10,27 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: "cd client && NODE_ENV=production npm run start:e2e",
-      port: 3120,
-      timeout: 5000,
-      reuseExistingServer: !process.env.CI,
-    },
-    {
-      command: "rm -rf server/data/db.json && PORT=3119 npm run dev:server",
-      port: 3119,
-      timeout: 5000,
+      command: "node tests/e2e/api.mock.js",
+      port: 3006,
+      timeout: 30000,
       reuseExistingServer: !process.env.CI,
       stdout: "pipe",
       stderr: "pipe",
-      env: {
-        NODE_ENV: "test",
-      },
+    },
+    {
+      command:
+        "rm -rf server/data/db.json && NODE_ENV=test PORT=3119 npm run dev:server",
+      port: 3119,
+      timeout: 30000,
+      reuseExistingServer: !process.env.CI,
+      stdout: "pipe",
+      stderr: "pipe",
+    },
+    {
+      command: "cd client && NODE_ENV=production npm run start:e2e",
+      port: 3120,
+      timeout: 30000,
+      reuseExistingServer: !process.env.CI,
     },
   ],
   workers: 1,

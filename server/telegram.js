@@ -1,12 +1,13 @@
-import TelegramBot from "node-telegram-bot-api";
 import memory from "./memory.js";
 import logger from "./logger.js";
+import TelegramBot from "node-telegram-bot-api";
 
 let bot = null;
 
 const init = async (sendTestMessage = false) => {
   // Clear existing bot instance if it exists
   if (bot) {
+    logger.info("Clearing existing bot instance");
     bot.stopPolling();
     bot = null;
   }
@@ -16,9 +17,39 @@ const init = async (sendTestMessage = false) => {
     return { success: false, error: "Missing token or chat ID" };
   }
 
+  // Log environment and bot state
+  logger.info(
+    `Environment: ${
+      process.env.NODE_ENV
+    }, Bot exists: ${!!bot}, Token exists: ${!!memory.db.telegram.token}`
+  );
+
+  // In test mode, create a simple bot that just logs messages
+  if (process.env.NODE_ENV === "test") {
+    logger.info("Test mode: creating test bot instance");
+    bot = {
+      stopPolling: () => logger.info("Test bot: stopPolling called"),
+      startPolling: () => logger.info("Test bot: startPolling called"),
+      onText: (pattern, callback) =>
+        logger.info("Test bot: onText handler registered"),
+      on: (event, callback) =>
+        logger.info(`Test bot: ${event} handler registered`),
+      sendMessage: (chatId, message, options) => {
+        logger.info("Test bot: sendMessage called", {
+          chatId,
+          message,
+          options,
+        });
+        return Promise.resolve(true);
+      },
+    };
+    return { success: true };
+  }
+
   // Create bot with error handling
   const createBot = async () => {
     try {
+      logger.info("Creating new Telegram bot instance");
       const newBot = new TelegramBot(memory.db.telegram.token, {
         polling: false, // Don't start polling yet
       });
@@ -27,6 +58,7 @@ const init = async (sendTestMessage = false) => {
       return newBot
         .getMe()
         .then(() => {
+          logger.info("Bot token validated successfully");
           // If getMe succeeds, start polling
           newBot.startPolling();
           return newBot;

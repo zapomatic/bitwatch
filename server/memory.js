@@ -1,7 +1,6 @@
 import { fileURLToPath } from "url";
 import path from "path";
 import fs from "fs";
-import logger from "./logger.js";
 
 const __filename = fileURLToPath(import.meta.url); // get the resolved path to the file
 const __dirname = path.dirname(__filename); // get the name of the directory
@@ -20,7 +19,6 @@ const sampleDbFile = path.join(
 
 // Initialize db.json if it doesn't exist
 if (!fs.existsSync(dbFile)) {
-  logger.info("Initializing database from sample configuration");
   // Read the sample database file
   const sampleDb = JSON.parse(fs.readFileSync(sampleDbFile, "utf8"));
 
@@ -31,7 +29,6 @@ if (!fs.existsSync(dbFile)) {
 
   // Write the initialized database
   fs.writeFileSync(dbFile, JSON.stringify(sampleDb, null, 2));
-  logger.success("Database initialized successfully");
 }
 
 const loadDb = () => {
