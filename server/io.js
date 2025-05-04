@@ -351,6 +351,78 @@ const socketIO = {
           return cb({ success: true });
         },
 
+        addExtendedKey: async (data, cb) => {
+          if (!data.collection || !data.name || !data.key) {
+            return cb({ success: false, error: "Missing required fields" });
+          }
+
+          logger.info(`Adding extended key ${data.name} to collection ${data.collection}`);
+
+          // Create collection if it doesn't exist
+          if (!memory.db.collections[data.collection]) {
+            memory.db.collections[data.collection] = { 
+              addresses: [], 
+              extendedKeys: [],
+              descriptors: []
+            };
+          }
+
+          // Check if extended key already exists
+          const collection = memory.db.collections[data.collection];
+          if (collection.extendedKeys.some(k => k.name === data.name || k.key === data.key)) {
+            return cb({ success: false, error: "Extended key with this name or key already exists" });
+          }
+
+          // Derive initial addresses
+          const addresses = await deriveExtendedKeyAddresses(
+            { key: data.key, skip: data.skip || 0 },
+            0,
+            parseInt(data.initialAddresses) || 10,
+            data.derivationPath
+          );
+
+          if (!addresses) {
+            return cb({ success: false, error: "Failed to derive addresses" });
+          }
+
+          // Add extended key to collection
+          collection.extendedKeys.push({
+            name: data.name,
+            key: data.key,
+            derivationPath: data.derivationPath,
+            gapLimit: parseInt(data.gapLimit) || 2,
+            initialAddresses: parseInt(data.initialAddresses) || 10,
+            skip: parseInt(data.skip) || 0,
+            addresses: addresses.map(addr => ({
+              address: addr.address,
+              name: `${data.name} ${addr.index}`,
+              index: addr.index,
+              expect: {
+                chain_in: 0,
+                chain_out: 0,
+                mempool_in: 0,
+                mempool_out: 0
+              },
+              monitor: {
+                chain_in: "auto-accept",
+                chain_out: "alert",
+                mempool_in: "auto-accept",
+                mempool_out: "alert"
+              },
+              actual: null,
+              error: false,
+              errorMessage: null
+            }))
+          });
+
+          memory.saveDb();
+          
+          // Emit state update to ALL clients
+          socketIO.io.emit("updateState", { collections: memory.db.collections });
+          
+          return cb({ success: true });
+        },
+
         editDescriptor: async (data, cb) => {
           if (!data.collection || !data.name || !data.descriptor || data.descriptorIndex === undefined) {
             return cb({ success: false, error: "Missing required fields" });
@@ -663,7 +735,7 @@ const checkGapLimit = async (item) => {
       );
       if (!result.success) {
         logger.error(`Failed to derive additional addresses: ${result.error}`);
-        return;
+        return { lastUsedIndex, emptyCount };
       }
       newAddresses = result.data;
     } else {
@@ -676,14 +748,17 @@ const checkGapLimit = async (item) => {
       );
     }
     
-    if (!newAddresses || newAddresses.length === 0) break;
+    if (!newAddresses || newAddresses.length === 0) {
+      logger.error('Failed to derive new addresses');
+      break;
+    }
     
     const newAddr = newAddresses[0];
     const balance = await getAddressBalance(newAddr.address);
     
     // Add delay between API calls
-    logger.scan(`Waiting ${memory.db.config?.apiDelay || 1000}ms before next request`);
-    await new Promise(resolve => setTimeout(resolve, memory.db.config?.apiDelay || 1000));
+    logger.scan(`Waiting ${memory.db.apiDelay || 100}ms before next request`);
+    await new Promise(resolve => setTimeout(resolve, memory.db.apiDelay || 100));
     
     if (balance.error) {
       logger.error(`Error checking balance for ${newAddr.address}: ${balance.message}`);
@@ -707,13 +782,10 @@ const checkGapLimit = async (item) => {
         mempool_in: "auto-accept",
         mempool_out: "alert"
       },
-      actual: null,
+      actual: balance.actual,
       error: false,
       errorMessage: null
     };
-
-    // Update balance using shared function
-    await checkAddressBalance(addressRecord, balance.actual);
     
     if (hasAddressActivity(addressRecord)) {
       logger.scan(`Found used address at index ${newAddr.index}`);

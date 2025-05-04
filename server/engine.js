@@ -6,7 +6,7 @@ import telegram from "./telegram.js";
 import logger from "./logger.js";
 import { detectBalanceChanges } from "./balance.js";
 
-const updateAddressAndEmit = (addr, balance) => {
+const updateAddressAndEmit = async (addr, balance) => {
   const collections = { ...memory.db.collections };
   const collection = collections[addr.collection];
   if (!collection) return;
@@ -16,6 +16,7 @@ const updateAddressAndEmit = (addr, balance) => {
   let addressArray = collection.addresses;
   let isExtendedKeyAddress = false;
   let isDescriptorAddress = false;
+  let parentItem = null;
 
   // If not found in regular addresses, check extended keys
   if (index === -1 && collection.extendedKeys) {
@@ -27,6 +28,7 @@ const updateAddressAndEmit = (addr, balance) => {
       if (index !== -1) {
         addressArray = extendedKey.addresses;
         isExtendedKeyAddress = true;
+        parentItem = extendedKey;
         break;
       }
     }
@@ -40,6 +42,7 @@ const updateAddressAndEmit = (addr, balance) => {
       if (index !== -1) {
         addressArray = descriptor.addresses;
         isDescriptorAddress = true;
+        parentItem = descriptor;
         break;
       }
     }
@@ -48,6 +51,7 @@ const updateAddressAndEmit = (addr, balance) => {
   if (index === -1) return;
 
   // Update the address with new balance
+  const oldBalance = addressArray[index].actual;
   addressArray[index] = {
     ...addressArray[index],
     actual: balance.actual,
@@ -61,77 +65,30 @@ const updateAddressAndEmit = (addr, balance) => {
     },
   };
 
-  // Check for changes and notify
-  const changes = detectBalanceChanges(
-    addr.address,
-    balance.actual,
-    addr.collection,
-    addressArray[index].name
-  );
-  if (changes) {
-    telegram.notifyBalanceChange(
-      addr.address,
-      changes,
-      addr.collection,
-      addressArray[index].name
-    );
+  // Check if balance changed
+  const balanceChanged =
+    !oldBalance ||
+    oldBalance.chain_in !== balance.actual.chain_in ||
+    oldBalance.chain_out !== balance.actual.chain_out ||
+    oldBalance.mempool_in !== balance.actual.mempool_in ||
+    oldBalance.mempool_out !== balance.actual.mempool_out;
+
+  // If this is an extended key or descriptor address and balance changed,
+  // check gap limit and generate more addresses if needed
+  if (
+    balanceChanged &&
+    (isExtendedKeyAddress || isDescriptorAddress) &&
+    parentItem
+  ) {
+    await checkGapLimit(parentItem);
   }
 
-  // Determine API state based on address data
-  const hasActualData = Object.values(collections).some(
-    (col) =>
-      col.addresses.some((addr) => addr.actual !== null) ||
-      (col.extendedKeys &&
-        col.extendedKeys.some((extKey) =>
-          extKey.addresses.some((addr) => addr.actual !== null)
-        )) ||
-      (col.descriptors &&
-        col.descriptors.some((desc) =>
-          desc.addresses.some((addr) => addr.actual !== null)
-        ))
-  );
-  const hasErrors = Object.values(collections).some(
-    (col) =>
-      col.addresses.some((addr) => addr.error) ||
-      (col.extendedKeys &&
-        col.extendedKeys.some((extKey) =>
-          extKey.addresses.some((addr) => addr.error)
-        )) ||
-      (col.descriptors &&
-        col.descriptors.some((desc) =>
-          desc.addresses.some((addr) => addr.error)
-        ))
-  );
-  const hasLoading = Object.values(collections).some(
-    (col) =>
-      col.addresses.some((addr) => addr.actual === null && !addr.error) ||
-      (col.extendedKeys &&
-        col.extendedKeys.some((extKey) =>
-          extKey.addresses.some((addr) => addr.actual === null && !addr.error)
-        )) ||
-      (col.descriptors &&
-        col.descriptors.some((desc) =>
-          desc.addresses.some((addr) => addr.actual === null && !addr.error)
-        ))
-  );
+  memory.db.collections = collections;
+  memory.saveDb();
 
-  let apiState = "?";
-  if (hasErrors) {
-    apiState = "ERROR";
-  } else if (hasLoading) {
-    apiState = "CHECKING";
-  } else if (hasActualData) {
-    apiState = "GOOD";
-  }
-
-  // Update state and emit changes
-  memory.state = {
-    collections,
-    websocketState: memory.state.websocketState,
-    apiState,
-  };
+  // Emit state update
   socketIO.io.emit("updateState", {
-    collections,
+    collections: memory.db.collections,
     apiState: memory.state.apiState,
   });
 };

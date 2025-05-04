@@ -64,8 +64,13 @@ const ExtendedKeyDialog = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose}>
-      <DialogTitle>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      aria-labelledby="extended-key-dialog-title"
+      data-testid="extended-key-dialog"
+    >
+      <DialogTitle id="extended-key-dialog-title">
         {extendedKey ? "Edit Extended Key" : "Add Extended Key"}
       </DialogTitle>
       <DialogContent>
@@ -78,7 +83,10 @@ const ExtendedKeyDialog = ({
             onChange={handleChange}
             helperText="A friendly name for this extended key"
             fullWidth
-            aria-label="Extended key name"
+            inputProps={{
+              "data-testid": "extended-key-name-input",
+              "aria-label": "Extended key name",
+            }}
           />
           <TextField
             label="Extended Key"
@@ -87,7 +95,10 @@ const ExtendedKeyDialog = ({
             onChange={handleChange}
             helperText="The extended public key (xpub, ypub, zpub)"
             fullWidth
-            aria-label="Extended public key"
+            inputProps={{
+              "data-testid": "extended-key-key-input",
+              "aria-label": "Extended public key",
+            }}
           />
           <TextField
             label="Derivation Path"
@@ -96,7 +107,10 @@ const ExtendedKeyDialog = ({
             onChange={handleChange}
             helperText="The derivation path (e.g., m/0)"
             fullWidth
-            aria-label="Derivation path"
+            inputProps={{
+              "data-testid": "extended-key-path-input",
+              "aria-label": "Derivation path",
+            }}
           />
           <TextField
             label="Gap Limit"
@@ -106,7 +120,10 @@ const ExtendedKeyDialog = ({
             type="number"
             helperText="Number of unused addresses before stopping derivation"
             fullWidth
-            aria-label="Gap limit"
+            inputProps={{
+              "data-testid": "extended-key-gap-input",
+              "aria-label": "Gap limit",
+            }}
           />
           <TextField
             label="Initial Addresses"
@@ -116,7 +133,10 @@ const ExtendedKeyDialog = ({
             type="number"
             helperText="Number of addresses to derive initially"
             fullWidth
-            aria-label="Initial addresses"
+            inputProps={{
+              "data-testid": "extended-key-initial-input",
+              "aria-label": "Initial addresses",
+            }}
           />
           <TextField
             label="Skip"
@@ -126,17 +146,25 @@ const ExtendedKeyDialog = ({
             type="number"
             helperText="Number of addresses to skip before starting derivation"
             fullWidth
-            aria-label="Skip addresses"
+            inputProps={{
+              "data-testid": "extended-key-skip-input",
+              "aria-label": "Skip addresses",
+            }}
           />
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} aria-label="Cancel extended key dialog">
+        <Button
+          onClick={onClose}
+          data-testid="extended-key-cancel-button"
+          aria-label="Cancel extended key dialog"
+        >
           Cancel
         </Button>
         <Button
           onClick={handleSubmit}
           variant="contained"
+          data-testid="extended-key-submit-button"
           aria-label={extendedKey ? "Save extended key" : "Add extended key"}
         >
           {extendedKey ? "Save" : "Add"}

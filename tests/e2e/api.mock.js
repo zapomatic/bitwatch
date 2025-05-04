@@ -2,6 +2,18 @@
 
 import { WebSocketServer } from "ws";
 import http from "http";
+import { readFileSync } from "fs";
+import { fileURLToPath } from "url";
+import { dirname, join } from "path";
+
+// Get the directory name of the current module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+
+// Read and parse the test data
+const testData = JSON.parse(
+  readFileSync(join(__dirname, "../../test-data/keys.json"), "utf8")
+);
 
 // State
 let wss = null;
@@ -18,6 +30,28 @@ const ADDRESS_STATES = {
   CHAIN_IN: "chain_in",
   MEMPOOL_OUT: "mempool_out",
   CHAIN_OUT: "chain_out",
+};
+
+// Get all addresses from extended keys and descriptors
+const getDerivedAddresses = () => {
+  const addresses = new Set();
+
+  // Add addresses from extended keys
+  Object.values(testData.addresses).forEach((keyData) => {
+    if (Array.isArray(keyData.addresses)) {
+      keyData.addresses.forEach((addr) => {
+        addresses.add(addr.address);
+      });
+    }
+  });
+
+  return addresses;
+};
+
+const derivedAddresses = getDerivedAddresses();
+
+const isPlainAddress = (address) => {
+  return !derivedAddresses.has(address);
 };
 
 const log = (level, message) => {
@@ -37,7 +71,64 @@ const getNextState = (currentState) => {
 };
 
 // Helper function to get balance based on state
-const getBalanceForState = (state) => {
+const getBalanceForState = (state, address) => {
+  // Get all derived addresses from test data
+  const derivedAddresses = getDerivedAddresses();
+
+  // If this is a derived address, check its position in its parent's address list
+  const isDerived = derivedAddresses.has(address);
+  let addressIndex = -1;
+
+  if (isDerived) {
+    // Find which key/descriptor this address belongs to and its index
+    for (const keyData of Object.values(testData.addresses)) {
+      if (Array.isArray(keyData.addresses)) {
+        const addrInfo = keyData.addresses.find((a) => a.address === address);
+        if (addrInfo) {
+          addressIndex = addrInfo.index;
+          break;
+        }
+      }
+    }
+  }
+
+  // For derived addresses (from extended keys or descriptors)
+  if (isDerived) {
+    // First two addresses after skip should have chain_in values
+    if (addressIndex === 1 || addressIndex === 2) {
+      return {
+        chain_stats: {
+          funded_txo_count: 1,
+          funded_txo_sum: 10000,
+          spent_txo_count: 0,
+          spent_txo_sum: 0,
+        },
+        mempool_stats: {
+          funded_txo_count: 0,
+          funded_txo_sum: 0,
+          spent_txo_count: 0,
+          spent_txo_sum: 0,
+        },
+      };
+    }
+    // All other derived addresses should have zero balance
+    return {
+      chain_stats: {
+        funded_txo_count: 0,
+        funded_txo_sum: 0,
+        spent_txo_count: 0,
+        spent_txo_sum: 0,
+      },
+      mempool_stats: {
+        funded_txo_count: 0,
+        funded_txo_sum: 0,
+        spent_txo_count: 0,
+        spent_txo_sum: 0,
+      },
+    };
+  }
+
+  // For plain addresses, use the original state-based logic
   switch (state) {
     case ADDRESS_STATES.INITIAL:
       return {
@@ -206,15 +297,15 @@ const handleHttpRequest = (req, res) => {
       const checkCount = addressCheckCounts.get(address) + 1;
       addressCheckCounts.set(address, checkCount);
 
-      // Keep initial state for first two requests
+      // Only increment state for plain addresses
       let nextState = currentState;
-      if (checkCount > 2) {
+      if (isPlainAddress(address) && checkCount > 2) {
         nextState = getNextState(currentState);
       }
       addressStates.set(address, nextState);
 
-      // Get balance for current state
-      const balance = getBalanceForState(addressStates.get(address));
+      // Get balance for current state, passing the address
+      const balance = getBalanceForState(addressStates.get(address), address);
       addressBalances.set(address, balance);
 
       res.writeHead(200, { "Content-Type": "application/json" });
@@ -299,7 +390,8 @@ const simulateTransaction = (tx) => {
       tx.vin.forEach((input) => {
         if (
           input?.prevout?.scriptpubkey_address &&
-          trackedAddresses.has(input.prevout.scriptpubkey_address)
+          trackedAddresses.has(input.prevout.scriptpubkey_address) &&
+          isPlainAddress(input.prevout.scriptpubkey_address)
         ) {
           relevantAddresses.add(input.prevout.scriptpubkey_address);
           // Update balance for input address
@@ -319,7 +411,8 @@ const simulateTransaction = (tx) => {
       tx.vout.forEach((output) => {
         if (
           output?.scriptpubkey_address &&
-          trackedAddresses.has(output.scriptpubkey_address)
+          trackedAddresses.has(output.scriptpubkey_address) &&
+          isPlainAddress(output.scriptpubkey_address)
         ) {
           relevantAddresses.add(output.scriptpubkey_address);
           // Update balance for output address

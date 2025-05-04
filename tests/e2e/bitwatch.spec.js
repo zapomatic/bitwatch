@@ -181,9 +181,164 @@ test.describe("Bitwatch", () => {
     await page.getByTestId(`${address}-accept-button`).click();
     // verify that the change took (no longer showing a diff)
     await expect(page.getByTestId(`${address}-chain-out-diff`)).not.toBeVisible();
-    
-    // Delete address
+
+    // Verify collection balance totals (subtract out from in on every address in the collection--single, extended, descriptor)
+    // First find the Donations collection row
+    const donationsRow = page.locator('tr.collection-row', { has: page.getByText('Donations') });
+    // Then find the On-Chain and Mempool cells within that row
+    await expect(donationsRow.locator('td', { hasText: '0.00009000 ₿' }).first()).toBeVisible();
+    await expect(donationsRow.locator('td', { hasText: '0.00000000 ₿' }).first()).toBeVisible();
+
+    // Add extended keys (xpub, ypub, zpub)
+    const extendedKeys = [
+      {
+        name: "Test XPub",
+        key: testData.keys.xpub1,
+        derivationPath: "m/0",
+        skip: 1,
+        gapLimit: 3,
+        initialAddresses: 3
+      },
+      {
+        name: "Test YPub",
+        key: testData.keys.ypub1,
+        derivationPath: "m/0",
+        skip: 1,
+        gapLimit: 3,
+        initialAddresses: 3
+      },
+      {
+        name: "Test ZPub",
+        key: testData.keys.zpub1,
+        derivationPath: "m/0",
+        skip: 1,
+        gapLimit: 3,
+        initialAddresses: 3
+      }
+    ];
+
+    for (const key of extendedKeys) {
+      await addExtendedKey(page, "Donations", key);
+      console.log(`Added ${key.name}`);
+
+      // Verify the key-derived addresses section is visible
+      await expect(page.getByText("Key-Derived Addresses")).toBeVisible();
+
+      // Find the extended key row
+      const keyRow = page.locator('tr.crystal-table-row', { has: page.getByText(key.name) });
+      
+      // Verify extended key information
+      await expect(keyRow.locator('td').nth(0)).toContainText(key.name);
+      await expect(keyRow.locator('td').nth(1)).toContainText(key.key.slice(0, 8));
+      await expect(keyRow.locator('td').nth(2)).toContainText(key.derivationPath);
+      await expect(keyRow.locator('td').nth(3)).toContainText(key.gapLimit.toString());
+      await expect(keyRow.locator('td').nth(4)).toContainText(key.skip.toString());
+      await expect(keyRow.locator('td').nth(5)).toContainText(key.initialAddresses.toString());
+
+      // Initially we should see just the initial addresses
+      await expect(keyRow.locator('td').nth(6)).toContainText('3');
+
+      // Wait for the engine to detect balances and generate more addresses
+      // The address count should increase to 6 as gap limit addresses are added
+      await expect(keyRow.locator('td').nth(6)).toContainText('6', { timeout: 10000 });
+
+      // Verify we have the expected number of addresses (initial + gap limit)
+      // We expect 6 addresses total:
+      // - 3 initial addresses (skipping index 0)
+      // - 3 more to satisfy gap limit after finding activity
+      const addressRows = page.locator('tr.address-row').filter({ hasText: key.name });
+      await expect(addressRows).toHaveCount(6);
+
+      // Verify the first address index starts at 1 (due to skip)
+      const firstAddressText = await addressRows.first().textContent();
+      expect(firstAddressText).toContain(`${key.name} 1`);
+
+      // Verify the last address index is 6
+      const lastAddressText = await addressRows.last().textContent();
+      expect(lastAddressText).toContain(`${key.name} 6`);
+
+      // Verify the first two addresses have chain balance
+      await expect(addressRows.nth(0).locator('[data-testid$="chain-in"]')).toHaveText("0.00010000 ₿");
+      await expect(addressRows.nth(1).locator('[data-testid$="chain-in"]')).toHaveText("0.00010000 ₿");
+      
+      // Verify remaining addresses have zero balance
+      for (let i = 2; i < 6; i++) {
+        await expect(addressRows.nth(i).locator('[data-testid$="chain-in"]')).toHaveText("0.00000000 ₿");
+      }
+
+      // Delete extended key
+      await page.getByTestId(`${key.key}-delete-button`).click();
+      console.log("Deleted extended key");
+    }
+
+    // Add descriptors
+    const descriptors = [
+      {
+        name: "Test MultiSig",
+        descriptor: testData.descriptors.multiSig,
+        skip: 1,
+        gapLimit: 3,
+        initialAddresses: 3
+      },
+      {
+        name: "Test SortedMultiSig",
+        descriptor: testData.descriptors.sortedMultiSig,
+        skip: 1,
+        gapLimit: 3,
+        initialAddresses: 3
+      },
+      {
+        name: "Test MixedKeyTypes",
+        descriptor: testData.descriptors.mixedKeyTypes,
+        skip: 1,
+        gapLimit: 3,
+        initialAddresses: 3
+      }
+    ];
+
+    for (const descriptor of descriptors) {
+      await addDescriptor(page, "Donations", descriptor);
+      console.log(`Added ${descriptor.name}`);
+
+      // Verify the key-derived addresses section is visible
+      await expect(page.getByText("Key-Derived Addresses")).toBeVisible();
+
+      // Verify we have the expected number of addresses (initial + gap limit)
+      // We expect 6 addresses total:
+      // - 3 initial addresses (skipping index 0)
+      // - 3 more to satisfy gap limit after finding activity
+      const addressRows = page.locator('tr.address-row').filter({ hasText: descriptor.name });
+      await expect(addressRows).toHaveCount(6);
+
+      // Verify the first address index starts at 1 (due to skip)
+      const firstAddressText = await addressRows.first().textContent();
+      expect(firstAddressText).toContain(`${descriptor.name} 1`);
+
+      // Verify the last address index is 6
+      const lastAddressText = await addressRows.last().textContent();
+      expect(lastAddressText).toContain(`${descriptor.name} 6`);
+
+      // Verify the first two addresses have chain balance
+      await expect(addressRows.nth(0).locator('[data-testid$="chain-in"]')).toHaveText("0.00010000 ₿");
+      await expect(addressRows.nth(1).locator('[data-testid$="chain-in"]')).toHaveText("0.00010000 ₿");
+      
+      // Verify remaining addresses have zero balance
+      for (let i = 2; i < 6; i++) {
+        await expect(addressRows.nth(i).locator('[data-testid$="chain-in"]')).toHaveText("0.00000000 ₿");
+      }
+
+      // Delete descriptor
+      await page.getByTestId(`${descriptor.descriptor}-delete-button`).click();
+      console.log("Deleted descriptor");
+    }
+
+    // Delete the single address we added at the start
     await page.getByTestId(`${address}-delete-button`).click();
+    console.log("Clicked delete button");
+    
+    // Wait for dialog to be fully rendered
+    await page.waitForTimeout(500);
+    
     // Verify delete confirmation dialog appears with correct message
     await expect(page.getByRole("heading", { name: "Confirm Delete" })).toBeVisible();
     await expect(page.getByText("Remove this address from the collection?")).toBeVisible();
@@ -195,120 +350,8 @@ test.describe("Bitwatch", () => {
     // verify that the collection still exists
     await expect(page.getByTestId("Donations-add-address")).toBeVisible();
 
-    // Add extended keys (xpub, ypub, zpub)
-    const extendedKeys = [
-      {
-        name: "Test XPub",
-        key: testData.keys.xpub1,
-        derivationPath: "m/0",
-        skip: 2,
-        gapLimit: 3,
-        initialAddresses: 3
-      },
-      {
-        name: "Test YPub",
-        key: testData.keys.ypub1,
-        derivationPath: "m/0",
-        skip: 2,
-        gapLimit: 3,
-        initialAddresses: 3
-      },
-      {
-        name: "Test ZPub",
-        key: testData.keys.zpub1,
-        derivationPath: "m/0",
-        skip: 2,
-        gapLimit: 3,
-        initialAddresses: 3
-      }
-    ];
-
-    for (const key of extendedKeys) {
-      await addExtendedKey(page, "Test Collection", key);
-      console.log(`Added ${key.name}`);
-
-      // Verify addresses loading
-      await expect(page.getByText("Loading addresses...")).toBeVisible();
-      console.log("Verified addresses loading");
-
-      // Wait for addresses to be generated
-      await page.waitForSelector('[aria-label="Addresses generated"]');
-      console.log("Addresses generated");
-
-      // Verify values on chain and mempool
-      await expect(page.getByText("Chain balance")).toBeVisible();
-      await expect(page.getByText("Mempool balance")).toBeVisible();
-      console.log("Verified chain and mempool values");
-
-      // Wait for balance change event
-      await page.waitForSelector('[aria-label="Balance change detected"]');
-      console.log("Balance change detected");
-
-      // Accept balance change
-      await page.getByRole("button", { name: "Accept" }).click();
-      console.log("Accepted balance change");
-
-      // Verify balance is confirmed
-      await expect(page.getByText("Balance confirmed")).toBeVisible();
-      console.log("Verified balance confirmation");
-
-      // Delete extended key
-      await page.getByTestId(`${key.key}-delete-button`).click();
-      console.log("Deleted extended key");
-    }
-
-    // Add descriptors
-    const descriptors = [
-      {
-        name: "Test MultiSig",
-        descriptor: testData.descriptors.multiSig
-      },
-      {
-        name: "Test SortedMultiSig",
-        descriptor: testData.descriptors.sortedMultiSig
-      },
-      {
-        name: "Test MixedKeyTypes",
-        descriptor: testData.descriptors.mixedKeyTypes
-      }
-    ];
-
-    for (const descriptor of descriptors) {
-      await addDescriptor(page, "Test Collection", descriptor);
-      console.log(`Added ${descriptor.name}`);
-
-      // Verify addresses loading
-      await expect(page.getByText("Loading addresses...")).toBeVisible();
-      console.log("Verified addresses loading");
-
-      // Wait for addresses to be generated
-      await page.waitForSelector('[aria-label="Addresses generated"]');
-      console.log("Addresses generated");
-
-      // Verify values on chain and mempool
-      await expect(page.getByText("Chain balance")).toBeVisible();
-      await expect(page.getByText("Mempool balance")).toBeVisible();
-      console.log("Verified chain and mempool values");
-
-      // Wait for balance change event
-      await page.waitForSelector('[aria-label="Balance change detected"]');
-      console.log("Balance change detected");
-
-      // Accept balance change
-      await page.getByRole("button", { name: "Accept" }).click();
-      console.log("Accepted balance change");
-
-      // Verify balance is confirmed
-      await expect(page.getByText("Balance confirmed")).toBeVisible();
-      console.log("Verified balance confirmation");
-
-      // Delete descriptor
-      await page.getByTestId(`${descriptor.descriptor}-delete-button`).click();
-      console.log("Deleted descriptor");
-    }
-
     // Delete collection
-    await page.getByTestId("Test Collection-delete").click();
-    console.log("Deleted test collection");
+    await page.getByTestId("Donations-delete").click();
+    console.log("Deleted Donations collection");
   });
 });

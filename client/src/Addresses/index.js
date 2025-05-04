@@ -221,8 +221,8 @@ export default function Addresses() {
 
   const handleDelete = useCallback(
     ({ address, collection, extendedKey, descriptor }) => {
-      if (typeof collection === "string") {
-        // Handle direct collection name string
+      if (typeof collection === "string" && !address) {
+        // Handle direct collection name string (only for collection deletion)
         setDeleteDialog({
           open: true,
           collection,

@@ -77,10 +77,13 @@ export const findAndClick = async (page, selector, options = {}) => {
 
 export const findAndFill = async (page, selector, value, options = {}) => {
   const { timeout = 30000, exact = false } = options;
-  const locator = page.locator(selector);
+  const locator = page.locator(`${selector} input`);
 
   // Wait for any matching element to be visible
-  await page.waitForSelector(selector, { state: "visible", timeout });
+  await page.waitForSelector(`${selector} input`, {
+    state: "visible",
+    timeout,
+  });
 
   if (exact) {
     await locator.first().fill(value);
@@ -137,17 +140,28 @@ export const addExtendedKey = async (
   { name, key, derivationPath, skip, gapLimit, initialAddresses }
 ) => {
   await findAndClick(page, `[data-testid="${collection}-add-extended-key"]`);
-  await findAndFill(page, '[aria-label="Extended key name"]', name);
-  await findAndFill(page, '[aria-label="Extended public key"]', key);
-  await findAndFill(page, '[aria-label="Derivation path"]', derivationPath);
-  await findAndFill(page, '[aria-label="Skip addresses"]', skip.toString());
-  await findAndFill(page, '[aria-label="Gap limit"]', gapLimit.toString());
-  await findAndFill(
-    page,
-    '[aria-label="Initial addresses"]',
+
+  // Wait for dialog to be visible
+  await page.waitForSelector('[data-testid="extended-key-dialog"]', {
+    state: "visible",
+  });
+
+  // Fill in the form fields
+  await page.fill('[data-testid="extended-key-name-input"]', name);
+  await page.fill('[data-testid="extended-key-key-input"]', key);
+  await page.fill('[data-testid="extended-key-path-input"]', derivationPath);
+  await page.fill('[data-testid="extended-key-skip-input"]', skip.toString());
+  await page.fill(
+    '[data-testid="extended-key-gap-input"]',
+    gapLimit.toString()
+  );
+  await page.fill(
+    '[data-testid="extended-key-initial-input"]',
     initialAddresses.toString()
   );
-  await findAndClick(page, '[aria-label="Add extended key"]');
+
+  // Click the Add button
+  await page.getByTestId("extended-key-submit-button").click();
 };
 
 export const addDescriptor = async (

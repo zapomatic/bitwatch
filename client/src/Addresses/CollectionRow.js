@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   TableRow,
   TableCell,
@@ -40,12 +40,31 @@ const CollectionRow = ({
   setNotification,
   autoShowAddForm,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(
+    autoShowAddForm ||
+      (collection.addresses && collection.addresses.length > 0) ||
+      (collection.extendedKeys && collection.extendedKeys.length > 0) ||
+      (collection.descriptors && collection.descriptors.length > 0)
+  );
   const [newName, setNewName] = useState(collection.name);
   const [isEditing, setIsEditing] = useState(false);
   const [extendedKeyDialogOpen, setExtendedKeyDialogOpen] = useState(false);
   const [descriptorDialogOpen, setDescriptorDialogOpen] = useState(false);
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
+
+  useEffect(() => {
+    if (
+      collection.addresses?.length > 0 ||
+      collection.extendedKeys?.length > 0 ||
+      collection.descriptors?.length > 0
+    ) {
+      setIsExpanded(true);
+    }
+  }, [
+    collection.addresses?.length,
+    collection.extendedKeys?.length,
+    collection.descriptors?.length,
+  ]);
 
   const handleExpandClick = (e) => {
     e.preventDefault();
@@ -55,6 +74,16 @@ const CollectionRow = ({
 
   const handleAddClick = () => {
     setAddressDialogOpen(true);
+  };
+
+  const handleAddExtendedKey = () => {
+    setExtendedKeyDialogOpen(true);
+    setIsExpanded(true);
+  };
+
+  const handleAddDescriptor = () => {
+    setDescriptorDialogOpen(true);
+    setIsExpanded(true);
   };
 
   const handleRenameCollection = () => {
@@ -147,8 +176,8 @@ const CollectionRow = ({
         <TableCell className="crystal-table-cell">
           <Box className="crystal-flex crystal-flex-start">
             <BalanceCell
-              value={totals.chain_in}
-              expect={totals.expect_chain_in}
+              value={totals.chain_in - totals.chain_out}
+              expect={totals.expect_chain_in - totals.expect_chain_out}
               displayBtc={displayBtc}
               error={totals.hasError}
               pending={totals.hasPending}
@@ -158,8 +187,8 @@ const CollectionRow = ({
         <TableCell className="crystal-table-cell">
           <Box className="crystal-flex crystal-flex-start">
             <BalanceCell
-              value={totals.mempool_in}
-              expect={totals.expect_mempool_in}
+              value={totals.mempool_in - totals.mempool_out}
+              expect={totals.expect_mempool_in - totals.expect_mempool_out}
               displayBtc={displayBtc}
               error={totals.hasError}
               pending={totals.hasPending}
@@ -176,14 +205,14 @@ const CollectionRow = ({
               aria-label="Add address to collection"
             />
             <IconButtonStyled
-              onClick={() => setExtendedKeyDialogOpen(true)}
+              onClick={handleAddExtendedKey}
               icon={<KeyIcon />}
               title="Add Extended Key"
               data-testid={`${collection.name}-add-extended-key`}
               aria-label="Add extended key to collection"
             />
             <IconButtonStyled
-              onClick={() => setDescriptorDialogOpen(true)}
+              onClick={handleAddDescriptor}
               icon={<GroupsIcon />}
               title="Add Descriptor"
               data-testid={`${collection.name}-add-descriptor`}

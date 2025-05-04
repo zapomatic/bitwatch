@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   TableRow,
   TableCell,
@@ -26,7 +26,16 @@ const DescriptorInfo = ({
   onSaveExpected,
   displayBtc,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(
+    descriptor.addresses?.length > 0
+  );
+
+  useEffect(() => {
+    if (descriptor.addresses?.length > 0) {
+      setIsExpanded(true);
+    }
+  }, [descriptor.addresses?.length]);
+
   const [copied, setCopied] = useState(false);
 
   const handleExpandClick = (e) => {
