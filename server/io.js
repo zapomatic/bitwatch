@@ -384,6 +384,80 @@ const socketIO = {
         checkGapLimit: async (data, cb) => {
           const result = await checkGapLimit(data);
           return cb(result);
+        },
+
+        delete: async (data, cb) => {
+          const { address, collection, extendedKey, descriptor } = data;
+          
+          if (!collection) {
+            return cb({ error: "Collection not specified" });
+          }
+
+          const targetCollection = memory.db.collections[collection];
+          if (!targetCollection) {
+            return cb({ error: "Collection not found" });
+          }
+
+          // Handle address deletion
+          if (address) {
+            // If it's an extended key address
+            if (extendedKey) {
+              const keyIndex = targetCollection.extendedKeys.findIndex(k => k.key === extendedKey.key);
+              if (keyIndex === -1) {
+                return cb({ error: "Extended key not found" });
+              }
+              const addressIndex = targetCollection.extendedKeys[keyIndex].addresses.findIndex(a => a.address === address);
+              if (addressIndex === -1) {
+                return cb({ error: "Address not found in extended key" });
+              }
+              targetCollection.extendedKeys[keyIndex].addresses.splice(addressIndex, 1);
+            }
+            // If it's a descriptor address
+            else if (descriptor) {
+              const descIndex = targetCollection.descriptors.findIndex(d => d.descriptor === descriptor.descriptor);
+              if (descIndex === -1) {
+                return cb({ error: "Descriptor not found" });
+              }
+              const addressIndex = targetCollection.descriptors[descIndex].addresses.findIndex(a => a.address === address);
+              if (addressIndex === -1) {
+                return cb({ error: "Address not found in descriptor" });
+              }
+              targetCollection.descriptors[descIndex].addresses.splice(addressIndex, 1);
+            }
+            // Regular address
+            else {
+              const addressIndex = targetCollection.addresses.findIndex(a => a.address === address);
+              if (addressIndex === -1) {
+                return cb({ error: "Address not found" });
+              }
+              targetCollection.addresses.splice(addressIndex, 1);
+            }
+          }
+          // Handle extended key deletion
+          else if (extendedKey) {
+            const keyIndex = targetCollection.extendedKeys.findIndex(k => k.key === extendedKey.key);
+            if (keyIndex === -1) {
+              return cb({ error: "Extended key not found" });
+            }
+            targetCollection.extendedKeys.splice(keyIndex, 1);
+          }
+          // Handle descriptor deletion
+          else if (descriptor) {
+            const descIndex = targetCollection.descriptors.findIndex(d => d.descriptor === descriptor.descriptor);
+            if (descIndex === -1) {
+              return cb({ error: "Descriptor not found" });
+            }
+            targetCollection.descriptors.splice(descIndex, 1);
+          }
+          // Handle collection deletion
+          else {
+            delete memory.db.collections[collection];
+          }
+
+          // Save changes and emit update
+          memory.saveDb();
+          socketIO.io.emit("updateState", { collections: memory.db.collections });
+          return cb({ status: "ok" });
         }
       };
 

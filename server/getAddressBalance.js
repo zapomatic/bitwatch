@@ -89,7 +89,9 @@ const getAddressBalance = async (addr, onRateLimit) => {
   const baseDelay = 2000; // Start with 2 seconds
 
   while (retryCount < maxRetries) {
-    const result = await attemptCall(addr);
+    const result = await attemptCall(addr).catch((e) => {
+      return { error: true, message: e.message };
+    });
     if (!result.error) {
       // If we got here after retries, notify that API is good again
       if (retryCount > 0) {

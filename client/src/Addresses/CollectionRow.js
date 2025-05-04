@@ -189,7 +189,7 @@ const CollectionRow = ({
               aria-label="Add descriptor to collection"
             />
             <IconButtonStyled
-              onClick={() => onDelete(collection.name)}
+              onClick={() => onDelete({ collection: collection.name })}
               icon={<DeleteIcon />}
               title="Delete Collection"
               data-testid={`${collection.name}-delete`}

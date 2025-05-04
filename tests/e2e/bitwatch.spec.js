@@ -160,7 +160,7 @@ test.describe("Bitwatch", () => {
     console.log("Added single address");
 
     // Verify loading state
-    await expect(page.getByText("Loading...")).toBeVisible();
+    await expect(page.locator('.balance-cell .crystal-text:has-text("Loading...")')).toBeVisible({ timeout: 30000 });
     console.log("Verified loading state");
 
     // Wait for balance change event

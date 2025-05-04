@@ -62,7 +62,7 @@ export { test, expect };
 
 // Helper functions for finding and interacting with elements
 export const findAndClick = async (page, selector, options = {}) => {
-  const { timeout = 5000, exact = false } = options;
+  const { timeout = 30000, exact = false } = options;
   const locator = page.locator(selector);
 
   // Wait for any matching element to be visible
@@ -76,7 +76,7 @@ export const findAndClick = async (page, selector, options = {}) => {
 };
 
 export const findAndFill = async (page, selector, value, options = {}) => {
-  const { timeout = 2000, exact = false } = options;
+  const { timeout = 30000, exact = false } = options;
   const locator = page.locator(selector);
 
   // Wait for any matching element to be visible

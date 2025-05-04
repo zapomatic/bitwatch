@@ -221,6 +221,19 @@ export default function Addresses() {
 
   const handleDelete = useCallback(
     ({ address, collection, extendedKey, descriptor }) => {
+      if (typeof collection === "string") {
+        // Handle direct collection name string
+        setDeleteDialog({
+          open: true,
+          collection,
+          address: null,
+          extendedKey: null,
+          descriptor: null,
+          message: "Delete this collection and all its addresses?",
+        });
+        return;
+      }
+
       if (address && extendedKey) {
         setDeleteDialog({
           open: true,
@@ -265,15 +278,6 @@ export default function Addresses() {
           extendedKey: null,
           descriptor,
           message: "Delete this descriptor and all its derived addresses?",
-        });
-      } else {
-        setDeleteDialog({
-          open: true,
-          collection,
-          address: null,
-          extendedKey: null,
-          descriptor: null,
-          message: "Delete this collection and all its addresses?",
         });
       }
     },
