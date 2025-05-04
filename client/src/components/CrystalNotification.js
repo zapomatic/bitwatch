@@ -2,15 +2,21 @@ import React from "react";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 
-const CrystalNotification = ({ open, onClose, message, severity = "info" }) => (
+const CrystalNotification = ({
+  open,
+  onClose,
+  message,
+  severity = "info",
+  testId = "notification",
+}) => (
   <Snackbar
     open={open}
     autoHideDuration={6000}
     onClose={onClose}
     anchorOrigin={{ vertical: "top", horizontal: "right" }}
-    sx={{
+    style={{
       position: "fixed",
-      top: "16px",
+      top: "70px",
       right: "16px",
       zIndex: 9999,
     }}
@@ -18,6 +24,7 @@ const CrystalNotification = ({ open, onClose, message, severity = "info" }) => (
     <Alert
       onClose={onClose}
       severity={severity}
+      data-testid={testId}
       sx={{
         width: "100%",
         background: "var(--theme-surface)",

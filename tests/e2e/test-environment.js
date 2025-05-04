@@ -60,31 +60,112 @@ const test = base.extend({
 
 export { test, expect };
 
+// Helper functions for finding and interacting with elements
+export const findAndClick = async (page, selector, options = {}) => {
+  const { timeout = 5000, exact = false } = options;
+  const locator = page.locator(selector);
+
+  // Wait for any matching element to be visible
+  await page.waitForSelector(selector, { state: "visible", timeout });
+
+  if (exact) {
+    await locator.first().click();
+  } else {
+    await locator.click();
+  }
+};
+
+export const findAndFill = async (page, selector, value, options = {}) => {
+  const { timeout = 2000, exact = false } = options;
+  const locator = page.locator(selector);
+
+  // Wait for any matching element to be visible
+  await page.waitForSelector(selector, { state: "visible", timeout });
+
+  if (exact) {
+    await locator.first().fill(value);
+  } else {
+    await locator.fill(value);
+  }
+};
+
 // Helper functions for common test operations
 export const addCollection = async (page, name) => {
-  await page.click("text=Add Collection");
-  await page.fill('[aria-label="Collection Name"]', name);
-  await page.click("text=Save");
+  // Click the "New Collection" button in the toolbar
+  await findAndClick(page, '[aria-label="New Collection"]');
+
+  // Wait for the new collection row to be fully rendered
+  await page.waitForSelector('input[placeholder="Collection Name"]', {
+    state: "visible",
+    timeout: 5000,
+  });
+
+  // Fill in the collection name
+  await page.fill('input[placeholder="Collection Name"]', name);
+
+  // Wait for and click the Add button
+  const addButton = page.locator(
+    'button.crystal-button[aria-label="Add Collection"]'
+  );
+  await addButton.waitFor({ state: "visible", timeout: 5000 });
+  await addButton.click();
+
+  // Verify that collection row has been added with the new name
+  await page.waitForSelector(`text=${name}`);
 };
 
-export const addAddress = async (page, collection, address) => {
-  await page.click(`[data-testid="${collection}-add-address"]`);
-  await page.fill('[aria-label="Name"]', address.name);
-  await page.fill('[aria-label="Address"]', address.address);
-  await page.click("text=Save");
+export const addAddress = async (page, collection, { name, address }) => {
+  await findAndClick(page, `[data-testid="${collection}-add-address"]`);
+
+  // Wait for the dialog to be visible
+  await page.waitForSelector('[aria-label="Address name"] input', {
+    state: "visible",
+    timeout: 5000,
+  });
+
+  // Fill in the address name
+  await page.fill('[aria-label="Address name"] input', name);
+
+  // Fill in the Bitcoin address
+  await page.fill('[aria-label="Bitcoin address"] input', address);
+
+  // Click the save button
+  await findAndClick(page, '[aria-label="Save address"]');
 };
 
-export const addExtendedKey = async (page, collection, key) => {
-  await page.click(`[data-testid="${collection}-add-extended-key"]`);
-  await page.fill('[aria-label="Name"]', key.name);
-  await page.fill('[aria-label="Extended Key"]', key.key);
-  await page.fill('[aria-label="Derivation Path"]', "m/0");
-  await page.click("text=Add");
+export const addExtendedKey = async (
+  page,
+  collection,
+  { name, key, derivationPath, skip, gapLimit, initialAddresses }
+) => {
+  await findAndClick(page, `[data-testid="${collection}-add-extended-key"]`);
+  await findAndFill(page, '[aria-label="Extended key name"]', name);
+  await findAndFill(page, '[aria-label="Extended public key"]', key);
+  await findAndFill(page, '[aria-label="Derivation path"]', derivationPath);
+  await findAndFill(page, '[aria-label="Skip addresses"]', skip.toString());
+  await findAndFill(page, '[aria-label="Gap limit"]', gapLimit.toString());
+  await findAndFill(
+    page,
+    '[aria-label="Initial addresses"]',
+    initialAddresses.toString()
+  );
+  await findAndClick(page, '[aria-label="Add extended key"]');
 };
 
-export const addDescriptor = async (page, collection, descriptor) => {
-  await page.click(`[data-testid="${collection}-add-descriptor"]`);
-  await page.fill('[aria-label="Name"]', descriptor.name);
-  await page.fill('[aria-label="Descriptor"]', descriptor.descriptor);
-  await page.click("text=Add");
+export const addDescriptor = async (
+  page,
+  collection,
+  { name, descriptor, skip, gapLimit, initialAddresses }
+) => {
+  await findAndClick(page, `[data-testid="${collection}-add-descriptor"]`);
+  await findAndFill(page, '[aria-label="Descriptor name"]', name);
+  await findAndFill(page, '[aria-label="Output descriptor"]', descriptor);
+  await findAndFill(page, '[aria-label="Skip addresses"]', skip.toString());
+  await findAndFill(page, '[aria-label="Gap limit"]', gapLimit.toString());
+  await findAndFill(
+    page,
+    '[aria-label="Initial addresses"]',
+    initialAddresses.toString()
+  );
+  await findAndClick(page, '[aria-label="Add descriptor"]');
 };

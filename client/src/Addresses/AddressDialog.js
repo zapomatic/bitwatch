@@ -95,6 +95,7 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           helperText="A friendly name for this address"
+          aria-label="Address name"
         />
         <TextField
           margin="dense"
@@ -105,6 +106,7 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
             setFormData({ ...formData, address: e.target.value })
           }
           helperText="The Bitcoin address to watch"
+          aria-label="Bitcoin address"
         />
         <Typography variant="subtitle1" sx={{ mt: 0, mb: 1 }}>
           Expected Balances
@@ -127,6 +129,7 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
                 })
               }
               helperText="Expected on-chain incoming balance"
+              aria-label="Expected chain incoming balance"
             />
           </Grid>
           <Grid item xs={6}>
@@ -146,6 +149,7 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
                 })
               }
               helperText="Expected on-chain outgoing balance"
+              aria-label="Expected chain outgoing balance"
             />
           </Grid>
           <Grid item xs={6}>
@@ -165,6 +169,7 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
                 })
               }
               helperText="Expected mempool incoming balance"
+              aria-label="Expected mempool incoming balance"
             />
           </Grid>
           <Grid item xs={6}>
@@ -184,6 +189,7 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
                 })
               }
               helperText="Expected mempool outgoing balance"
+              aria-label="Expected mempool outgoing balance"
             />
           </Grid>
         </Grid>
@@ -244,8 +250,15 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
         </Grid>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSave} variant="contained" color="primary">
+        <Button onClick={onClose} aria-label="Cancel address dialog">
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSave}
+          variant="contained"
+          color="primary"
+          aria-label="Save address"
+        >
           Save
         </Button>
       </DialogActions>

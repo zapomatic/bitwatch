@@ -151,6 +151,7 @@ const main = async () => {
   const testKeys = generateTestKeys();
   const testAddresses = generateTestAddresses(testKeys);
   const testDescriptors = generateTestDescriptors(testKeys);
+  testAddresses.zapomatic = "bc1q67csgqm9muhynyd864tj2p48g8gachyg2nwara";
 
   const testData = {
     keys: testKeys,

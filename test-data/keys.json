@@ -6,6 +6,7 @@
     "zpub1": "zpub6qfp6hKyMTw1jdnUQGr4xihYxp7rQmAPp67pk4YYAcZBdRisqyaqh1Z2N1RVCNtEVW6c4eLuPZctjUx3QVBQEQPFNaR5uvumrzUbGRQ8voQ"
   },
   "addresses": {
+    "zapomatic": "bc1q67csgqm9muhynyd864tj2p48g8gachyg2nwara",
     "xpub1": {
       "key": "xpub6CDEarkRoiwWPj3n3gYygGwgoGchxYg3g6Zs5L2nB4B6wdojzcWCKKHMu9XuY1GyYygRfrVembjAko1T5xTsxj7ecKXxEPzDxx7nCK8Dxtx",
       "addresses": [

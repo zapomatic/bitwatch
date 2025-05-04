@@ -4,10 +4,9 @@ import Button from "@mui/material/Button";
 import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import Title from "./Title";
-import Snackbar from "@mui/material/Snackbar";
-import Alert from "@mui/material/Alert";
 import "./theme.css";
 import { FormControlLabel, Switch } from "@mui/material";
+import CrystalNotification from "./components/CrystalNotification";
 
 import { DEFAULT_CONFIG, PRIVATE_CONFIG } from "./config";
 
@@ -248,41 +247,13 @@ function Config() {
         </Grid>
       </div>
 
-      <Snackbar
+      <CrystalNotification
         open={notification.open}
-        autoHideDuration={6000}
         onClose={handleCloseNotification}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        sx={{
-          position: "fixed",
-          bottom: "80px",
-          right: "16px",
-          zIndex: 9999,
-        }}
-        data-testid="config-notification"
-      >
-        <Alert
-          onClose={handleCloseNotification}
-          severity={notification.severity}
-          sx={{
-            width: "100%",
-            background: "var(--theme-surface)",
-            color: "var(--theme-text)",
-            border: "1px solid rgba(77, 244, 255, 0.3)",
-            boxShadow: "0 0 15px var(--theme-glow-secondary)",
-            "& .MuiAlert-icon": {
-              color:
-                notification.severity === "error"
-                  ? "var(--theme-danger)"
-                  : notification.severity === "warning"
-                  ? "var(--theme-warning)"
-                  : "var(--theme-success)",
-            },
-          }}
-        >
-          {notification.message}
-        </Alert>
-      </Snackbar>
+        message={notification.message}
+        severity={notification.severity}
+        testId="config-notification"
+      />
     </>
   );
 }

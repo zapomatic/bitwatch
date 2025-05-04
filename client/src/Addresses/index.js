@@ -675,8 +675,9 @@ export default function Addresses() {
                 className="crystal-button crystal-button-primary"
                 onClick={() => setNewCollection({ name: "" })}
                 startIcon={<AddIcon />}
+                aria-label="New Collection"
               >
-                Add Collection
+                New Collection
               </Button>
             </Box>
           </Toolbar>
@@ -763,6 +764,7 @@ export default function Addresses() {
                           name: e.target.value,
                         })
                       }
+                      aria-label="Collection Name"
                       placeholder="Collection Name"
                       style={{ width: "100%" }}
                       onKeyPress={(e) => {
@@ -784,6 +786,7 @@ export default function Addresses() {
                     >
                       <Button
                         className="crystal-button"
+                        aria-label="Add Collection"
                         onClick={handleAddCollection}
                         disabled={!newCollection.name.trim()}
                         sx={{
@@ -801,6 +804,7 @@ export default function Addresses() {
                       </Button>
                       <Button
                         className="crystal-button"
+                        aria-label="Cancel Collection"
                         onClick={() => setNewCollection(null)}
                         sx={{
                           background:

@@ -73,6 +73,7 @@ const DescriptorDialog = ({
             onChange={handleChange}
             helperText="A friendly name for this descriptor"
             fullWidth
+            aria-label="Descriptor name"
           />
           <TextField
             label="Descriptor"
@@ -81,6 +82,7 @@ const DescriptorDialog = ({
             onChange={handleChange}
             helperText="The output descriptor (e.g., wpkh([fingerprint/derivation]xpub/0/*))"
             fullWidth
+            aria-label="Output descriptor"
           />
           <TextField
             label="Gap Limit"
@@ -90,6 +92,7 @@ const DescriptorDialog = ({
             type="number"
             helperText="Number of unused addresses before stopping derivation"
             fullWidth
+            aria-label="Gap limit"
           />
           <TextField
             label="Initial Addresses"
@@ -99,6 +102,7 @@ const DescriptorDialog = ({
             type="number"
             helperText="Number of addresses to derive initially"
             fullWidth
+            aria-label="Initial addresses"
           />
           <TextField
             label="Skip"
@@ -108,12 +112,19 @@ const DescriptorDialog = ({
             type="number"
             helperText="Number of addresses to skip before starting derivation"
             fullWidth
+            aria-label="Skip addresses"
           />
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
-        <Button onClick={handleSubmit} variant="contained">
+        <Button onClick={onClose} aria-label="Cancel descriptor dialog">
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSubmit}
+          variant="contained"
+          aria-label={descriptor ? "Save descriptor" : "Add descriptor"}
+        >
           {descriptor ? "Save" : "Add"}
         </Button>
       </DialogActions>

@@ -60,7 +60,7 @@ const BalanceCell = ({
         />
       )}
       <Box className="crystal-flex crystal-flex-start crystal-gap-1">
-        <Typography className="crystal-text">
+        <Typography className="crystal-text" aria-label="Balance value">
           {formatSatoshis(actualValue, displayBtc)}
         </Typography>
         {!isVerified && (
@@ -69,6 +69,7 @@ const BalanceCell = ({
               diff > 0 ? "crystal-text-success" : "crystal-text-danger"
             }`}
             sx={{ fontSize: "0.9em", fontWeight: 500, ml: 1 }}
+            aria-label="Balance difference"
           >
             ({diff > 0 ? "+" : ""}
             {formatSatoshis(diff, displayBtc)})
@@ -91,11 +92,13 @@ const BalanceCell = ({
               <NotificationsActiveIcon
                 className="crystal-text-warning"
                 sx={{ fontSize: "1rem" }}
+                aria-label="Incoming alert status"
               />
             ) : (
               <CheckCircleIcon
                 className="crystal-text-success"
                 sx={{ fontSize: "1rem" }}
+                aria-label="Incoming auto-accept status"
               />
             )}
           </Tooltip>
@@ -110,11 +113,13 @@ const BalanceCell = ({
               <NotificationsActiveIcon
                 className="crystal-text-warning"
                 sx={{ fontSize: "1rem" }}
+                aria-label="Outgoing alert status"
               />
             ) : (
               <CheckCircleIcon
                 className="crystal-text-success"
                 sx={{ fontSize: "1rem" }}
+                aria-label="Outgoing auto-accept status"
               />
             )}
           </Tooltip>

@@ -1,5 +1,6 @@
 import { test, expect } from "./test-environment.js";
-// import testData from "../../test-data/keys.json" with { type: 'json' };
+import testData from "../../test-data/keys.json" with { type: 'json' };
+import { addCollection, addAddress, addExtendedKey, addDescriptor } from "./test-environment.js";
 
 test.describe("Bitwatch", () => {
   // test.beforeEach(async ({}) => {});
@@ -83,6 +84,8 @@ test.describe("Bitwatch", () => {
     await expect(page.getByTestId("config-notification")).toContainText(
       "Configuration saved successfully"
     );
+    // Dismiss the notification
+    await page.getByTestId("config-notification").getByRole("button", { name: "Close" }).click();
     console.log("Verified success notification");
 
     // Switch back to public mode
@@ -102,6 +105,8 @@ test.describe("Bitwatch", () => {
     await expect(page.getByTestId("config-notification")).toContainText(
       "Configuration saved successfully"
     );
+    // Dismiss the notification
+    await page.getByTestId("config-notification").getByRole("button", { name: "Close" }).click();
     console.log("Verified success notification");
 
     // Navigate to integrations
@@ -135,15 +140,173 @@ test.describe("Bitwatch", () => {
     await expect(notification).toBeVisible();
     await expect(notification).toContainText("Integrations saved successfully");
     await expect(notification).toHaveClass(/MuiAlert-standardSuccess/);
+    // Dismiss the notification
+    await notification.getByRole("button", { name: "Close" }).click();
     console.log("Success notification verified");
 
-    // Wait for notification to disappear (6 seconds + animation)
-    // await page.waitForTimeout(6500);
+    // Navigate to addresses page
+    await page.getByTestId("watch-list-button").click();
+    console.log("Navigated to addresses page");
 
-    // TODO: Add tests for actual notifications
-    // For example:
-    // - Add a watch address
-    // - Trigger a balance change
-    // - Verify that a Telegram notification was sent
+    // Add a new collection
+    await addCollection(page, "Donations");
+    console.log("Added test collection");
+
+    // Add single address
+    await addAddress(page, "Donations", {
+      name: "zapomatic",
+      address: testData.addresses.zapomatic
+    });
+    console.log("Added single address");
+
+    // Verify loading state
+    await expect(page.getByText("Loading...")).toBeVisible();
+    console.log("Verified loading state");
+
+    // Wait for balance change event
+    await page.waitForSelector('[aria-label="Balance change detected"]', {
+      timeout: 5000,
+    });
+    console.log("Balance change detected");
+
+    // Verify balance change in UI
+    await expect(page.getByText("Balance changed")).toBeVisible();
+    console.log("Verified balance change in UI");
+
+    // Accept balance change
+    await page.getByRole("button", { name: "Accept" }).click();
+    console.log("Accepted balance change");
+
+    // Verify balance is confirmed
+    await expect(page.getByText("Balance confirmed")).toBeVisible();
+    console.log("Verified balance confirmation");
+
+    // Delete address
+    await page.getByTestId("delete-button").click();
+    console.log("Deleted address");
+
+    // Add extended keys (xpub, ypub, zpub)
+    const extendedKeys = [
+      {
+        name: "Test XPub",
+        key: testData.keys.xpub1,
+        derivationPath: "m/0",
+        skip: 2,
+        gapLimit: 3,
+        initialAddresses: 3
+      },
+      {
+        name: "Test YPub",
+        key: testData.keys.ypub1,
+        derivationPath: "m/0",
+        skip: 2,
+        gapLimit: 3,
+        initialAddresses: 3
+      },
+      {
+        name: "Test ZPub",
+        key: testData.keys.zpub1,
+        derivationPath: "m/0",
+        skip: 2,
+        gapLimit: 3,
+        initialAddresses: 3
+      }
+    ];
+
+    for (const key of extendedKeys) {
+      await addExtendedKey(page, "Test Collection", key);
+      console.log(`Added ${key.name}`);
+
+      // Verify addresses loading
+      await expect(page.getByText("Loading addresses...")).toBeVisible();
+      console.log("Verified addresses loading");
+
+      // Wait for addresses to be generated
+      await page.waitForSelector('[aria-label="Addresses generated"]', {
+        timeout: 5000,
+      });
+      console.log("Addresses generated");
+
+      // Verify values on chain and mempool
+      await expect(page.getByText("Chain balance")).toBeVisible();
+      await expect(page.getByText("Mempool balance")).toBeVisible();
+      console.log("Verified chain and mempool values");
+
+      // Wait for balance change event
+      await page.waitForSelector('[aria-label="Balance change detected"]', {
+        timeout: 5000,
+      });
+      console.log("Balance change detected");
+
+      // Accept balance change
+      await page.getByRole("button", { name: "Accept" }).click();
+      console.log("Accepted balance change");
+
+      // Verify balance is confirmed
+      await expect(page.getByText("Balance confirmed")).toBeVisible();
+      console.log("Verified balance confirmation");
+
+      // Delete extended key
+      await page.getByTestId("delete-button").click();
+      console.log("Deleted extended key");
+    }
+
+    // Add descriptors
+    const descriptors = [
+      {
+        name: "Test MultiSig",
+        descriptor: testData.descriptors.multiSig
+      },
+      {
+        name: "Test SortedMultiSig",
+        descriptor: testData.descriptors.sortedMultiSig
+      },
+      {
+        name: "Test MixedKeyTypes",
+        descriptor: testData.descriptors.mixedKeyTypes
+      }
+    ];
+
+    for (const descriptor of descriptors) {
+      await addDescriptor(page, "Test Collection", descriptor);
+      console.log(`Added ${descriptor.name}`);
+
+      // Verify addresses loading
+      await expect(page.getByText("Loading addresses...")).toBeVisible();
+      console.log("Verified addresses loading");
+
+      // Wait for addresses to be generated
+      await page.waitForSelector('[aria-label="Addresses generated"]', {
+        timeout: 5000,
+      });
+      console.log("Addresses generated");
+
+      // Verify values on chain and mempool
+      await expect(page.getByText("Chain balance")).toBeVisible();
+      await expect(page.getByText("Mempool balance")).toBeVisible();
+      console.log("Verified chain and mempool values");
+
+      // Wait for balance change event
+      await page.waitForSelector('[aria-label="Balance change detected"]', {
+        timeout: 5000,
+      });
+      console.log("Balance change detected");
+
+      // Accept balance change
+      await page.getByRole("button", { name: "Accept" }).click();
+      console.log("Accepted balance change");
+
+      // Verify balance is confirmed
+      await expect(page.getByText("Balance confirmed")).toBeVisible();
+      console.log("Verified balance confirmation");
+
+      // Delete descriptor
+      await page.getByTestId("delete-button").click();
+      console.log("Deleted descriptor");
+    }
+
+    // Delete collection
+    await page.getByTestId("Test Collection-delete").click();
+    console.log("Deleted test collection");
   });
 });
