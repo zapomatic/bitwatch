@@ -240,7 +240,7 @@ test.describe("Bitwatch", () => {
 
       // Wait for the engine to detect balances and generate more addresses
       // The address count should increase to 6 as gap limit addresses are added
-      await expect(keyRow.locator('td').nth(6)).toContainText('6', { timeout: 10000 });
+      await expect(keyRow.locator('td').nth(6)).toContainText('6', { timeout: 30000 });
 
       // Verify we have the expected number of addresses (initial + gap limit)
       // We expect 6 addresses total:

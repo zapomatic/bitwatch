@@ -2,10 +2,8 @@ import getAddressBalance from "./getAddressBalance.js";
 import { parallelLimit } from "async";
 import socketIO from "./io.js";
 import memory from "./memory.js";
-import telegram from "./telegram.js";
 import logger from "./logger.js";
-import { detectBalanceChanges } from "./balance.js";
-
+import { checkAndUpdateGapLimit } from "./balance.js";
 const updateAddressAndEmit = async (addr, balance) => {
   const collections = { ...memory.db.collections };
   const collection = collections[addr.collection];
@@ -80,7 +78,15 @@ const updateAddressAndEmit = async (addr, balance) => {
     (isExtendedKeyAddress || isDescriptorAddress) &&
     parentItem
   ) {
-    await checkGapLimit(parentItem);
+    const needsMoreAddresses = await checkAndUpdateGapLimit(parentItem);
+    if (needsMoreAddresses) {
+      // Call the socket handler to generate more addresses
+      socketIO.io.emit("checkGapLimit", {
+        collection: addr.collection,
+        extendedKey: isExtendedKeyAddress ? parentItem : null,
+        descriptor: isDescriptorAddress ? parentItem : null,
+      });
+    }
   }
 
   memory.db.collections = collections;

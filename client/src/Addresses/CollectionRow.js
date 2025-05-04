@@ -267,10 +267,8 @@ const CollectionRow = ({
                           key={address.address}
                           address={address}
                           collection={collection}
-                          onEditAddress={onEditAddress}
-                          onSaveExpected={onSaveExpected}
-                          onDelete={onDelete}
                           displayBtc={displayBtc}
+                          setNotification={setNotification}
                         />
                       ))}
                     </TableBody>

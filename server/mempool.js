@@ -1,7 +1,10 @@
 import memory from "./memory.js";
 import logger from "./logger.js";
-import { detectBalanceChanges } from "./balance.js";
-import { checkAddressBalance } from "./balance.js";
+import {
+  detectBalanceChanges,
+  checkAddressBalance,
+  checkAndUpdateGapLimit,
+} from "./balance.js";
 import telegram from "./telegram.js";
 import mempoolJS from "@mempool/mempool.js";
 
@@ -187,6 +190,14 @@ const updateAddressBalance = async (address, balance, io) => {
               addr.name
             );
             if (changes) {
+              // Check gap limit if balance changed
+              const updated = await checkAndUpdateGapLimit(extendedKey);
+              if (updated) {
+                logger.info(
+                  `Generated new addresses for ${extendedKey.name} to maintain gap limit`
+                );
+              }
+
               // Emit update for this address
               io.emit("updateState", { collections: memory.db.collections });
               // Notify via telegram if needed
@@ -196,9 +207,44 @@ const updateAddressBalance = async (address, balance, io) => {
                 collectionName,
                 addr.name
               );
+            }
+          }
+          return true;
+        }
+      }
+    }
 
+    // Check descriptor addresses
+    if (collection.descriptors) {
+      for (const descriptor of collection.descriptors) {
+        const addr = descriptor.addresses.find((a) => a.address === address);
+        if (addr) {
+          const balanceChanged = await checkAddressBalance(addr, balance);
+          if (balanceChanged) {
+            const changes = detectBalanceChanges(
+              address,
+              balance,
+              collectionName,
+              addr.name
+            );
+            if (changes) {
               // Check gap limit if balance changed
-              await checkGapLimit(extendedKey);
+              const updated = await checkAndUpdateGapLimit(descriptor);
+              if (updated) {
+                logger.info(
+                  `Generated new addresses for ${descriptor.name} to maintain gap limit`
+                );
+              }
+
+              // Emit update for this address
+              io.emit("updateState", { collections: memory.db.collections });
+              // Notify via telegram if needed
+              telegram.notifyBalanceChange(
+                address,
+                changes,
+                collectionName,
+                addr.name
+              );
             }
           }
           return true;

@@ -81,21 +81,20 @@ const getBalanceForState = (state, address) => {
 
   if (isDerived) {
     // Find which key/descriptor this address belongs to and its index
-    for (const keyData of Object.values(testData.addresses)) {
-      if (Array.isArray(keyData.addresses)) {
-        const addrInfo = keyData.addresses.find((a) => a.address === address);
+    let keyData;
+    for (const kd of Object.values(testData.addresses)) {
+      if (Array.isArray(kd.addresses)) {
+        const addrInfo = kd.addresses.find((a) => a.address === address);
         if (addrInfo) {
+          keyData = kd;
           addressIndex = addrInfo.index;
           break;
         }
       }
     }
-  }
 
-  // For derived addresses (from extended keys or descriptors)
-  if (isDerived) {
-    // First two addresses after skip should have chain_in values
-    if (addressIndex === 1 || addressIndex === 2) {
+    // First two addresses in the derived set should have chain_in values
+    if (addressIndex <= 1) {
       return {
         chain_stats: {
           funded_txo_count: 1,
@@ -111,6 +110,7 @@ const getBalanceForState = (state, address) => {
         },
       };
     }
+
     // All other derived addresses should have zero balance
     return {
       chain_stats: {

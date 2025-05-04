@@ -5,7 +5,9 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import CheckIcon from "@mui/icons-material/Check";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import BalanceCell from "./BalanceCell";
+import socketIO from "../io";
 
 const AddressCell = ({ address }) => {
   const [copied, setCopied] = useState(false);
@@ -55,14 +57,73 @@ const AddressCell = ({ address }) => {
   );
 };
 
-const AddressRow = ({
-  address,
-  collection,
-  onEditAddress,
-  onSaveExpected,
-  onDelete,
-  displayBtc,
-}) => {
+const AddressRow = ({ address, collection, displayBtc, setNotification }) => {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsRefreshing(true);
+    setNotification({
+      open: true,
+      message: `Refreshing balance for ${address.name}...`,
+      severity: "info",
+    });
+
+    socketIO.emit(
+      "refreshBalance",
+      {
+        collection: collection.name,
+        address: address.address,
+      },
+      (response) => {
+        setIsRefreshing(false);
+        if (response.error) {
+          setNotification({
+            open: true,
+            message: `Failed to refresh balance: ${response.error}`,
+            severity: "error",
+          });
+        } else {
+          setNotification({
+            open: true,
+            message: "Balance refreshed successfully",
+            severity: "success",
+          });
+        }
+      }
+    );
+  };
+
+  const handleEdit = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    socketIO.emit("editAddress", {
+      collection: collection.name,
+      address: address,
+    });
+  };
+
+  const handleDelete = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    socketIO.emit("delete", {
+      collection: collection.name,
+      address: address.address,
+    });
+  };
+
+  const handleSaveExpected = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    socketIO.emit("saveExpected", {
+      collection: collection.name,
+      address: address.address,
+      actual: address.actual,
+      expect: address.actual,
+    });
+  };
+
   // Helper to check if any balance has changed
   const hasBalanceChanges =
     address.actual &&
@@ -139,7 +200,15 @@ const AddressRow = ({
         <Box className="crystal-flex crystal-flex-center crystal-gap-1">
           <IconButtonStyled
             size="small"
-            onClick={() => onEditAddress(collection.name, address)}
+            onClick={handleRefresh}
+            icon={<RefreshIcon fontSize="small" />}
+            data-testid={`${address.address}-refresh-button`}
+            aria-label="Refresh balance"
+            disabled={isRefreshing}
+          />
+          <IconButtonStyled
+            size="small"
+            onClick={handleEdit}
             icon={<EditIcon fontSize="small" />}
             data-testid={`${address.address}-edit-button`}
             aria-label="Edit address"
@@ -147,14 +216,7 @@ const AddressRow = ({
           {hasBalanceChanges && (
             <IconButtonStyled
               size="small"
-              onClick={() =>
-                onSaveExpected({
-                  collection: collection.name,
-                  address: address.address,
-                  actual: address.actual,
-                  expect: address.actual,
-                })
-              }
+              onClick={handleSaveExpected}
               icon={<CheckIcon fontSize="small" />}
               data-testid={`${address.address}-accept-button`}
               aria-label="Accept balance changes"
@@ -162,13 +224,7 @@ const AddressRow = ({
           )}
           <IconButtonStyled
             size="small"
-            onClick={(e) => {
-              e.stopPropagation();
-              onDelete({
-                collection: collection.name,
-                address: address.address,
-              });
-            }}
+            onClick={handleDelete}
             icon={<DeleteIcon fontSize="small" />}
             variant="danger"
             data-testid={`${address.address}-delete-button`}

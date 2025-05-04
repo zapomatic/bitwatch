@@ -2,18 +2,14 @@ import { Server as io } from "socket.io";
 import pjson from "../package.json" with { type: "json" };
 import memory from "./memory.js";
 import telegram from "./telegram.js";
-import engine from "./engine.js";
 import logger from "./logger.js";
 import { BIP32Factory } from 'bip32';
 import * as bitcoin from 'bitcoinjs-lib';
-import { ECPairFactory } from 'ecpair';
 import * as ecc from 'tiny-secp256k1';
 import getAddressBalance from "./getAddressBalance.js";
-import { checkAddressBalance, hasAddressActivity } from "./balance.js";
-import { parseDescriptor, deriveAddresses, validateDescriptor } from './descriptors.js';
-// const { v4: uuidv4 } = require("uuid");
+import { hasAddressActivity } from "./balance.js";
+import { deriveAddresses, validateDescriptor } from './descriptors.js';
 
-const ecpair = ECPairFactory(ecc);
 const bip32 = BIP32Factory(ecc);
 
 const socketIO = {
@@ -78,6 +74,66 @@ const socketIO = {
             apiState: memory.state.apiState,
             interval: memory.db.interval
           });
+        },
+
+        refreshBalance: async (data, cb) => {
+          if (!data.collection || !data.address) {
+            return cb({ error: "Missing collection or address" });
+          }
+
+          logger.info(`Refreshing balance for ${data.address} in ${data.collection}`);
+          
+          const collection = memory.db.collections[data.collection];
+          if (!collection) {
+            return cb({ error: "Collection not found" });
+          }
+
+          // Find address in either main addresses or extended key addresses
+          let addr = collection.addresses.find((a) => a.address === data.address);
+
+          // If not found in main addresses, check extended keys
+          if (!addr && collection.extendedKeys) {
+            for (const extendedKey of collection.extendedKeys) {
+              addr = extendedKey.addresses.find((a) => a.address === data.address);
+              if (addr) break;
+            }
+          }
+
+          // If not found in extended keys, check descriptors
+          if (!addr && collection.descriptors) {
+            for (const descriptor of collection.descriptors) {
+              addr = descriptor.addresses.find((a) => a.address === data.address);
+              if (addr) break;
+            }
+          }
+
+          if (!addr) {
+            return cb({ error: "Address not found" });
+          }
+
+          // Fetch new balance
+          const balance = await getAddressBalance(data.address);
+          if (balance.error) {
+            addr.error = true;
+            addr.errorMessage = balance.message;
+            // Save state
+            memory.saveDb();
+            // Emit update to all clients
+            socketIO.io.emit("updateState", { collections: memory.db.collections });
+            return cb({ error: balance.message });
+          }
+
+          addr.actual = balance.actual;
+          addr.error = false;
+          addr.errorMessage = null;
+
+          // Save state
+          memory.saveDb();
+
+          // Emit update to all clients
+          socketIO.io.emit("updateState", { collections: memory.db.collections });
+          
+          cb({ success: true });
         },
 
         getConfig: async (cb) => {
@@ -377,7 +433,7 @@ const socketIO = {
           const addresses = await deriveExtendedKeyAddresses(
             { key: data.key, skip: data.skip || 0 },
             0,
-            parseInt(data.initialAddresses) || 10,
+            data.initialAddresses || 5,
             data.derivationPath
           );
 
@@ -390,9 +446,9 @@ const socketIO = {
             name: data.name,
             key: data.key,
             derivationPath: data.derivationPath,
-            gapLimit: parseInt(data.gapLimit) || 2,
-            initialAddresses: parseInt(data.initialAddresses) || 10,
-            skip: parseInt(data.skip) || 0,
+            gapLimit: data.gapLimit || 2,
+            initialAddresses: data.initialAddresses || 5,
+            skip: data.skip || 0,
             addresses: addresses.map(addr => ({
               address: addr.address,
               name: `${data.name} ${addr.index}`,
@@ -449,10 +505,10 @@ const socketIO = {
           collection.descriptors[data.descriptorIndex] = {
             ...collection.descriptors[data.descriptorIndex],
             descriptor: data.descriptor,
-            gapLimit: parseInt(data.gapLimit),
+            gapLimit: data.gapLimit,
             name: data.name,
-            skip: parseInt(data.skip),
-            initialAddresses: parseInt(data.initialAddresses),
+            skip: data.skip || 0,
+            initialAddresses: data.initialAddresses || 5,
             addresses: allAddressesResult.data.map(addr => ({
               address: addr.address,
               name: `${data.name} ${addr.index}`,
@@ -481,8 +537,74 @@ const socketIO = {
         },
 
         checkGapLimit: async (data, cb) => {
-          const result = await checkGapLimit(data);
-          return cb(result);
+          const { collection, extendedKey, descriptor } = data;
+          const targetCollection = memory.db.collections[collection];
+          if (!targetCollection) {
+            return cb({ error: "Collection not found" });
+          }
+
+          let item;
+          if (extendedKey) {
+            item = targetCollection.extendedKeys.find(k => k.key === extendedKey.key);
+            if (!item) {
+              return cb({ error: "Extended key not found" });
+            }
+          } else if (descriptor) {
+            item = targetCollection.descriptors.find(d => d.descriptor === descriptor.descriptor);
+            if (!item) {
+              return cb({ error: "Descriptor not found" });
+            }
+          } else {
+            return cb({ error: "No extended key or descriptor specified" });
+          }
+
+          // Derive more addresses if needed
+          const startIndex = item.addresses.length;
+          const newAddresses = extendedKey ? 
+            await deriveExtendedKeyAddresses(
+              { key: item.key, skip: item.skip || 0 },
+              startIndex,
+              item.gapLimit,
+              item.derivationPath
+            ) :
+            await deriveAddresses(
+              item.descriptor,
+              startIndex,
+              item.gapLimit,
+              item.skip || 0
+            );
+
+          if (!newAddresses) {
+            return cb({ error: "Failed to derive new addresses" });
+          }
+
+          // Add new addresses to the item
+          item.addresses.push(...newAddresses.map(addr => ({
+            address: addr.address,
+            name: `${item.name} ${addr.index}`,
+            index: addr.index,
+            expect: {
+              chain_in: 0,
+              chain_out: 0,
+              mempool_in: 0,
+              mempool_out: 0
+            },
+            monitor: {
+              chain_in: "auto-accept",
+              chain_out: "alert",
+              mempool_in: "auto-accept",
+              mempool_out: "alert"
+            },
+            actual: null,
+            error: false,
+            errorMessage: null
+          })));
+
+          // Save and emit update
+          memory.saveDb();
+          socketIO.io.emit("updateState", { collections: memory.db.collections });
+
+          return cb({ success: true });
         },
 
         delete: async (data, cb) => {

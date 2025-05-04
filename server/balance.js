@@ -1,6 +1,83 @@
 import memory from "./memory.js";
 import logger from "./logger.js";
 
+// Helper to check if an address has any activity
+export const hasAddressActivity = (addr) => {
+  if (!addr?.actual) return false;
+  return (
+    addr.actual.chain_in > 0 ||
+    addr.actual.chain_out > 0 ||
+    addr.actual.mempool_in > 0 ||
+    addr.actual.mempool_out > 0
+  );
+};
+
+// Helper to find the last used address and empty count
+const findLastUsedAndEmpty = (addresses) => {
+  let lastUsedIndex = -1;
+  let emptyCount = 0;
+
+  // Sort addresses by index to ensure we check them in order
+  const sortedAddresses = [...addresses].sort((a, b) => a.index - b.index);
+
+  for (const addr of sortedAddresses) {
+    if (hasAddressActivity(addr)) {
+      lastUsedIndex = addr.index;
+      emptyCount = 0;
+    } else {
+      emptyCount++;
+    }
+  }
+
+  return { lastUsedIndex, emptyCount };
+};
+
+// Check if we need to generate more addresses to maintain gap limit
+export const checkAndUpdateGapLimit = async (item) => {
+  if (!item?.addresses) return false;
+
+  const { lastUsedIndex, emptyCount } = findLastUsedAndEmpty(item.addresses);
+
+  // If we have enough empty addresses after the last used one, we're good
+  if (emptyCount >= item.gapLimit) {
+    return false;
+  }
+
+  // If we need more addresses, emit an event to trigger address generation
+  logger.info(
+    `Need more addresses for ${item.name}: last used index ${lastUsedIndex}, empty count ${emptyCount}, gap limit ${item.gapLimit}`
+  );
+  return true;
+};
+
+// Shared function for checking address balance changes
+export const checkAddressBalance = async (addr, newBalance) => {
+  if (!addr) return false;
+
+  // Skip if no actual balance yet
+  if (!addr.actual) {
+    addr.actual = newBalance;
+    return true;
+  }
+
+  // Check if any balance has changed
+  const hasChanged =
+    addr.actual.chain_in !== newBalance.chain_in ||
+    addr.actual.chain_out !== newBalance.chain_out ||
+    addr.actual.mempool_in !== newBalance.mempool_in ||
+    addr.actual.mempool_out !== newBalance.mempool_out;
+
+  if (hasChanged) {
+    logger.scan(`Balance changed for ${addr.address}`);
+    addr.actual = newBalance;
+    addr.error = false;
+    addr.errorMessage = null;
+  }
+
+  return hasChanged;
+};
+
+// Detect balance changes for notifications
 export const detectBalanceChanges = (
   address,
   balance,
@@ -18,6 +95,14 @@ export const detectBalanceChanges = (
   if (!addr && collection.extendedKeys) {
     for (const extendedKey of collection.extendedKeys) {
       addr = extendedKey.addresses.find((a) => a.address === address);
+      if (addr) break;
+    }
+  }
+
+  // If not found in extended keys, check descriptors
+  if (!addr && collection.descriptors) {
+    for (const descriptor of collection.descriptors) {
+      addr = descriptor.addresses.find((a) => a.address === address);
       if (addr) break;
     }
   }
@@ -122,37 +207,4 @@ Previous: chain_in=${oldBalance.chain_in}, chain_out=${oldBalance.chain_out}, me
   }
 
   return Object.keys(changes).length > 0 ? changes : null;
-};
-
-// Shared function for checking address balance changes
-export const checkAddressBalance = async (addr, newBalance) => {
-  if (!addr) return false;
-
-  // Skip if no actual balance yet
-  if (!addr.actual) {
-    addr.actual = newBalance;
-    return true;
-  }
-
-  // Check if any balance has changed
-  const hasChanged =
-    addr.actual.chain_in !== newBalance.chain_in ||
-    addr.actual.chain_out !== newBalance.chain_out ||
-    addr.actual.mempool_in !== newBalance.mempool_in ||
-    addr.actual.mempool_out !== newBalance.mempool_out;
-
-  if (hasChanged) {
-    logger.scan(`Balance changed for ${addr.address}`);
-    addr.actual = newBalance;
-    addr.error = false;
-    addr.errorMessage = null;
-  }
-
-  return hasChanged;
-};
-
-// Shared function to check if address has activity
-export const hasAddressActivity = (addr) => {
-  if (!addr?.actual) return false;
-  return (addr.actual.chain_in || 0) + (addr.actual.mempool_in || 0) > 0;
 };

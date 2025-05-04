@@ -9,6 +9,7 @@ import {
   Table,
   TableBody,
   Tooltip,
+  TableHead,
 } from "@mui/material";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import EditIcon from "@mui/icons-material/Edit";
@@ -22,9 +23,8 @@ const DescriptorInfo = ({
   onEdit,
   onDelete,
   collection,
-  onEditAddress,
-  onSaveExpected,
   displayBtc,
+  setNotification,
 }) => {
   const [isExpanded, setIsExpanded] = useState(
     descriptor.addresses?.length > 0
@@ -54,14 +54,6 @@ const DescriptorInfo = ({
     e.preventDefault();
     e.stopPropagation();
     onDelete({ descriptor });
-  };
-
-  const handleAddressDelete = (address) => {
-    onDelete({
-      collection: collection.name,
-      address: address.address,
-      descriptor: descriptor,
-    });
   };
 
   const handleCopy = (e) => {
@@ -148,16 +140,23 @@ const DescriptorInfo = ({
           <Collapse in={isExpanded} timeout="auto" unmountOnExit>
             <Box sx={{ margin: 1 }}>
               <Table size="small" className="crystal-table address-subtable">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Name</TableCell>
+                    <TableCell>Address</TableCell>
+                    <TableCell>On-Chain</TableCell>
+                    <TableCell>Mempool</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
                 <TableBody>
                   {descriptor.addresses.map((address) => (
                     <AddressRow
                       key={address.address}
                       address={address}
                       collection={collection}
-                      onEditAddress={onEditAddress}
-                      onSaveExpected={onSaveExpected}
-                      onDelete={handleAddressDelete}
                       displayBtc={displayBtc}
+                      setNotification={setNotification}
                     />
                   ))}
                 </TableBody>
