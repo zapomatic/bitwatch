@@ -53,15 +53,39 @@ const BalanceCell = ({
   const diff = actualValue - expectedValue;
   const isVerified = diff === 0;
 
+  // Get the monitoring setting for this specific type
+  const monitoringSetting = monitor?.[type] || null;
+
   return (
     <Box className="crystal-flex crystal-flex-start crystal-gap-1">
       {label && <Typography className="crystal-text">{label}</Typography>}
-      {isVerified ? (
-        <CheckIcon className="crystal-text-success" sx={{ fontSize: "1rem" }} />
+      {!monitoringSetting ? (
+        // Collection row - just show verification status
+        isVerified ? (
+          <CheckIcon
+            className="crystal-text-success"
+            sx={{ fontSize: "1rem" }}
+          />
+        ) : (
+          <WarningIcon
+            className="crystal-text-warning"
+            sx={{ fontSize: "1rem" }}
+          />
+        )
+      ) : // Individual address row - show monitoring status
+      monitoringSetting === "auto-accept" ? (
+        <CheckCircleIcon
+          className="crystal-text-success"
+          sx={{ fontSize: "1rem" }}
+          aria-label={`Auto-accept monitoring for ${type}`}
+          data-testid={`${dataTestId}-auto-accept-icon`}
+        />
       ) : (
-        <WarningIcon
+        <NotificationsActiveIcon
           className="crystal-text-warning"
           sx={{ fontSize: "1rem" }}
+          aria-label={`Alert monitoring for ${type}`}
+          data-testid={`${dataTestId}-alert-icon`}
         />
       )}
       <Box className="crystal-flex crystal-flex-start crystal-gap-1">
@@ -72,7 +96,7 @@ const BalanceCell = ({
         >
           {formatSatoshis(actualValue, displayBtc)}
         </Typography>
-        {!isVerified && (
+        {diff !== 0 && (
           <Typography
             className={`crystal-text ${
               diff > 0 ? "crystal-text-success" : "crystal-text-danger"
@@ -86,55 +110,6 @@ const BalanceCell = ({
           </Typography>
         )}
       </Box>
-      {monitor && type && (
-        <Box
-          className="crystal-flex crystal-flex-start crystal-gap-1"
-          sx={{ ml: 1 }}
-        >
-          <Tooltip
-            title={`Incoming: ${
-              monitor[`${type}_in`] === "alert"
-                ? "Alert on changes"
-                : "Auto-accept changes"
-            }`}
-          >
-            {monitor[`${type}_in`] === "alert" ? (
-              <NotificationsActiveIcon
-                className="crystal-text-warning"
-                sx={{ fontSize: "1rem" }}
-                aria-label="Incoming alert status"
-              />
-            ) : (
-              <CheckCircleIcon
-                className="crystal-text-success"
-                sx={{ fontSize: "1rem" }}
-                aria-label="Incoming auto-accept status"
-              />
-            )}
-          </Tooltip>
-          <Tooltip
-            title={`Outgoing: ${
-              monitor[`${type}_out`] === "alert"
-                ? "Alert on changes"
-                : "Auto-accept changes"
-            }`}
-          >
-            {monitor[`${type}_out`] === "alert" ? (
-              <NotificationsActiveIcon
-                className="crystal-text-warning"
-                sx={{ fontSize: "1rem" }}
-                aria-label="Outgoing alert status"
-              />
-            ) : (
-              <CheckCircleIcon
-                className="crystal-text-success"
-                sx={{ fontSize: "1rem" }}
-                aria-label="Outgoing auto-accept status"
-              />
-            )}
-          </Tooltip>
-        </Box>
-      )}
     </Box>
   );
 };

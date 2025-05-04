@@ -75,7 +75,12 @@ const ExtendedKeyInfo = ({
               size="small"
               onClick={handleExpandClick}
               sx={{ mr: 1 }}
-              data-testid={isExpanded ? "collapse-button" : "expand-button"}
+              data-testid={`${extendedKey.key}-expand-button`}
+              aria-label={
+                isExpanded
+                  ? "Collapse extended key details"
+                  : "Expand extended key details"
+              }
             >
               {isExpanded ? <ExpandLess /> : <ExpandMore />}
             </IconButton>
@@ -92,6 +97,8 @@ const ExtendedKeyInfo = ({
                 size="small"
                 onClick={handleCopy}
                 icon={<ContentCopyIcon fontSize="small" />}
+                data-testid={`${extendedKey.key}-copy-button`}
+                aria-label="Copy extended key"
               />
             </Tooltip>
           </Box>
@@ -117,11 +124,17 @@ const ExtendedKeyInfo = ({
         </TableCell>
         <TableCell>
           <Box sx={{ display: "flex", gap: 1 }}>
-            <IconButtonStyled onClick={handleEditClick} icon={<EditIcon />} />
+            <IconButtonStyled
+              onClick={handleEditClick}
+              icon={<EditIcon />}
+              data-testid={`${extendedKey.key}-edit-button`}
+              aria-label="Edit extended key"
+            />
             <IconButtonStyled
               onClick={handleDeleteClick}
               icon={<DeleteIcon />}
-              data-testid="delete-button"
+              data-testid={`${extendedKey.key}-delete-button`}
+              aria-label="Delete extended key"
             />
           </Box>
         </TableCell>

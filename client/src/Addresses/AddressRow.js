@@ -62,110 +62,122 @@ const AddressRow = ({
   onSaveExpected,
   onDelete,
   displayBtc,
-}) => (
-  <TableRow className="crystal-table-row address-row">
-    <TableCell>
-      <Box className="crystal-flex crystal-flex-start crystal-gap-1">
-        <Typography className="crystal-text">{address.name}</Typography>
-      </Box>
-    </TableCell>
-    <TableCell className="crystal-table-cell">
-      <AddressCell address={address.address} />
-    </TableCell>
-    <TableCell className="crystal-table-cell">
-      <Box className="crystal-flex crystal-flex-start">
-        <BalanceCell
-          label="⬅️"
-          value={address.actual?.chain_in}
-          expect={address.expect?.chain_in}
-          displayBtc={displayBtc}
-          error={address.error}
-          pending={!address.actual && !address.error}
-          monitor={address.monitor}
-          type="chain_in"
-          dataTestId={`${address.address}-chain-in`}
-        />
-      </Box>
-      <Box className="crystal-flex crystal-flex-start" sx={{ mt: 1 }}>
-        <BalanceCell
-          label="➡️"
-          value={address.actual?.chain_out}
-          expect={address.expect?.chain_out}
-          displayBtc={displayBtc}
-          error={address.error}
-          pending={!address.actual && !address.error}
-          monitor={address.monitor}
-          type="chain_out"
-          dataTestId={`${address.address}-chain-out`}
-        />
-      </Box>
-    </TableCell>
-    <TableCell className="crystal-table-cell">
-      <Box className="crystal-flex crystal-flex-start">
-        <BalanceCell
-          value={address.actual?.mempool_in}
-          expect={address.expect?.mempool_in}
-          displayBtc={displayBtc}
-          error={address.error}
-          pending={!address.actual && !address.error}
-          monitor={address.monitor}
-          type="mempool_in"
-          dataTestId={`${address.address}-mempool-in`}
-        />
-      </Box>
-      <Box className="crystal-flex crystal-flex-start" sx={{ mt: 1 }}>
-        <BalanceCell
-          value={address.actual?.mempool_out}
-          expect={address.expect?.mempool_out}
-          displayBtc={displayBtc}
-          error={address.error}
-          pending={!address.actual && !address.error}
-          monitor={address.monitor}
-          type="mempool_out"
-          dataTestId={`${address.address}-mempool-out`}
-        />
-      </Box>
-    </TableCell>
-    <TableCell>
-      <Box className="crystal-flex crystal-flex-center crystal-gap-1">
-        <IconButtonStyled
-          size="small"
-          onClick={() => onEditAddress(collection.name, address)}
-          icon={<EditIcon fontSize="small" />}
-        />
-        {(address.actual?.chain_in !== address.expect?.chain_in ||
-          address.actual?.chain_out !== address.expect?.chain_out ||
-          address.actual?.mempool_in !== address.expect?.mempool_in ||
-          address.actual?.mempool_out !== address.expect?.mempool_out) && (
+}) => {
+  // Helper to check if any balance has changed
+  const hasBalanceChanges =
+    address.actual &&
+    (address.actual.chain_in !== address.expect.chain_in ||
+      address.actual.chain_out !== address.expect.chain_out ||
+      address.actual.mempool_in !== address.expect.mempool_in ||
+      address.actual.mempool_out !== address.expect.mempool_out);
+
+  return (
+    <TableRow className="crystal-table-row address-row">
+      <TableCell>
+        <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+          <Typography className="crystal-text">{address.name}</Typography>
+        </Box>
+      </TableCell>
+      <TableCell className="crystal-table-cell">
+        <AddressCell address={address.address} />
+      </TableCell>
+      <TableCell className="crystal-table-cell">
+        <Box className="crystal-flex crystal-flex-start">
+          <BalanceCell
+            label="⬅️"
+            value={address.actual?.chain_in}
+            expect={address.expect?.chain_in}
+            displayBtc={displayBtc}
+            error={address.error}
+            pending={!address.actual && !address.error}
+            monitor={address.monitor}
+            type="chain_in"
+            dataTestId={`${address.address}-chain-in`}
+          />
+        </Box>
+        <Box className="crystal-flex crystal-flex-start" sx={{ mt: 1 }}>
+          <BalanceCell
+            label="➡️"
+            value={address.actual?.chain_out}
+            expect={address.expect?.chain_out}
+            displayBtc={displayBtc}
+            error={address.error}
+            pending={!address.actual && !address.error}
+            monitor={address.monitor}
+            type="chain_out"
+            dataTestId={`${address.address}-chain-out`}
+          />
+        </Box>
+      </TableCell>
+      <TableCell className="crystal-table-cell">
+        <Box className="crystal-flex crystal-flex-start">
+          <BalanceCell
+            value={address.actual?.mempool_in}
+            expect={address.expect?.mempool_in}
+            displayBtc={displayBtc}
+            error={address.error}
+            pending={!address.actual && !address.error}
+            monitor={address.monitor}
+            type="mempool_in"
+            dataTestId={`${address.address}-mempool-in`}
+          />
+        </Box>
+        <Box className="crystal-flex crystal-flex-start" sx={{ mt: 1 }}>
+          <BalanceCell
+            value={address.actual?.mempool_out}
+            expect={address.expect?.mempool_out}
+            displayBtc={displayBtc}
+            error={address.error}
+            pending={!address.actual && !address.error}
+            monitor={address.monitor}
+            type="mempool_out"
+            dataTestId={`${address.address}-mempool-out`}
+          />
+        </Box>
+      </TableCell>
+      <TableCell>
+        <Box className="crystal-flex crystal-flex-center crystal-gap-1">
           <IconButtonStyled
             size="small"
-            onClick={() =>
-              onSaveExpected({
+            onClick={() => onEditAddress(collection.name, address)}
+            icon={<EditIcon fontSize="small" />}
+            data-testid={`${address.address}-edit-button`}
+            aria-label="Edit address"
+          />
+          {hasBalanceChanges && (
+            <IconButtonStyled
+              size="small"
+              onClick={() =>
+                onSaveExpected({
+                  collection: collection.name,
+                  address: address.address,
+                  actual: address.actual,
+                  expect: address.actual,
+                })
+              }
+              icon={<CheckIcon fontSize="small" />}
+              data-testid={`${address.address}-accept-button`}
+              aria-label="Accept balance changes"
+            />
+          )}
+          <IconButtonStyled
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete({
                 collection: collection.name,
                 address: address.address,
-                actual: address.actual,
-                expect: address.actual,
-              })
-            }
-            icon={<CheckIcon fontSize="small" />}
-            variant="success"
+              });
+            }}
+            icon={<DeleteIcon fontSize="small" />}
+            variant="danger"
+            data-testid={`${address.address}-delete-button`}
+            aria-label="Delete address"
           />
-        )}
-        <IconButtonStyled
-          size="small"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDelete({
-              collection: collection.name,
-              address: address.address,
-            });
-          }}
-          icon={<DeleteIcon fontSize="small" />}
-          variant="danger"
-        />
-      </Box>
-    </TableCell>
-  </TableRow>
-);
+        </Box>
+      </TableCell>
+    </TableRow>
+  );
+};
 
 export default AddressRow;

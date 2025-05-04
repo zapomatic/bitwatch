@@ -10,6 +10,7 @@ let clients = new Set();
 let trackedAddresses = new Set();
 let addressBalances = new Map();
 let addressStates = new Map(); // Track state of each address
+let addressCheckCounts = new Map(); // Track number of checks per address
 
 const ADDRESS_STATES = {
   INITIAL: "initial",
@@ -28,6 +29,10 @@ const log = (level, message) => {
 const getNextState = (currentState) => {
   const states = Object.values(ADDRESS_STATES);
   const currentIndex = states.indexOf(currentState);
+  // If we're at the last state, stay there instead of cycling
+  if (currentIndex === states.length - 1) {
+    return currentState;
+  }
   return states[(currentIndex + 1) % states.length];
 };
 
@@ -95,6 +100,7 @@ const getBalanceForState = (state) => {
         },
       };
     case ADDRESS_STATES.CHAIN_OUT:
+    default:
       return {
         chain_stats: {
           funded_txo_count: 1,
@@ -109,8 +115,6 @@ const getBalanceForState = (state) => {
           spent_txo_sum: 0,
         },
       };
-    default:
-      return getBalanceForState(ADDRESS_STATES.INITIAL);
   }
 };
 
@@ -191,18 +195,26 @@ const handleHttpRequest = (req, res) => {
     if (url.pathname.startsWith("/api/address/")) {
       const address = url.pathname.split("/").pop();
 
-      // Initialize state if not exists
+      // Initialize state and check count if not exists
       if (!addressStates.has(address)) {
         addressStates.set(address, ADDRESS_STATES.INITIAL);
+        addressCheckCounts.set(address, 0);
       }
 
-      // Get current state and progress to next
+      // Get current state and check count
       const currentState = addressStates.get(address);
-      const nextState = getNextState(currentState);
+      const checkCount = addressCheckCounts.get(address) + 1;
+      addressCheckCounts.set(address, checkCount);
+
+      // Keep initial state for first two requests
+      let nextState = currentState;
+      if (checkCount > 2) {
+        nextState = getNextState(currentState);
+      }
       addressStates.set(address, nextState);
 
       // Get balance for current state
-      const balance = getBalanceForState(currentState);
+      const balance = getBalanceForState(addressStates.get(address));
       addressBalances.set(address, balance);
 
       res.writeHead(200, { "Content-Type": "application/json" });

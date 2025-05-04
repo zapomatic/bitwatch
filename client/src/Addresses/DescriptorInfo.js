@@ -71,7 +71,17 @@ const DescriptorInfo = ({
       >
         <TableCell>
           <Box sx={{ display: "flex", alignItems: "center" }}>
-            <IconButton size="small" onClick={handleExpandClick} sx={{ mr: 1 }}>
+            <IconButton
+              size="small"
+              onClick={handleExpandClick}
+              sx={{ mr: 1 }}
+              data-testid={`${descriptor.descriptor}-expand-button`}
+              aria-label={
+                isExpanded
+                  ? "Collapse descriptor details"
+                  : "Expand descriptor details"
+              }
+            >
               {isExpanded ? <ExpandLess /> : <ExpandMore />}
             </IconButton>
             <Typography variant="body2">{descriptor.name}</Typography>
@@ -87,6 +97,8 @@ const DescriptorInfo = ({
                 size="small"
                 onClick={handleCopy}
                 icon={<ContentCopyIcon fontSize="small" />}
+                data-testid={`${descriptor.descriptor}-copy-button`}
+                aria-label="Copy descriptor"
               />
             </Tooltip>
           </Box>
@@ -107,11 +119,17 @@ const DescriptorInfo = ({
         </TableCell>
         <TableCell>
           <Box sx={{ display: "flex", gap: 1 }}>
-            <IconButtonStyled onClick={handleEditClick} icon={<EditIcon />} />
+            <IconButtonStyled
+              onClick={handleEditClick}
+              icon={<EditIcon />}
+              data-testid={`${descriptor.descriptor}-edit-button`}
+              aria-label="Edit descriptor"
+            />
             <IconButtonStyled
               onClick={handleDeleteClick}
               icon={<DeleteIcon />}
-              data-testid="delete-button"
+              data-testid={`${descriptor.descriptor}-delete-button`}
+              aria-label="Delete descriptor"
             />
           </Box>
         </TableCell>

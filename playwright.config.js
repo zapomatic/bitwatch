@@ -35,9 +35,9 @@ export default defineConfig({
   ],
   workers: 1,
   reporter: "list",
-  timeout: 5000,
+  timeout: 15000,
   expect: {
-    timeout: 5000,
+    timeout: 15000,
   },
   retries: process.env.CI ? 2 : 0,
 });

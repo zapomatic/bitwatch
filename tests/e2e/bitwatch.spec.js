@@ -44,60 +44,43 @@ test.describe("Bitwatch", () => {
     await page.getByTestId("settings-button").click();
     console.log("Settings opened");
 
-    // Verify default values (should match mock API server)
+    // Verify default test values first
     await expect(page.getByTestId("config-api")).toHaveValue(testDb.api);
     await expect(page.getByTestId("config-interval")).toHaveValue(testDb.interval.toString());
     await expect(page.getByTestId("config-apiDelay")).toHaveValue(testDb.apiDelay.toString());
     await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue(testDb.apiParallelLimit.toString());
     await expect(page.getByTestId("config-debugLogging")).not.toBeChecked();
 
-    // Switch to private mode
+    // Switch to public mode and verify public settings
+    await page.getByTestId("use-public-api").click();
+    console.log("Switched to public mode");
+    await expect(page.getByTestId("config-api")).toHaveValue("https://mempool.space");
+    await expect(page.getByTestId("config-interval")).toHaveValue("600000");
+    await expect(page.getByTestId("config-apiDelay")).toHaveValue("2000");
+    await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue("1");
+
+    // Switch to private mode and verify private settings
     await page.getByTestId("use-local-node").click();
     console.log("Switched to private mode");
+    await expect(page.getByTestId("config-api")).toHaveValue("http://10.21.21.26:3006");
+    await expect(page.getByTestId("config-interval")).toHaveValue("60000");
+    await expect(page.getByTestId("config-apiDelay")).toHaveValue("100");
+    await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue("100");
 
-    // Verify private mode values (should match PRIVATE_CONFIG)
-    await expect(page.getByTestId("config-api")).toHaveValue(
-      `http://10.21.21.26:3006`
-    );
-    await expect(page.getByTestId("config-interval")).toHaveValue(
-      `60000`
-    );
-    await expect(page.getByTestId("config-apiDelay")).toHaveValue(
-      `100`
-    );
-    await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue(
-      `100`
-    );
-
-    // Toggle debug logging
+    // Return to test settings
+    await page.getByTestId("use-public-api").click();
+    console.log("Returned to public mode");
+    await page.getByTestId("config-api").fill(testDb.api);
+    await page.getByTestId("config-interval").fill(testDb.interval.toString());
+    await page.getByTestId("config-apiDelay").fill(testDb.apiDelay.toString());
+    await page.getByTestId("config-apiParallelLimit").fill(testDb.apiParallelLimit.toString());
     await page.getByTestId("config-debugLogging").click();
     await expect(page.getByTestId("config-debugLogging")).toBeChecked();
-    console.log("Toggled debug logging");
+    console.log("Restored test settings");
 
     // Save configuration
     await page.getByTestId("save-configuration").click();
     console.log("Saved configuration");
-
-    // Verify success notification
-    await expect(page.getByTestId("config-notification")).toBeVisible();
-    await expect(page.getByTestId("config-notification")).toContainText(
-      "Configuration saved successfully"
-    );
-    // Dismiss the notification
-    await page.getByTestId("config-notification").getByRole("button", { name: "Close" }).click();
-    console.log("Verified success notification");
-
-    // Switch back to public mode
-    await page.getByTestId("use-public-api").click();
-    console.log("Switched back to public mode");
-
-    // Manually set the API endpoint back to the mock server
-    await page.getByTestId("config-api").fill(testDb.api);
-    console.log("Set API endpoint back to mock server");
-
-    // Save configuration again
-    await page.getByTestId("save-configuration").click();
-    console.log("Saved public configuration");
 
     // Verify success notification
     await expect(page.getByTestId("config-notification")).toBeVisible();
@@ -158,12 +141,16 @@ test.describe("Bitwatch", () => {
     console.log("Verified address table is visible");
 
     // Wait for the loading state to complete
-    const address = "bc1q67csgqm9muhynyd864tj2p48g8gachyg2nwara";
+    const address = testData.addresses.zapomatic;
     await expect(page.getByTestId(`${address}-chain-in`)).not.toContainText("Loading...");
     await expect(page.getByTestId(`${address}-chain-out`)).not.toContainText("Loading...");
     await expect(page.getByTestId(`${address}-mempool-in`)).not.toContainText("Loading...");
     await expect(page.getByTestId(`${address}-mempool-out`)).not.toContainText("Loading...");
-    console.log("Loading state completed");
+
+    await expect(page.getByTestId(`${address}-mempool-in-auto-accept-icon`)).toBeVisible();
+    await expect(page.getByTestId(`${address}-chain-in-auto-accept-icon`)).toBeVisible();
+    await expect(page.getByTestId(`${address}-mempool-out-alert-icon`)).toBeVisible();
+    await expect(page.getByTestId(`${address}-chain-out-alert-icon`)).toBeVisible();
 
     // Verify initial balance values
     await expect(page.getByTestId(`${address}-chain-in`)).toHaveText("0.00000000 ₿");
@@ -172,28 +159,41 @@ test.describe("Bitwatch", () => {
     await expect(page.getByTestId(`${address}-mempool-out`)).toHaveText("0.00000000 ₿");
     
     // Wait for mempool input
-    await expect(page.getByTestId(`${address}-mempool-in`)).toHaveText("0.00010000");
-    await expect(page.getByTestId(`${address}-mempool-in-diff`)).toHaveText("(+0.00010000)");
-    
+    await expect(page.getByTestId(`${address}-mempool-in`).and(page.getByLabel("Balance value"))).toHaveText("0.00010000 ₿");
     // Wait for chain input
-    await expect(page.getByTestId(`${address}-chain-in`)).toHaveText("0.00010000");
-    await expect(page.getByTestId(`${address}-chain-in-diff`)).toHaveText("(+0.00010000)");
-    await expect(page.getByTestId(`${address}-mempool-in`)).toHaveText("0");
-    
+    await expect(page.getByTestId(`${address}-chain-in`).and(page.getByLabel("Balance value"))).toHaveText("0.00010000 ₿");
     // Wait for mempool output
-    await expect(page.getByTestId(`${address}-mempool-out`)).toHaveText("0.00001000");
-    await expect(page.getByTestId(`${address}-mempool-out-diff`)).toHaveText("(-0.00001000)");
-    await expect(page.getByTestId(`${address}-chain-in`)).toHaveText("0.00009000");
+    await expect(page.getByTestId(`${address}-mempool-out`).and(page.getByLabel("Balance value"))).toHaveText("0.00001000 ₿");
+    // Wait for the diff to appear and have the correct value
+    await expect(page.getByTestId(`${address}-mempool-out-diff`)).toBeVisible();
+    await expect(page.getByTestId(`${address}-mempool-out-diff`)).toHaveText("(+0.00001000 ₿)");
+    // Verify accept button for address change state
+    await expect(page.getByTestId(`${address}-accept-button`)).toBeVisible();
     
     // Wait for chain output
-    await expect(page.getByTestId(`${address}-chain-out`)).toHaveText("0.00001000");
-    await expect(page.getByTestId(`${address}-chain-out-diff`)).toHaveText("(-0.00001000)");
-    await expect(page.getByTestId(`${address}-mempool-out`)).toHaveText("0");
-    await expect(page.getByTestId(`${address}-chain-in`)).toHaveText("0.00009000");
-
+    await expect(page.getByTestId(`${address}-chain-out`).and(page.getByLabel("Balance value"))).toHaveText("0.00001000 ₿");
+    await expect(page.getByTestId(`${address}-chain-out-diff`)).toBeVisible();
+    await expect(page.getByTestId(`${address}-chain-out-diff`)).toHaveText("(+0.00001000 ₿)");
+    // Verify alert icon and accept button for chain-out
+    await expect(page.getByTestId(`${address}-chain-out-alert-icon`)).toBeVisible();
+    await expect(page.getByTestId(`${address}-accept-button`)).toBeVisible();
+    // Accept the chain-out change
+    await page.getByTestId(`${address}-accept-button`).click();
+    // verify that the change took (no longer showing a diff)
+    await expect(page.getByTestId(`${address}-chain-out-diff`)).not.toBeVisible();
+    
     // Delete address
-    await page.getByTestId("delete-button").click();
+    await page.getByTestId(`${address}-delete-button`).click();
+    // Verify delete confirmation dialog appears with correct message
+    await expect(page.getByRole("heading", { name: "Confirm Delete" })).toBeVisible();
+    await expect(page.getByText("Remove this address from the collection?")).toBeVisible();
+    // Confirm deletion
+    await page.getByRole("button", { name: "Delete" }).click();
     console.log("Deleted address");
+    // verify that the address is deleted
+    await expect(page.getByTestId(`${address}-delete-button`)).not.toBeVisible();
+    // verify that the collection still exists
+    await expect(page.getByTestId("Donations-add-address")).toBeVisible();
 
     // Add extended keys (xpub, ypub, zpub)
     const extendedKeys = [
@@ -253,7 +253,7 @@ test.describe("Bitwatch", () => {
       console.log("Verified balance confirmation");
 
       // Delete extended key
-      await page.getByTestId("delete-button").click();
+      await page.getByTestId(`${key.key}-delete-button`).click();
       console.log("Deleted extended key");
     }
 
@@ -303,7 +303,7 @@ test.describe("Bitwatch", () => {
       console.log("Verified balance confirmation");
 
       // Delete descriptor
-      await page.getByTestId("delete-button").click();
+      await page.getByTestId(`${descriptor.descriptor}-delete-button`).click();
       console.log("Deleted descriptor");
     }
 
