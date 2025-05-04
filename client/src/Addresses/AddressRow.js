@@ -83,6 +83,7 @@ const AddressRow = ({
           pending={!address.actual && !address.error}
           monitor={address.monitor}
           type="chain_in"
+          dataTestId={`${address.address}-chain-in`}
         />
       </Box>
       <Box className="crystal-flex crystal-flex-start" sx={{ mt: 1 }}>
@@ -95,6 +96,7 @@ const AddressRow = ({
           pending={!address.actual && !address.error}
           monitor={address.monitor}
           type="chain_out"
+          dataTestId={`${address.address}-chain-out`}
         />
       </Box>
     </TableCell>
@@ -108,6 +110,7 @@ const AddressRow = ({
           pending={!address.actual && !address.error}
           monitor={address.monitor}
           type="mempool_in"
+          dataTestId={`${address.address}-mempool-in`}
         />
       </Box>
       <Box className="crystal-flex crystal-flex-start" sx={{ mt: 1 }}>
@@ -119,6 +122,7 @@ const AddressRow = ({
           pending={!address.actual && !address.error}
           monitor={address.monitor}
           type="mempool_out"
+          dataTestId={`${address.address}-mempool-out`}
         />
       </Box>
     </TableCell>

@@ -33,23 +33,7 @@ if (!fs.existsSync(dbFile)) {
 
 const loadDb = () => {
   const data = fs.readFileSync(dbFile, "utf8");
-  const db = JSON.parse(data);
-
-  // Clean up any ephemeral data from collections
-  Object.values(db.collections || {}).forEach((collection) => {
-    delete collection.totals;
-    // Remove ephemeral data from all addresses
-    collection.addresses.forEach((addr) => {
-      delete addr.actual;
-      delete addr.error;
-      delete addr.errorMessage;
-    });
-  });
-
-  // Save cleaned db back to file
-  fs.writeFileSync(dbFile, JSON.stringify(db, null, 2));
-
-  return db;
+  return JSON.parse(data);
 };
 
 const saveDb = () => {

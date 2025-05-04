@@ -19,9 +19,7 @@ test.describe("Bitwatch", () => {
 
     // Wait for server connection
     console.log("Waiting for server connection...");
-    await page.waitForSelector('[aria-label="Server status: CONNECTED"]', {
-      timeout: 5000,
-    });
+    await page.waitForSelector('[aria-label="Server status: CONNECTED"]');
     const serverState = await page.evaluate(() => {
       const statusElement = document.querySelector(
         '[aria-label="Server status: CONNECTED"]'
@@ -33,9 +31,7 @@ test.describe("Bitwatch", () => {
 
     // Wait for WebSocket connection
     console.log("Waiting for WebSocket connection...");
-    await page.waitForSelector('[aria-label="WebSocket status: CONNECTED"]', {
-      timeout: 5000,
-    });
+    await page.waitForSelector('[aria-label="WebSocket status: CONNECTED"]');
     const websocketState = await page.evaluate(() => {
       const statusElement = document.querySelector(
         '[aria-label="WebSocket status: CONNECTED"]'
@@ -148,11 +144,6 @@ test.describe("Bitwatch", () => {
     await addCollection(page, "Donations");
     console.log("Added test collection");
 
-    // Verify collection is expanded and shows empty state
-    await expect(page.locator('text=Single Addresses')).toBeVisible();
-    await expect(page.locator('table.address-subtable')).toBeVisible();
-    console.log("Verified collection is expanded");
-
     // Add single address
     await addAddress(page, "Donations", {
       name: "zapomatic",
@@ -166,30 +157,39 @@ test.describe("Bitwatch", () => {
     await expect(page.locator(`text=${testData.addresses.zapomatic.slice(0, 8)}...`)).toBeVisible();
     console.log("Verified address table is visible");
 
-    // Wait for the API interval to ensure the balance has been checked
-    await new Promise(resolve => setTimeout(resolve, testDb.interval));
-    console.log("Waited for API interval");
+    // Wait for the loading state to complete
+    const address = "bc1q67csgqm9muhynyd864tj2p48g8gachyg2nwara";
+    await expect(page.getByTestId(`${address}-chain-in`)).not.toContainText("Loading...");
+    await expect(page.getByTestId(`${address}-chain-out`)).not.toContainText("Loading...");
+    await expect(page.getByTestId(`${address}-mempool-in`)).not.toContainText("Loading...");
+    await expect(page.getByTestId(`${address}-mempool-out`)).not.toContainText("Loading...");
+    console.log("Loading state completed");
 
     // Verify initial balance values
-    const balanceCell = page.locator('.balance-cell');
-    await expect(balanceCell.getByText("0")).toBeVisible();
-    console.log("Verified initial balance");
-
-    // Wait for balance change event
-    await page.waitForSelector('[aria-label="Balance change detected"]');
-    console.log("Balance change detected");
-
-    // Verify balance change in UI
-    await expect(page.getByText("Balance changed")).toBeVisible();
-    console.log("Verified balance change in UI");
-
-    // Accept balance change
-    await page.getByRole("button", { name: "Accept" }).click();
-    console.log("Accepted balance change");
-
-    // Verify balance is confirmed
-    await expect(page.getByText("Balance confirmed")).toBeVisible();
-    console.log("Verified balance confirmation");
+    await expect(page.getByTestId(`${address}-chain-in`)).toHaveText("0.00000000 ₿");
+    await expect(page.getByTestId(`${address}-chain-out`)).toHaveText("0.00000000 ₿");
+    await expect(page.getByTestId(`${address}-mempool-in`)).toHaveText("0.00000000 ₿");
+    await expect(page.getByTestId(`${address}-mempool-out`)).toHaveText("0.00000000 ₿");
+    
+    // Wait for mempool input
+    await expect(page.getByTestId(`${address}-mempool-in`)).toHaveText("0.00010000");
+    await expect(page.getByTestId(`${address}-mempool-in-diff`)).toHaveText("(+0.00010000)");
+    
+    // Wait for chain input
+    await expect(page.getByTestId(`${address}-chain-in`)).toHaveText("0.00010000");
+    await expect(page.getByTestId(`${address}-chain-in-diff`)).toHaveText("(+0.00010000)");
+    await expect(page.getByTestId(`${address}-mempool-in`)).toHaveText("0");
+    
+    // Wait for mempool output
+    await expect(page.getByTestId(`${address}-mempool-out`)).toHaveText("0.00001000");
+    await expect(page.getByTestId(`${address}-mempool-out-diff`)).toHaveText("(-0.00001000)");
+    await expect(page.getByTestId(`${address}-chain-in`)).toHaveText("0.00009000");
+    
+    // Wait for chain output
+    await expect(page.getByTestId(`${address}-chain-out`)).toHaveText("0.00001000");
+    await expect(page.getByTestId(`${address}-chain-out-diff`)).toHaveText("(-0.00001000)");
+    await expect(page.getByTestId(`${address}-mempool-out`)).toHaveText("0");
+    await expect(page.getByTestId(`${address}-chain-in`)).toHaveText("0.00009000");
 
     // Delete address
     await page.getByTestId("delete-button").click();

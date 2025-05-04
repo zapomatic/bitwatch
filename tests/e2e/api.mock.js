@@ -9,10 +9,109 @@ let httpServer = null;
 let clients = new Set();
 let trackedAddresses = new Set();
 let addressBalances = new Map();
+let addressStates = new Map(); // Track state of each address
+
+const ADDRESS_STATES = {
+  INITIAL: "initial",
+  MEMPOOL_IN: "mempool_in",
+  CHAIN_IN: "chain_in",
+  MEMPOOL_OUT: "mempool_out",
+  CHAIN_OUT: "chain_out",
+};
 
 const log = (level, message) => {
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] [${level}] ${message}`);
+};
+
+// Helper function to get next state
+const getNextState = (currentState) => {
+  const states = Object.values(ADDRESS_STATES);
+  const currentIndex = states.indexOf(currentState);
+  return states[(currentIndex + 1) % states.length];
+};
+
+// Helper function to get balance based on state
+const getBalanceForState = (state) => {
+  switch (state) {
+    case ADDRESS_STATES.INITIAL:
+      return {
+        chain_stats: {
+          funded_txo_count: 0,
+          funded_txo_sum: 0,
+          spent_txo_count: 0,
+          spent_txo_sum: 0,
+        },
+        mempool_stats: {
+          funded_txo_count: 0,
+          funded_txo_sum: 0,
+          spent_txo_count: 0,
+          spent_txo_sum: 0,
+        },
+      };
+    case ADDRESS_STATES.MEMPOOL_IN:
+      return {
+        chain_stats: {
+          funded_txo_count: 0,
+          funded_txo_sum: 0,
+          spent_txo_count: 0,
+          spent_txo_sum: 0,
+        },
+        mempool_stats: {
+          funded_txo_count: 1,
+          funded_txo_sum: 10000,
+          spent_txo_count: 0,
+          spent_txo_sum: 0,
+        },
+      };
+    case ADDRESS_STATES.CHAIN_IN:
+      return {
+        chain_stats: {
+          funded_txo_count: 1,
+          funded_txo_sum: 10000,
+          spent_txo_count: 0,
+          spent_txo_sum: 0,
+        },
+        mempool_stats: {
+          funded_txo_count: 0,
+          funded_txo_sum: 0,
+          spent_txo_count: 0,
+          spent_txo_sum: 0,
+        },
+      };
+    case ADDRESS_STATES.MEMPOOL_OUT:
+      return {
+        chain_stats: {
+          funded_txo_count: 1,
+          funded_txo_sum: 10000,
+          spent_txo_count: 0,
+          spent_txo_sum: 0,
+        },
+        mempool_stats: {
+          funded_txo_count: 0,
+          funded_txo_sum: 0,
+          spent_txo_count: 1,
+          spent_txo_sum: 1000,
+        },
+      };
+    case ADDRESS_STATES.CHAIN_OUT:
+      return {
+        chain_stats: {
+          funded_txo_count: 1,
+          funded_txo_sum: 10000,
+          spent_txo_count: 1,
+          spent_txo_sum: 1000,
+        },
+        mempool_stats: {
+          funded_txo_count: 0,
+          funded_txo_sum: 0,
+          spent_txo_count: 0,
+          spent_txo_sum: 0,
+        },
+      };
+    default:
+      return getBalanceForState(ADDRESS_STATES.INITIAL);
+  }
 };
 
 // WebSocket handlers
@@ -91,20 +190,20 @@ const handleHttpRequest = (req, res) => {
     // Handle /api/address/:address endpoint
     if (url.pathname.startsWith("/api/address/")) {
       const address = url.pathname.split("/").pop();
-      const balance = addressBalances.get(address) || {
-        chain_stats: {
-          funded_txo_count: 0,
-          funded_txo_sum: 0,
-          spent_txo_count: 0,
-          spent_txo_sum: 0,
-        },
-        mempool_stats: {
-          funded_txo_count: 0,
-          funded_txo_sum: 0,
-          spent_txo_count: 0,
-          spent_txo_sum: 0,
-        },
-      };
+
+      // Initialize state if not exists
+      if (!addressStates.has(address)) {
+        addressStates.set(address, ADDRESS_STATES.INITIAL);
+      }
+
+      // Get current state and progress to next
+      const currentState = addressStates.get(address);
+      const nextState = getNextState(currentState);
+      addressStates.set(address, nextState);
+
+      // Get balance for current state
+      const balance = getBalanceForState(currentState);
+      addressBalances.set(address, balance);
 
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(balance));

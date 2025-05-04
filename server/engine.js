@@ -175,6 +175,12 @@ const engine = async () => {
     }
   }
 
+  // Log the addresses we're about to check
+  logger.info(`Addresses to check: ${JSON.stringify(allAddresses, null, 2)}`);
+  logger.info(
+    `Memory state: ${JSON.stringify(memory.db.collections, null, 2)}`
+  );
+
   // Set API state to CHECKING when starting a new check
   memory.state.apiState = "CHECKING";
   socketIO.io.emit("updateState", {

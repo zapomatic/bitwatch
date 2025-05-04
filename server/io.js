@@ -176,8 +176,35 @@ const socketIO = {
               errorMessage: null
             });
             
+            // Log the collection state after adding the address
+            logger.info(`Collection state after adding address: ${JSON.stringify(memory.db.collections[data.collection], null, 2)}`);
+            
             memory.saveDb();
             socketIO.io.emit("updateState", { collections: memory.db.collections });
+
+            // rather than do this, we will allow the engine to check
+            // as it should be adding this address and checking it on our regular interval
+            // this allows us to not eat up rate limits out of band
+            // 
+            // Force an immediate balance check for the new address
+            // const balance = await getAddressBalance(data.address);
+            // if (!balance.error) {
+            //   const changes = detectBalanceChanges(
+            //     data.address,
+            //     balance.actual,
+            //     data.collection,
+            //     data.name
+            //   );
+            //   if (changes) {
+            //     telegram.notifyBalanceChange(
+            //       data.address,
+            //       changes,
+            //       data.collection,
+            //       data.name
+            //     );
+            //   }
+            // }
+
             return cb({ status: "ok", record: true });
           }
           

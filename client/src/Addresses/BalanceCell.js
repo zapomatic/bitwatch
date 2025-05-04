@@ -15,11 +15,16 @@ const BalanceCell = ({
   pending,
   type,
   value,
+  dataTestId,
 }) => {
   if (pending) {
     return (
       <Box className="crystal-flex crystal-flex-start crystal-gap-1">
-        <Typography className="crystal-text" sx={{ opacity: 0.5 }}>
+        <Typography
+          className="crystal-text"
+          sx={{ opacity: 0.5 }}
+          data-testid={`${dataTestId}-loading`}
+        >
           Loading...
         </Typography>
       </Box>
@@ -60,7 +65,11 @@ const BalanceCell = ({
         />
       )}
       <Box className="crystal-flex crystal-flex-start crystal-gap-1">
-        <Typography className="crystal-text" aria-label="Balance value">
+        <Typography
+          className="crystal-text"
+          aria-label="Balance value"
+          data-testid={dataTestId}
+        >
           {formatSatoshis(actualValue, displayBtc)}
         </Typography>
         {!isVerified && (
@@ -70,6 +79,7 @@ const BalanceCell = ({
             }`}
             sx={{ fontSize: "0.9em", fontWeight: 500, ml: 1 }}
             aria-label="Balance difference"
+            data-testid={`${dataTestId}-diff`}
           >
             ({diff > 0 ? "+" : ""}
             {formatSatoshis(diff, displayBtc)})
