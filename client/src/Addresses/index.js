@@ -16,17 +16,17 @@ import {
   DialogTitle,
   Alert,
 } from "@mui/material";
-import Title from "../Title";
+import Title from "../Title.js";
 import socketIO from "../io";
 import AddIcon from "@mui/icons-material/Add";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import "../theme.css";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
 import FileUploadIcon from "@mui/icons-material/FileUpload";
-import CrystalNotification from "../components/CrystalNotification";
-import AddressDialog from "./AddressDialog";
-import CollectionRow from "./CollectionRow";
-import { calculateCollectionTotals } from "../utils/collection";
+import CrystalNotification from "../components/CrystalNotification.js";
+import AddressDialog from "./AddressDialog.js";
+import CollectionRow from "./CollectionRow.js";
+import { calculateCollectionTotals } from "../utils/collection.js";
 
 export default function Addresses() {
   const [collections, setCollections] = useState({});

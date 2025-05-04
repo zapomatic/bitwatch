@@ -38,8 +38,9 @@ const CollectionRow = ({
   onEditAddress,
   displayBtc,
   setNotification,
+  autoShowAddForm,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(true);
   const [newName, setNewName] = useState(collection.name);
   const [isEditing, setIsEditing] = useState(false);
   const [extendedKeyDialogOpen, setExtendedKeyDialogOpen] = useState(false);

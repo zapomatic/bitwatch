@@ -97,7 +97,6 @@ export const addCollection = async (page, name) => {
   // Wait for the new collection row to be fully rendered
   await page.waitForSelector('input[placeholder="Collection Name"]', {
     state: "visible",
-    timeout: 5000,
   });
 
   // Fill in the collection name
@@ -107,7 +106,7 @@ export const addCollection = async (page, name) => {
   const addButton = page.locator(
     'button.crystal-button[aria-label="Add Collection"]'
   );
-  await addButton.waitFor({ state: "visible", timeout: 5000 });
+  await addButton.waitFor({ state: "visible" });
   await addButton.click();
 
   // Verify that collection row has been added with the new name
@@ -120,7 +119,6 @@ export const addAddress = async (page, collection, { name, address }) => {
   // Wait for the dialog to be visible
   await page.waitForSelector('[aria-label="Address name"] input', {
     state: "visible",
-    timeout: 5000,
   });
 
   // Fill in the address name

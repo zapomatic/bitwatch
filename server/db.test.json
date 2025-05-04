@@ -1,9 +1,9 @@
 {
   "collections": {},
-  "interval": 600000,
+  "interval": 5000,
   "api": "http://localhost:3006",
-  "apiDelay": 2000,
-  "apiParallelLimit": 1,
+  "apiDelay": 100,
+  "apiParallelLimit": 5,
   "debugLogging": false,
   "telegram": {
     "chatId": "",

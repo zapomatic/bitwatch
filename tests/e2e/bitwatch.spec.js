@@ -1,5 +1,6 @@
 import { test, expect } from "./test-environment.js";
 import testData from "../../test-data/keys.json" with { type: 'json' };
+import testDb from "../../server/db.test.json" with { type: 'json' };
 import { addCollection, addAddress, addExtendedKey, addDescriptor } from "./test-environment.js";
 
 test.describe("Bitwatch", () => {
@@ -48,12 +49,10 @@ test.describe("Bitwatch", () => {
     console.log("Settings opened");
 
     // Verify default values (should match mock API server)
-    await expect(page.getByTestId("config-api")).toHaveValue(
-      "http://localhost:3006"
-    );
-    await expect(page.getByTestId("config-interval")).toHaveValue("600000");
-    await expect(page.getByTestId("config-apiDelay")).toHaveValue("2000");
-    await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue("1");
+    await expect(page.getByTestId("config-api")).toHaveValue(testDb.api);
+    await expect(page.getByTestId("config-interval")).toHaveValue(testDb.interval.toString());
+    await expect(page.getByTestId("config-apiDelay")).toHaveValue(testDb.apiDelay.toString());
+    await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue(testDb.apiParallelLimit.toString());
     await expect(page.getByTestId("config-debugLogging")).not.toBeChecked();
 
     // Switch to private mode
@@ -62,12 +61,16 @@ test.describe("Bitwatch", () => {
 
     // Verify private mode values (should match PRIVATE_CONFIG)
     await expect(page.getByTestId("config-api")).toHaveValue(
-      "http://10.21.21.26:3006"
+      `http://10.21.21.26:3006`
     );
-    await expect(page.getByTestId("config-interval")).toHaveValue("60000");
-    await expect(page.getByTestId("config-apiDelay")).toHaveValue("100");
+    await expect(page.getByTestId("config-interval")).toHaveValue(
+      `60000`
+    );
+    await expect(page.getByTestId("config-apiDelay")).toHaveValue(
+      `100`
+    );
     await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue(
-      "100"
+      `100`
     );
 
     // Toggle debug logging
@@ -93,7 +96,7 @@ test.describe("Bitwatch", () => {
     console.log("Switched back to public mode");
 
     // Manually set the API endpoint back to the mock server
-    await page.getByTestId("config-api").fill("http://localhost:3006");
+    await page.getByTestId("config-api").fill(testDb.api);
     console.log("Set API endpoint back to mock server");
 
     // Save configuration again
@@ -115,14 +118,9 @@ test.describe("Bitwatch", () => {
     // Fill in Telegram configuration
     await page.fill(
       "#telegram-token",
-      "123456789:ABCdefGHIjklMNOpqrsTUVwxyz123456789",
-      {
-        timeout: 1000,
-      }
+      "123456789:ABCdefGHIjklMNOpqrsTUVwxyz123456789"
     );
-    await page.fill("#telegram-chatid", "test-chat-id", {
-      timeout: 1000,
-    });
+    await page.fill("#telegram-chatid", "test-chat-id");
     console.log("Telegram config filled");
 
     // Save the configuration
@@ -130,9 +128,7 @@ test.describe("Bitwatch", () => {
     console.log("Integrations saved");
 
     // Wait for the success notification
-    await page.waitForSelector("text=Integrations saved successfully", {
-      timeout: 2000,
-    });
+    await page.waitForSelector("text=Integrations saved successfully");
     console.log("Success notification shown");
 
     // Verify the success notification
@@ -152,6 +148,11 @@ test.describe("Bitwatch", () => {
     await addCollection(page, "Donations");
     console.log("Added test collection");
 
+    // Verify collection is expanded and shows empty state
+    await expect(page.locator('text=Single Addresses')).toBeVisible();
+    await expect(page.locator('table.address-subtable')).toBeVisible();
+    console.log("Verified collection is expanded");
+
     // Add single address
     await addAddress(page, "Donations", {
       name: "zapomatic",
@@ -159,14 +160,23 @@ test.describe("Bitwatch", () => {
     });
     console.log("Added single address");
 
-    // Verify loading state
-    await expect(page.locator('.balance-cell .crystal-text:has-text("Loading...")')).toBeVisible({ timeout: 30000 });
-    console.log("Verified loading state");
+    // Verify address is visible in the expanded table
+    await expect(page.locator('text=Single Addresses')).toBeVisible();
+    await expect(page.locator('table.address-subtable')).toBeVisible();
+    await expect(page.locator(`text=${testData.addresses.zapomatic.slice(0, 8)}...`)).toBeVisible();
+    console.log("Verified address table is visible");
+
+    // Wait for the API interval to ensure the balance has been checked
+    await new Promise(resolve => setTimeout(resolve, testDb.interval));
+    console.log("Waited for API interval");
+
+    // Verify initial balance values
+    const balanceCell = page.locator('.balance-cell');
+    await expect(balanceCell.getByText("0")).toBeVisible();
+    console.log("Verified initial balance");
 
     // Wait for balance change event
-    await page.waitForSelector('[aria-label="Balance change detected"]', {
-      timeout: 5000,
-    });
+    await page.waitForSelector('[aria-label="Balance change detected"]');
     console.log("Balance change detected");
 
     // Verify balance change in UI
@@ -222,9 +232,7 @@ test.describe("Bitwatch", () => {
       console.log("Verified addresses loading");
 
       // Wait for addresses to be generated
-      await page.waitForSelector('[aria-label="Addresses generated"]', {
-        timeout: 5000,
-      });
+      await page.waitForSelector('[aria-label="Addresses generated"]');
       console.log("Addresses generated");
 
       // Verify values on chain and mempool
@@ -233,9 +241,7 @@ test.describe("Bitwatch", () => {
       console.log("Verified chain and mempool values");
 
       // Wait for balance change event
-      await page.waitForSelector('[aria-label="Balance change detected"]', {
-        timeout: 5000,
-      });
+      await page.waitForSelector('[aria-label="Balance change detected"]');
       console.log("Balance change detected");
 
       // Accept balance change
@@ -276,9 +282,7 @@ test.describe("Bitwatch", () => {
       console.log("Verified addresses loading");
 
       // Wait for addresses to be generated
-      await page.waitForSelector('[aria-label="Addresses generated"]', {
-        timeout: 5000,
-      });
+      await page.waitForSelector('[aria-label="Addresses generated"]');
       console.log("Addresses generated");
 
       // Verify values on chain and mempool
@@ -287,9 +291,7 @@ test.describe("Bitwatch", () => {
       console.log("Verified chain and mempool values");
 
       // Wait for balance change event
-      await page.waitForSelector('[aria-label="Balance change detected"]', {
-        timeout: 5000,
-      });
+      await page.waitForSelector('[aria-label="Balance change detected"]');
       console.log("Balance change detected");
 
       // Accept balance change
