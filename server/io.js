@@ -66,18 +66,20 @@ const socketIO = {
           // Update memory state
           memory.state.apiState = apiState;
 
-          cb({
+          cb && cb({
             version: pjson.version,
             collections: memory.db.collections,
             websocketState: memory.state.websocketState,
             apiState: memory.state.apiState,
             interval: memory.db.interval
           });
+          return true;
         },
 
         refreshBalance: async (data, cb) => {
           if (!data.collection || !data.address) {
-            return cb({ error: "Missing collection or address" });
+            cb && cb({ error: "Missing collection or address" });
+            return;
           }
 
           logger.info(`Refreshing balance for ${data.address} in ${data.collection}`);
@@ -85,29 +87,33 @@ const socketIO = {
           // Fetch new balance
           const balance = await getAddressBalance(data.address);
           if (balance.error) {
-            return cb({ error: balance.message });
+            cb && cb({ error: balance.message });
+            return;
           }
 
           // Use centralized balance update handler
           const result = await handleBalanceUpdate(data.address, balance, data.collection);
           if (result.error) {
-            return cb({ error: result.error });
+            cb && cb({ error: result.error });
+            return;
           }
 
           // Emit update to all clients
           socketIO.io.emit("updateState", { collections: memory.db.collections });
           
-          cb({ success: true });
+          cb && cb({ success: true });
+          return true;
         },
 
         getConfig: async (cb) => {
-          cb({
+          cb && cb({
             interval: memory.db.interval,
             api: memory.db.api,
             apiDelay: memory.db.apiDelay,
             apiParallelLimit: memory.db.apiParallelLimit,
             debugLogging: memory.db.debugLogging,
           });
+          return true;
         },
         saveConfig: async (data, cb) => {
           logger.info(`Saving config ${data.api} at ${data.interval}ms, delay ${data.apiDelay}ms, parallel ${data.apiParallelLimit}, debug=${data.debugLogging}`);
@@ -117,11 +123,13 @@ const socketIO = {
           memory.db.apiParallelLimit = data.apiParallelLimit;
           memory.db.debugLogging = data.debugLogging;
           memory.saveDb();
-          cb({ success: true });
+          cb && cb({ success: true });
+          return true;
         },
 
         getIntegrations: async (cb) => {
-          cb({ telegram: memory.db.telegram || {} });
+          cb && cb({ telegram: memory.db.telegram || {} });
+          return true;
         },
 
         saveIntegrations: async (data, cb) => {
@@ -136,11 +144,13 @@ const socketIO = {
           
           if (!result.success) {
             logger.error('Telegram initialization failed:', result.error);
-            return cb({ success: false, error: result.error });
+            cb && cb({ success: false, error: result.error });
+            return;
           }
           
           logger.success('Telegram initialized successfully');
-          cb({ success: true, data });
+          cb && cb({ success: true, data });
+          return true;
         },
 
         add: async (data, cb) => {
@@ -149,7 +159,8 @@ const socketIO = {
           // Handle adding a collection
           if (data.collection && !data.name && !data.address) {
             if (memory.db.collections[data.collection]) {
-              return cb({ error: "Collection already exists" });
+              cb && cb({ error: "Collection already exists" });
+              return;
             }
             
             memory.db.collections[data.collection] = {
@@ -160,19 +171,22 @@ const socketIO = {
             
             memory.saveDb();
             socketIO.io.emit("updateState", { collections: memory.db.collections });
-            return cb({ status: "ok" });
+            cb && cb({ status: "ok" });
+            return true;
           }
           
           // Handle adding an address
           if (data.collection && data.name && data.address) {
             const collection = memory.db.collections[data.collection];
             if (!collection) {
-              return cb({ error: "Collection not found" });
+              cb && cb({ error: "Collection not found" });
+              return;
             }
             
             // Check if address already exists
             if (collection.addresses.some(addr => addr.address === data.address)) {
-              return cb({ error: "Address already exists in this collection" });
+              cb && cb({ error: "Address already exists in this collection" });
+              return;
             }
             
             // Add the new address
@@ -196,45 +210,23 @@ const socketIO = {
               errorMessage: null
             });
             
-            // Log the collection state after adding the address
-            // logger.info(`Collection state after adding address: ${JSON.stringify(memory.db.collections[data.collection], null, 2)}`);
-            
             memory.saveDb();
             socketIO.io.emit("updateState", { collections: memory.db.collections });
-
-            // rather than do this, we will allow the engine to check
-            // as it should be adding this address and checking it on our regular interval
-            // this allows us to not eat up rate limits out of band
-            // 
-            // Force an immediate balance check for the new address
-            // const balance = await getAddressBalance(data.address);
-            // if (!balance.error) {
-            //   const changes = detectBalanceChanges(
-            //     data.address,
-            //     balance.actual,
-            //     data.collection,
-            //     data.name
-            //   );
-            //   if (changes) {
-            //     telegram.notifyBalanceChange(
-            //       data.address,
-            //       changes,
-            //       data.collection,
-            //       data.name
-            //     );
-            //   }
-            // }
-
-            return cb({ status: "ok", record: true });
+            cb && cb({ status: "ok", record: true });
+            return true;
           }
           
-          return cb({ error: "Invalid request" });
+          cb && cb({ error: "Invalid request" });
+          return;
         },
 
         saveExpected: async (data, cb) => {
           logger.processing(`Saving expected state for ${data.collection}/${data.address}`);
           const collection = memory.db.collections[data.collection];
-          if (!collection) return cb(`collection not found`);
+          if (!collection) {
+            cb && cb({ error: "Collection not found" });
+            return;
+          }
           
           // First check main addresses
           let record = collection.addresses.find((a) => a.address === data.address);
@@ -255,7 +247,10 @@ const socketIO = {
             }
           }
           
-          if (!record) return cb(`address not found`);
+          if (!record) {
+            cb && cb({ error: "Address not found" });
+            return;
+          }
           
           // Update expect values while preserving the object structure
           // Use actual values if expect values aren't available
@@ -267,45 +262,15 @@ const socketIO = {
           };
           
           memory.saveDb();
-
-          // Determine API state based on address data
-          const hasActualData = Object.values(memory.db.collections).some(col => 
-            col.addresses.some(addr => addr.actual !== null) ||
-            (col.extendedKeys && col.extendedKeys.some(key => key.addresses.some(addr => addr.actual !== null))) ||
-            (col.descriptors && col.descriptors.some(desc => desc.addresses.some(addr => addr.actual !== null)))
-          );
-          const hasErrors = Object.values(memory.db.collections).some(col => 
-            col.addresses.some(addr => addr.error) ||
-            (col.extendedKeys && col.extendedKeys.some(key => key.addresses.some(addr => addr.error))) ||
-            (col.descriptors && col.descriptors.some(desc => desc.addresses.some(addr => addr.error)))
-          );
-          const hasLoading = Object.values(memory.db.collections).some(col => 
-            col.addresses.some(addr => addr.actual === null && !addr.error) ||
-            (col.extendedKeys && col.extendedKeys.some(key => key.addresses.some(addr => addr.actual === null && !addr.error))) ||
-            (col.descriptors && col.descriptors.some(desc => desc.addresses.some(addr => addr.actual === null && !addr.error)))
-          );
-
-          let apiState = "?";
-          if (hasErrors) {
-            apiState = "ERROR";
-          } else if (hasLoading) {
-            apiState = "CHECKING";
-          } else if (hasActualData) {
-            apiState = "GOOD";
-          }
-
-          // Emit state update to ALL clients
-          socketIO.io.emit("updateState", {
-            collections: memory.db.collections,
-            apiState,
-            interval: memory.db.interval
-          });
-          cb({ success: true });
+          socketIO.io.emit("updateState", { collections: memory.db.collections });
+          cb && cb({ success: true });
+          return true;
         },
 
         addDescriptor: async (data, cb) => {
           if (!data.collection || !data.name || !data.descriptor) {
-            return cb({ success: false, error: "Missing required fields" });
+            cb && cb({ success: false, error: "Missing required fields" });
+            return;
           }
 
           logger.info(`Adding descriptor ${data.name} to collection ${data.collection}`);
@@ -313,7 +278,8 @@ const socketIO = {
           // Validate descriptor
           const validation = validateDescriptor(data.descriptor);
           if (!validation.success) {
-            return cb({ success: false, error: validation.error });
+            cb && cb({ success: false, error: validation.error });
+            return;
           }
 
           // Create collection if it doesn't exist
@@ -328,13 +294,15 @@ const socketIO = {
           // Check if descriptor already exists
           const collection = memory.db.collections[data.collection];
           if (collection.descriptors.some(d => d.name === data.name)) {
-            return cb({ success: false, error: "Descriptor with this name already exists" });
+            cb && cb({ success: false, error: "Descriptor with this name already exists" });
+            return;
           }
 
           // Derive addresses
           const result = await deriveAddresses(data.descriptor, data.gapLimit, data.initialAddresses, data.skip);
           if (!result.success) {
-            return cb({ success: false, error: result.error });
+            cb && cb({ success: false, error: result.error });
+            return;
           }
 
           // Add descriptor to collection
@@ -364,16 +332,15 @@ const socketIO = {
           });
 
           memory.saveDb();
-          
-          // Emit state update to ALL clients
           socketIO.io.emit("updateState", { collections: memory.db.collections });
-          
-          return cb({ success: true });
+          cb && cb({ success: true });
+          return true;
         },
 
         addExtendedKey: async (data, cb) => {
           if (!data.collection || !data.name || !data.key) {
-            return cb({ success: false, error: "Missing required fields" });
+            cb && cb({ success: false, error: "Missing required fields" });
+            return;
           }
 
           logger.info(`Adding extended key ${data.name} to collection ${data.collection}`);
@@ -390,7 +357,8 @@ const socketIO = {
           // Check if extended key already exists
           const collection = memory.db.collections[data.collection];
           if (collection.extendedKeys.some(k => k.name === data.name || k.key === data.key)) {
-            return cb({ success: false, error: "Extended key with this name or key already exists" });
+            cb && cb({ success: false, error: "Extended key with this name or key already exists" });
+            return;
           }
 
           // Derive initial addresses
@@ -402,7 +370,8 @@ const socketIO = {
           );
 
           if (!addresses) {
-            return cb({ success: false, error: "Failed to derive addresses" });
+            cb && cb({ success: false, error: "Failed to derive addresses" });
+            return;
           }
 
           // Add extended key to collection
@@ -436,21 +405,21 @@ const socketIO = {
           });
 
           memory.saveDb();
-          
-          // Emit state update to ALL clients
           socketIO.io.emit("updateState", { collections: memory.db.collections });
-          
-          return cb({ success: true });
+          cb && cb({ success: true });
+          return true;
         },
 
         editDescriptor: async (data, cb) => {
           if (!data.collection || !data.name || !data.descriptor || data.descriptorIndex === undefined) {
-            return cb({ success: false, error: "Missing required fields" });
+            cb && cb({ success: false, error: "Missing required fields" });
+            return;
           }
 
           const collection = memory.db.collections[data.collection];
           if (!collection || !collection.descriptors[data.descriptorIndex]) {
-            return cb({ success: false, error: "Descriptor not found" });
+            cb && cb({ success: false, error: "Descriptor not found" });
+            return;
           }
 
           // Get all addresses in one batch
@@ -462,7 +431,8 @@ const socketIO = {
           );
 
           if (!allAddressesResult.success) {
-            return cb({ success: false, error: allAddressesResult.error || "Failed to derive addresses" });
+            cb && cb({ success: false, error: allAddressesResult.error || "Failed to derive addresses" });
+            return;
           }
 
           // Update the descriptor
@@ -497,7 +467,8 @@ const socketIO = {
 
           memory.saveDb();
           socketIO.io.emit("updateState", { collections: memory.db.collections });
-          return cb({ success: true });
+          cb && cb({ success: true });
+          return true;
         },
 
         delete: async (data, cb) => {
