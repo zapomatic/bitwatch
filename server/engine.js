@@ -4,6 +4,11 @@ import socketIO from "./io.js";
 import memory from "./memory.js";
 import logger from "./logger.js";
 import { checkAndUpdateGapLimit } from "./balance.js";
+import {
+  deriveExtendedKeyAddresses,
+  deriveAddresses,
+} from "./addressDeriver.js";
+
 const updateAddressAndEmit = async (addr, balance) => {
   const collections = { ...memory.db.collections };
   const collection = collections[addr.collection];
@@ -80,12 +85,47 @@ const updateAddressAndEmit = async (addr, balance) => {
   ) {
     const needsMoreAddresses = await checkAndUpdateGapLimit(parentItem);
     if (needsMoreAddresses) {
-      // Call the socket handler to generate more addresses
-      socketIO.io.emit("checkGapLimit", {
-        collection: addr.collection,
-        extendedKey: isExtendedKeyAddress ? parentItem : null,
-        descriptor: isDescriptorAddress ? parentItem : null,
-      });
+      // Derive more addresses
+      const newAddresses = isExtendedKeyAddress
+        ? await deriveExtendedKeyAddresses(
+            parentItem.key,
+            parentItem.addresses.length,
+            parentItem.gapLimit,
+            parentItem.derivationPath
+          )
+        : await deriveAddresses(
+            parentItem.descriptor,
+            parentItem.addresses.length,
+            parentItem.gapLimit,
+            parentItem.skip || 0
+          );
+
+      if (newAddresses) {
+        // Add new addresses to parent item
+        parentItem.addresses = [
+          ...parentItem.addresses,
+          ...newAddresses.map((addr) => ({
+            address: addr.address,
+            name: `${parentItem.name} ${addr.index}`,
+            index: addr.index,
+            expect: {
+              chain_in: 0,
+              chain_out: 0,
+              mempool_in: 0,
+              mempool_out: 0,
+            },
+            monitor: {
+              chain_in: "auto-accept",
+              chain_out: "alert",
+              mempool_in: "auto-accept",
+              mempool_out: "alert",
+            },
+            actual: null,
+            error: false,
+            errorMessage: null,
+          })),
+        ];
+      }
     }
   }
 

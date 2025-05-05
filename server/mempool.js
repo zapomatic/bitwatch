@@ -191,11 +191,47 @@ const updateAddressBalance = async (address, balance, io) => {
             );
             if (changes) {
               // Check gap limit if balance changed
-              const updated = await checkAndUpdateGapLimit(extendedKey);
-              if (updated) {
-                logger.info(
-                  `Generated new addresses for ${extendedKey.name} to maintain gap limit`
+              const needsMoreAddresses = await checkAndUpdateGapLimit(
+                extendedKey
+              );
+              if (needsMoreAddresses) {
+                // Derive more addresses
+                const newAddresses = await deriveExtendedKeyAddresses(
+                  extendedKey.key,
+                  extendedKey.addresses.length,
+                  extendedKey.gapLimit,
+                  extendedKey.derivationPath
                 );
+
+                if (newAddresses) {
+                  // Add new addresses to extended key
+                  extendedKey.addresses = [
+                    ...extendedKey.addresses,
+                    ...newAddresses.map((addr) => ({
+                      address: addr.address,
+                      name: `${extendedKey.name} ${addr.index}`,
+                      index: addr.index,
+                      expect: {
+                        chain_in: 0,
+                        chain_out: 0,
+                        mempool_in: 0,
+                        mempool_out: 0,
+                      },
+                      monitor: {
+                        chain_in: "auto-accept",
+                        chain_out: "alert",
+                        mempool_in: "auto-accept",
+                        mempool_out: "alert",
+                      },
+                      actual: null,
+                      error: false,
+                      errorMessage: null,
+                    })),
+                  ];
+
+                  // Update tracked addresses with new ones
+                  updateTrackedAddresses();
+                }
               }
 
               // Emit update for this address
@@ -229,11 +265,47 @@ const updateAddressBalance = async (address, balance, io) => {
             );
             if (changes) {
               // Check gap limit if balance changed
-              const updated = await checkAndUpdateGapLimit(descriptor);
-              if (updated) {
-                logger.info(
-                  `Generated new addresses for ${descriptor.name} to maintain gap limit`
+              const needsMoreAddresses = await checkAndUpdateGapLimit(
+                descriptor
+              );
+              if (needsMoreAddresses) {
+                // Derive more addresses
+                const result = await deriveAddresses(
+                  descriptor.descriptor,
+                  descriptor.addresses.length,
+                  descriptor.gapLimit,
+                  descriptor.skip || 0
                 );
+
+                if (result.success) {
+                  // Add new addresses to descriptor
+                  descriptor.addresses = [
+                    ...descriptor.addresses,
+                    ...result.data.map((addr) => ({
+                      address: addr.address,
+                      name: `${descriptor.name} ${addr.index}`,
+                      index: addr.index,
+                      expect: {
+                        chain_in: 0,
+                        chain_out: 0,
+                        mempool_in: 0,
+                        mempool_out: 0,
+                      },
+                      monitor: {
+                        chain_in: "auto-accept",
+                        chain_out: "alert",
+                        mempool_in: "auto-accept",
+                        mempool_out: "alert",
+                      },
+                      actual: null,
+                      error: false,
+                      errorMessage: null,
+                    })),
+                  ];
+
+                  // Update tracked addresses with new ones
+                  updateTrackedAddresses();
+                }
               }
 
               // Emit update for this address
