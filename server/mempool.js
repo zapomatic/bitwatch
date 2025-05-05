@@ -7,6 +7,10 @@ import {
 } from "./balance.js";
 import telegram from "./telegram.js";
 import mempoolJS from "@mempool/mempool.js";
+import {
+  deriveExtendedKeyAddresses,
+  deriveAddresses,
+} from "./addressDeriver.js";
 
 let mempoolClient = null;
 let trackedAddresses = new Set();
