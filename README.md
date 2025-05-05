@@ -90,6 +90,18 @@ npm run setup
 npm run dev
 ```
 
+### Testing
+
+```bash
+npm run test:e2e
+```
+
+or with UI debugging:
+
+```bash
+npm run test:e2e:debug
+```
+
 ## Some Interesting Addresses to Monitor
 
 By default, the app will ship monitoring the following addresses (as examples):

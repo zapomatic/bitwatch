@@ -297,19 +297,21 @@ const handleHttpRequest = (req, res) => {
       const checkCount = addressCheckCounts.get(address) + 1;
       addressCheckCounts.set(address, checkCount);
 
-      // Only increment state for plain addresses
-      let nextState = currentState;
-      if (isPlainAddress(address) && checkCount > 2) {
-        nextState = getNextState(currentState);
-      }
-      addressStates.set(address, nextState);
-
       // Get balance for current state, passing the address
-      const balance = getBalanceForState(addressStates.get(address), address);
+      const balance = getBalanceForState(currentState, address);
       addressBalances.set(address, balance);
 
+      // Send response first
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(balance));
+
+      // Then increment state for plain addresses after 1 check
+      if (isPlainAddress(address) && checkCount >= 1) {
+        const nextState = getNextState(currentState);
+        addressStates.set(address, nextState);
+        addressCheckCounts.set(address, 0); // Reset check count for next state
+      }
+
       return;
     }
 

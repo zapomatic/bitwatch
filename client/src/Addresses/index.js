@@ -200,6 +200,11 @@ export default function Addresses() {
     socketIO.emit("saveExpected", updatedRow, (response) => {
       if (response?.error) {
         console.error("Error saving expected state:", response.error);
+        setNotification({
+          open: true,
+          message: `Failed to save expected balance: ${response.error}`,
+          severity: "error",
+        });
       } else {
         // Update local state to reflect the new expected values
         setCollections((prevCollections) => {
@@ -214,6 +219,11 @@ export default function Addresses() {
             }
           }
           return newCollections;
+        });
+        setNotification({
+          open: true,
+          message: "Balance refreshed successfully",
+          severity: "success",
         });
       }
     });

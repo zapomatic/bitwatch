@@ -30,7 +30,7 @@ const attemptCall = async (addr) => {
     currentOpt.path = `${options.path}/${addr}`;
     
     const fullUrl = `${api.protocol}//${api.hostname}${api.port ? `:${api.port}` : ''}${currentOpt.path}`;
-    logger.network(`Fetching balance: ${fullUrl}`);
+    // logger.network(`Fetching balance: ${fullUrl}`);
     
     const req = (api.protocol === "https:" ? https : http).request(
       currentOpt,

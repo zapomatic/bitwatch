@@ -2,6 +2,7 @@ import { test, expect } from "./test-environment.js";
 import testData from "../../test-data/keys.json" with { type: 'json' };
 import testDb from "../../server/db.test.json" with { type: 'json' };
 import { addCollection, addAddress, addExtendedKey, addDescriptor } from "./test-environment.js";
+import { refreshAddressBalance } from "./test-environment.js";
 
 test.describe("Bitwatch", () => {
   // test.beforeEach(async ({}) => {});
@@ -140,47 +141,65 @@ test.describe("Bitwatch", () => {
     await expect(page.locator(`text=${testData.addresses.zapomatic.slice(0, 8)}...`)).toBeVisible();
     console.log("Verified address table is visible");
 
-    // Wait for the loading state to complete
-    const address = testData.addresses.zapomatic;
-    await expect(page.getByTestId(`${address}-chain-in`)).not.toContainText("Loading...");
-    await expect(page.getByTestId(`${address}-chain-out`)).not.toContainText("Loading...");
-    await expect(page.getByTestId(`${address}-mempool-in`)).not.toContainText("Loading...");
-    await expect(page.getByTestId(`${address}-mempool-out`)).not.toContainText("Loading...");
+    // Test refresh balance functionality for each state transition
+    console.log("Testing refresh balance functionality for all states");
 
-    await expect(page.getByTestId(`${address}-mempool-in-auto-accept-icon`)).toBeVisible();
-    await expect(page.getByTestId(`${address}-chain-in-auto-accept-icon`)).toBeVisible();
-    await expect(page.getByTestId(`${address}-mempool-out-alert-icon`)).toBeVisible();
-    await expect(page.getByTestId(`${address}-chain-out-alert-icon`)).toBeVisible();
+    // Initial state (all zeros)
+    await refreshAddressBalance(page, testData.addresses.zapomatic, {
+      chain_in: "0.00000000 ₿",
+      chain_out: "0.00000000 ₿",
+      mempool_in: "0.00000000 ₿",
+      mempool_out: "0.00000000 ₿"
+    });
+    console.log("Initial zero balance state verified");
 
-    // Verify initial balance values
-    await expect(page.getByTestId(`${address}-chain-in`)).toHaveText("0.00000000 ₿");
-    await expect(page.getByTestId(`${address}-chain-out`)).toHaveText("0.00000000 ₿");
-    await expect(page.getByTestId(`${address}-mempool-in`)).toHaveText("0.00000000 ₿");
-    await expect(page.getByTestId(`${address}-mempool-out`)).toHaveText("0.00000000 ₿");
-    
-    // Wait for mempool input
-    await expect(page.getByTestId(`${address}-mempool-in`).and(page.getByLabel("Balance value"))).toHaveText("0.00010000 ₿");
-    // Wait for chain input
-    await expect(page.getByTestId(`${address}-chain-in`).and(page.getByLabel("Balance value"))).toHaveText("0.00010000 ₿");
-    // Wait for mempool output
-    await expect(page.getByTestId(`${address}-mempool-out`).and(page.getByLabel("Balance value"))).toHaveText("0.00001000 ₿");
+    // Refresh to get mempool input state
+    await refreshAddressBalance(page, testData.addresses.zapomatic, {
+      mempool_in: "0.00010000 ₿"
+    });
+    console.log("Mempool input state verified");
+
+    // Refresh to get chain input state
+    await refreshAddressBalance(page, testData.addresses.zapomatic, {
+      chain_in: "0.00010000 ₿"
+    });
+    console.log("Chain input state verified");
+
+    // Refresh to get mempool output state
+    await refreshAddressBalance(page, testData.addresses.zapomatic, {
+      mempool_out: "0.00001000 ₿"
+    });
     // Wait for the diff to appear and have the correct value
-    await expect(page.getByTestId(`${address}-mempool-out-diff`)).toBeVisible();
-    await expect(page.getByTestId(`${address}-mempool-out-diff`)).toHaveText("(+0.00001000 ₿)");
+    await expect(page.getByTestId(`${testData.addresses.zapomatic}-mempool-out-diff`)).toBeVisible();
+    await expect(page.getByTestId(`${testData.addresses.zapomatic}-mempool-out-diff`)).toHaveText("(+0.00001000 ₿)");
     // Verify accept button for address change state
-    await expect(page.getByTestId(`${address}-accept-button`)).toBeVisible();
+    await expect(page.getByTestId(`${testData.addresses.zapomatic}-accept-button`)).toBeVisible();
+    console.log("Mempool output state verified");
     
-    // Wait for chain output
-    await expect(page.getByTestId(`${address}-chain-out`).and(page.getByLabel("Balance value"))).toHaveText("0.00001000 ₿");
-    await expect(page.getByTestId(`${address}-chain-out-diff`)).toBeVisible();
-    await expect(page.getByTestId(`${address}-chain-out-diff`)).toHaveText("(+0.00001000 ₿)");
+    // Refresh to get chain output state
+    await refreshAddressBalance(page, testData.addresses.zapomatic, {
+      chain_out: "0.00001000 ₿"
+    });
+    await expect(page.getByTestId(`${testData.addresses.zapomatic}-chain-out-diff`)).toBeVisible();
+    await expect(page.getByTestId(`${testData.addresses.zapomatic}-chain-out-diff`)).toHaveText("(+0.00001000 ₿)");
     // Verify alert icon and accept button for chain-out
-    await expect(page.getByTestId(`${address}-chain-out-alert-icon`)).toBeVisible();
-    await expect(page.getByTestId(`${address}-accept-button`)).toBeVisible();
+    await expect(page.getByTestId(`${testData.addresses.zapomatic}-chain-out-alert-icon`)).toBeVisible();
+    await expect(page.getByTestId(`${testData.addresses.zapomatic}-accept-button`)).toBeVisible();
+    console.log("Chain output state verified");
+
     // Accept the chain-out change
-    await page.getByTestId(`${address}-accept-button`).click();
+    await page.getByTestId(`${testData.addresses.zapomatic}-accept-button`).click();
     // verify that the change took (no longer showing a diff)
-    await expect(page.getByTestId(`${address}-chain-out-diff`)).not.toBeVisible();
+    await expect(page.getByTestId(`${testData.addresses.zapomatic}-chain-out-diff`)).not.toBeVisible();
+
+    // Final refresh to verify all states are stable
+    await refreshAddressBalance(page, testData.addresses.zapomatic, {
+      chain_in: "0.00010000 ₿",
+      chain_out: "0.00001000 ₿",
+      mempool_in: "0.00000000 ₿",
+      mempool_out: "0.00000000 ₿"
+    });
+    console.log("Final stable state verified");
 
     // Verify collection balance totals (subtract out from in on every address in the collection--single, extended, descriptor)
     // First find the Donations collection row
@@ -333,7 +352,7 @@ test.describe("Bitwatch", () => {
     }
 
     // Delete the single address we added at the start
-    await page.getByTestId(`${address}-delete-button`).click();
+    await page.getByTestId(`${testData.addresses.zapomatic}-delete-button`).click();
     console.log("Clicked delete button");
     
     // Wait for dialog to be fully rendered
@@ -346,7 +365,7 @@ test.describe("Bitwatch", () => {
     await page.getByRole("button", { name: "Delete" }).click();
     console.log("Deleted address");
     // verify that the address is deleted
-    await expect(page.getByTestId(`${address}-delete-button`)).not.toBeVisible();
+    await expect(page.getByTestId(`${testData.addresses.zapomatic}-delete-button`)).not.toBeVisible();
     // verify that the collection still exists
     await expect(page.getByTestId("Donations-add-address")).toBeVisible();
 

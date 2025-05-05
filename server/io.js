@@ -233,7 +233,7 @@ const socketIO = {
             });
             
             // Log the collection state after adding the address
-            logger.info(`Collection state after adding address: ${JSON.stringify(memory.db.collections[data.collection], null, 2)}`);
+            // logger.info(`Collection state after adding address: ${JSON.stringify(memory.db.collections[data.collection], null, 2)}`);
             
             memory.saveDb();
             socketIO.io.emit("updateState", { collections: memory.db.collections });
@@ -336,7 +336,7 @@ const socketIO = {
             apiState,
             interval: memory.db.interval
           });
-          cb();
+          cb({ success: true });
         },
 
         addDescriptor: async (data, cb) => {

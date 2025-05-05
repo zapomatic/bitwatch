@@ -181,3 +181,49 @@ export const addDescriptor = async (
   );
   await findAndClick(page, '[aria-label="Add descriptor"]');
 };
+
+export const refreshAddressBalance = async (
+  page,
+  address,
+  expectedBalances
+) => {
+  // Click the refresh button
+  await page.getByTestId(`${address}-refresh-button`).click();
+
+  // Wait for the notification to appear
+  await expect(page.getByTestId("notification")).toBeVisible();
+  // Verify it's a success notification
+  await expect(page.getByTestId("notification")).toHaveClass(
+    /MuiAlert-standardSuccess/
+  );
+
+  // Verify all balance values match expected values
+  if (expectedBalances.chain_in !== undefined) {
+    await expect(
+      page
+        .getByTestId(`${address}-chain-in`)
+        .and(page.getByLabel("Balance value"))
+    ).toHaveText(expectedBalances.chain_in);
+  }
+  if (expectedBalances.chain_out !== undefined) {
+    await expect(
+      page
+        .getByTestId(`${address}-chain-out`)
+        .and(page.getByLabel("Balance value"))
+    ).toHaveText(expectedBalances.chain_out);
+  }
+  if (expectedBalances.mempool_in !== undefined) {
+    await expect(
+      page
+        .getByTestId(`${address}-mempool-in`)
+        .and(page.getByLabel("Balance value"))
+    ).toHaveText(expectedBalances.mempool_in);
+  }
+  if (expectedBalances.mempool_out !== undefined) {
+    await expect(
+      page
+        .getByTestId(`${address}-mempool-out`)
+        .and(page.getByLabel("Balance value"))
+    ).toHaveText(expectedBalances.mempool_out);
+  }
+};

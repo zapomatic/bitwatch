@@ -116,12 +116,30 @@ const AddressRow = ({ address, collection, displayBtc, setNotification }) => {
   const handleSaveExpected = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    socketIO.emit("saveExpected", {
-      collection: collection.name,
-      address: address.address,
-      actual: address.actual,
-      expect: address.actual,
-    });
+    socketIO.emit(
+      "saveExpected",
+      {
+        collection: collection.name,
+        address: address.address,
+        actual: address.actual,
+        expect: address.actual,
+      },
+      (response) => {
+        if (response.error) {
+          setNotification({
+            open: true,
+            message: `Failed to save expected balance: ${response.error}`,
+            severity: "error",
+          });
+        } else {
+          setNotification({
+            open: true,
+            message: "Expectations saved successfully",
+            severity: "success",
+          });
+        }
+      }
+    );
   };
 
   // Helper to check if any balance has changed
