@@ -269,6 +269,7 @@ const CollectionRow = ({
                           collection={collection}
                           displayBtc={displayBtc}
                           setNotification={setNotification}
+                          onDelete={onDelete}
                         />
                       ))}
                     </TableBody>

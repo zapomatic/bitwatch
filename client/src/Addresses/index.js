@@ -876,6 +876,7 @@ export default function Addresses() {
               border: "1px solid rgba(77, 244, 255, 0.3)",
             },
           }}
+          data-testid="delete-confirmation-dialog"
         >
           <DialogTitle sx={{ color: "var(--theme-secondary)" }}>
             Confirm Delete
@@ -898,12 +899,14 @@ export default function Addresses() {
                 })
               }
               className="crystal-button"
+              data-testid="delete-confirmation-cancel"
             >
               Cancel
             </Button>
             <Button
               onClick={confirmDelete}
               className="crystal-button"
+              data-testid="delete-confirmation-confirm"
               sx={{
                 background:
                   "linear-gradient(135deg, var(--theme-danger), var(--theme-warning))",

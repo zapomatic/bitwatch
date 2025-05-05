@@ -57,7 +57,15 @@ const AddressCell = ({ address }) => {
   );
 };
 
-const AddressRow = ({ address, collection, displayBtc, setNotification }) => {
+const AddressRow = ({
+  address,
+  collection,
+  displayBtc,
+  setNotification,
+  parentKey,
+  index,
+  onDelete,
+}) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = (e) => {
@@ -107,10 +115,7 @@ const AddressRow = ({ address, collection, displayBtc, setNotification }) => {
   const handleDelete = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    socketIO.emit("delete", {
-      collection: collection.name,
-      address: address.address,
-    });
+    onDelete({ collection, address: address.address });
   };
 
   const handleSaveExpected = (e) => {
@@ -151,10 +156,21 @@ const AddressRow = ({ address, collection, displayBtc, setNotification }) => {
       address.actual.mempool_out !== address.expect.mempool_out);
 
   return (
-    <TableRow className="crystal-table-row address-row">
+    <TableRow
+      className="crystal-table-row address-row"
+      data-testid={`${parentKey ? `${parentKey}-` : ""}${address.address}-row`}
+      aria-label={`Address ${address.name}`}
+    >
       <TableCell>
         <Box className="crystal-flex crystal-flex-start crystal-gap-1">
-          <Typography className="crystal-text">{address.name}</Typography>
+          <Typography
+            className="crystal-text"
+            data-testid={`${
+              parentKey ? `${parentKey}-address-${index}` : address.address
+            }-name`}
+          >
+            {address.name}
+          </Typography>
         </Box>
       </TableCell>
       <TableCell className="crystal-table-cell">
@@ -171,7 +187,9 @@ const AddressRow = ({ address, collection, displayBtc, setNotification }) => {
             pending={!address.actual && !address.error}
             monitor={address.monitor}
             type="chain_in"
-            dataTestId={`${address.address}-chain-in`}
+            dataTestId={`${
+              parentKey ? `${parentKey}-address-${index}` : address.address
+            }-chain-in`}
           />
         </Box>
         <Box className="crystal-flex crystal-flex-start" sx={{ mt: 1 }}>
@@ -184,7 +202,9 @@ const AddressRow = ({ address, collection, displayBtc, setNotification }) => {
             pending={!address.actual && !address.error}
             monitor={address.monitor}
             type="chain_out"
-            dataTestId={`${address.address}-chain-out`}
+            dataTestId={`${
+              parentKey ? `${parentKey}-address-${index}` : address.address
+            }-chain-out`}
           />
         </Box>
       </TableCell>
@@ -198,7 +218,9 @@ const AddressRow = ({ address, collection, displayBtc, setNotification }) => {
             pending={!address.actual && !address.error}
             monitor={address.monitor}
             type="mempool_in"
-            dataTestId={`${address.address}-mempool-in`}
+            dataTestId={`${
+              parentKey ? `${parentKey}-address-${index}` : address.address
+            }-mempool-in`}
           />
         </Box>
         <Box className="crystal-flex crystal-flex-start" sx={{ mt: 1 }}>
@@ -210,7 +232,9 @@ const AddressRow = ({ address, collection, displayBtc, setNotification }) => {
             pending={!address.actual && !address.error}
             monitor={address.monitor}
             type="mempool_out"
-            dataTestId={`${address.address}-mempool-out`}
+            dataTestId={`${
+              parentKey ? `${parentKey}-address-${index}` : address.address
+            }-mempool-out`}
           />
         </Box>
       </TableCell>
@@ -220,7 +244,9 @@ const AddressRow = ({ address, collection, displayBtc, setNotification }) => {
             size="small"
             onClick={handleRefresh}
             icon={<RefreshIcon fontSize="small" />}
-            data-testid={`${address.address}-refresh-button`}
+            data-testid={`${
+              parentKey ? `${parentKey}-address-${index}` : address.address
+            }-refresh-button`}
             aria-label="Refresh balance"
             disabled={isRefreshing}
           />
@@ -228,7 +254,9 @@ const AddressRow = ({ address, collection, displayBtc, setNotification }) => {
             size="small"
             onClick={handleEdit}
             icon={<EditIcon fontSize="small" />}
-            data-testid={`${address.address}-edit-button`}
+            data-testid={`${
+              parentKey ? `${parentKey}-address-${index}` : address.address
+            }-edit-button`}
             aria-label="Edit address"
           />
           {hasBalanceChanges && (
@@ -236,7 +264,9 @@ const AddressRow = ({ address, collection, displayBtc, setNotification }) => {
               size="small"
               onClick={handleSaveExpected}
               icon={<CheckIcon fontSize="small" />}
-              data-testid={`${address.address}-accept-button`}
+              data-testid={`${
+                parentKey ? `${parentKey}-address-${index}` : address.address
+              }-accept-button`}
               aria-label="Accept balance changes"
             />
           )}
@@ -245,7 +275,9 @@ const AddressRow = ({ address, collection, displayBtc, setNotification }) => {
             onClick={handleDelete}
             icon={<DeleteIcon fontSize="small" />}
             variant="danger"
-            data-testid={`${address.address}-delete-button`}
+            data-testid={`${
+              parentKey ? `${parentKey}-address-${index}` : address.address
+            }-delete-button`}
             aria-label="Delete address"
           />
         </Box>

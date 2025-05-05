@@ -84,6 +84,7 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
       TransitionProps={{
         timeout: COLLAPSE_ANIMATION_DURATION,
       }}
+      data-testid="address-dialog"
     >
       <DialogTitle>{address ? "Edit Address" : "Add Address"}</DialogTitle>
       <DialogContent>
@@ -96,6 +97,9 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           helperText="A friendly name for this address"
           aria-label="Address name"
+          inputProps={{
+            "data-testid": "address-name-input",
+          }}
         />
         <TextField
           margin="dense"
@@ -107,6 +111,9 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
           }
           helperText="The Bitcoin address to watch"
           aria-label="Bitcoin address"
+          inputProps={{
+            "data-testid": "address-input",
+          }}
         />
         <Typography variant="subtitle1" sx={{ mt: 0, mb: 1 }}>
           Expected Balances
@@ -130,6 +137,9 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
               }
               helperText="Expected on-chain incoming balance"
               aria-label="Expected chain incoming balance"
+              inputProps={{
+                "data-testid": "address-chain-in-input",
+              }}
             />
           </Grid>
           <Grid item xs={6}>
@@ -150,6 +160,9 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
               }
               helperText="Expected on-chain outgoing balance"
               aria-label="Expected chain outgoing balance"
+              inputProps={{
+                "data-testid": "address-chain-out-input",
+              }}
             />
           </Grid>
           <Grid item xs={6}>
@@ -170,6 +183,9 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
               }
               helperText="Expected mempool incoming balance"
               aria-label="Expected mempool incoming balance"
+              inputProps={{
+                "data-testid": "address-mempool-in-input",
+              }}
             />
           </Grid>
           <Grid item xs={6}>
@@ -190,6 +206,9 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
               }
               helperText="Expected mempool outgoing balance"
               aria-label="Expected mempool outgoing balance"
+              inputProps={{
+                "data-testid": "address-mempool-out-input",
+              }}
             />
           </Grid>
         </Grid>
@@ -250,7 +269,11 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
         </Grid>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} aria-label="Cancel address dialog">
+        <Button
+          onClick={onClose}
+          aria-label="Cancel address dialog"
+          data-testid="address-dialog-cancel"
+        >
           Cancel
         </Button>
         <Button
@@ -258,6 +281,7 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
           variant="contained"
           color="primary"
           aria-label="Save address"
+          data-testid="address-dialog-save"
         >
           Save
         </Button>

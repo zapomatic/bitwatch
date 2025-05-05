@@ -24,18 +24,23 @@ const hasAddressActivity = (addr) => {
 const findLastUsedAndEmpty = (addresses) => {
   let lastUsedIndex = -1;
   let emptyCount = 0;
-  let foundActivity = false;
 
   // Sort addresses by index to ensure we check them in order
   const sortedAddresses = [...addresses].sort((a, b) => a.index - b.index);
 
+  // First pass: find the last used index
   for (const addr of sortedAddresses) {
     if (hasAddressActivity(addr)) {
       lastUsedIndex = addr.index;
-      emptyCount = 0;
-      foundActivity = true;
-    } else if (foundActivity) {
-      emptyCount++;
+    }
+  }
+
+  // Second pass: count empty addresses after the last used index
+  if (lastUsedIndex !== -1) {
+    for (const addr of sortedAddresses) {
+      if (addr.index > lastUsedIndex && !hasAddressActivity(addr)) {
+        emptyCount++;
+      }
     }
   }
 
@@ -302,17 +307,21 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
   if (balanceChanged && parentItem) {
     const addressesNeeded = await checkAndUpdateGapLimit(parentItem);
     if (addressesNeeded) {
+      // Calculate the next index to derive from
+      const maxIndex = Math.max(...parentItem.addresses.map(addr => addr.index));
+      const nextIndex = maxIndex + 1;
+
       // Derive more addresses
       const newAddresses = isExtendedKeyAddress
         ? await deriveExtendedKeyAddresses(
             parentItem.key,
-            parentItem.addresses.length,
+            nextIndex,
             addressesNeeded,
             parentItem.derivationPath
           )
         : await deriveAddresses(
             parentItem.descriptor,
-            parentItem.addresses.length,
+            nextIndex,
             addressesNeeded,
             parentItem.skip || 0
           );

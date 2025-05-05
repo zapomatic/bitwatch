@@ -504,12 +504,14 @@ const socketIO = {
           const { address, collection, extendedKey, descriptor } = data;
           
           if (!collection) {
-            return cb({ error: "Collection not specified" });
+            cb && cb({ error: "Collection not specified" });
+            return;
           }
 
           const targetCollection = memory.db.collections[collection];
           if (!targetCollection) {
-            return cb({ error: "Collection not found" });
+            cb && cb({ error: "Collection not found" });
+            return;
           }
 
           // Handle address deletion
@@ -518,11 +520,13 @@ const socketIO = {
             if (extendedKey) {
               const keyIndex = targetCollection.extendedKeys.findIndex(k => k.key === extendedKey.key);
               if (keyIndex === -1) {
-                return cb({ error: "Extended key not found" });
+                cb && cb({ error: "Extended key not found" });
+                return;
               }
               const addressIndex = targetCollection.extendedKeys[keyIndex].addresses.findIndex(a => a.address === address);
               if (addressIndex === -1) {
-                return cb({ error: "Address not found in extended key" });
+                cb && cb({ error: "Address not found in extended key" });
+                return;
               }
               targetCollection.extendedKeys[keyIndex].addresses.splice(addressIndex, 1);
             }
@@ -530,11 +534,13 @@ const socketIO = {
             else if (descriptor) {
               const descIndex = targetCollection.descriptors.findIndex(d => d.descriptor === descriptor.descriptor);
               if (descIndex === -1) {
-                return cb({ error: "Descriptor not found" });
+                cb && cb({ error: "Descriptor not found" });
+                return;
               }
               const addressIndex = targetCollection.descriptors[descIndex].addresses.findIndex(a => a.address === address);
               if (addressIndex === -1) {
-                return cb({ error: "Address not found in descriptor" });
+                cb && cb({ error: "Address not found in descriptor" });
+                return;
               }
               targetCollection.descriptors[descIndex].addresses.splice(addressIndex, 1);
             }
@@ -542,7 +548,8 @@ const socketIO = {
             else {
               const addressIndex = targetCollection.addresses.findIndex(a => a.address === address);
               if (addressIndex === -1) {
-                return cb({ error: "Address not found" });
+                cb && cb({ error: "Address not found" });
+                return;
               }
               targetCollection.addresses.splice(addressIndex, 1);
             }
@@ -551,7 +558,8 @@ const socketIO = {
           else if (extendedKey) {
             const keyIndex = targetCollection.extendedKeys.findIndex(k => k.key === extendedKey.key);
             if (keyIndex === -1) {
-              return cb({ error: "Extended key not found" });
+              cb && cb({ error: "Extended key not found" });
+              return;
             }
             targetCollection.extendedKeys.splice(keyIndex, 1);
           }
@@ -559,7 +567,8 @@ const socketIO = {
           else if (descriptor) {
             const descIndex = targetCollection.descriptors.findIndex(d => d.descriptor === descriptor.descriptor);
             if (descIndex === -1) {
-              return cb({ error: "Descriptor not found" });
+              cb && cb({ error: "Descriptor not found" });
+              return;
             }
             targetCollection.descriptors.splice(descIndex, 1);
           }
@@ -571,13 +580,20 @@ const socketIO = {
           // Save changes and emit update
           memory.saveDb();
           socketIO.io.emit("updateState", { collections: memory.db.collections });
-          return cb({ status: "ok" });
+          cb && cb({ status: "ok" });
+          return true;
         }
       };
 
       // Register handlers
       Object.entries(handlers).forEach(([event, handler]) => {
-        socket.on(event, handler);
+        socket.on(event, async (data, cb) => {
+          const result = await handler(data, cb);
+          // Only call cb if it exists and we haven't already called it in the handler
+          if (cb && typeof cb === 'function' && result !== undefined) {
+            cb(result);
+          }
+        });
       });
 
       return handlers;

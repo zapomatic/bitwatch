@@ -62,21 +62,53 @@ export { test, expect };
 
 // Helper functions for finding and interacting with elements
 export const findAndClick = async (page, selector, options = {}) => {
-  const { timeout = 30000, exact = false } = options;
+  const {
+    timeout = 10000,
+    exact = false,
+    maxRetries = 3,
+    allowOverlay = false,
+  } = options;
   const locator = page.locator(selector);
+  let retryCount = 0;
 
-  // Wait for any matching element to be visible
-  await page.waitForSelector(selector, { state: "visible", timeout });
+  while (retryCount < maxRetries) {
+    try {
+      // Wait for any matching element to be visible
+      await page.waitForSelector(selector, { state: "visible", timeout });
 
-  if (exact) {
-    await locator.first().click();
-  } else {
-    await locator.click();
+      // Only check for overlays if we're not trying to click something in a dialog
+      if (!allowOverlay) {
+        // Wait for any overlays/dialogs to be gone
+        const overlaySelector = ".MuiDialog-root, .MuiModal-root";
+        const overlay = page.locator(overlaySelector);
+        const hasOverlay = await overlay.isVisible().catch(() => false);
+        if (hasOverlay) {
+          // If there's an overlay, wait a bit and retry
+          await page.waitForTimeout(100);
+          retryCount++;
+          continue;
+        }
+      }
+
+      // Try to click
+      if (exact) {
+        await locator.first().click({ timeout: 1000 });
+      } else {
+        await locator.click({ timeout: 1000 });
+      }
+      return; // Success!
+    } catch (error) {
+      if (retryCount >= maxRetries - 1) {
+        throw error; // Last attempt failed, propagate the error
+      }
+      retryCount++;
+      await page.waitForTimeout(100);
+    }
   }
 };
 
 export const findAndFill = async (page, selector, value, options = {}) => {
-  const { timeout = 30000, exact = false } = options;
+  const { timeout = 10000, exact = false } = options;
   const locator = page.locator(`${selector} input`);
 
   // Wait for any matching element to be visible
@@ -120,18 +152,26 @@ export const addAddress = async (page, collection, { name, address }) => {
   await findAndClick(page, `[data-testid="${collection}-add-address"]`);
 
   // Wait for the dialog to be visible
-  await page.waitForSelector('[aria-label="Address name"] input', {
+  await page.waitForSelector('[data-testid="address-dialog"]', {
     state: "visible",
   });
 
   // Fill in the address name
-  await page.fill('[aria-label="Address name"] input', name);
+  await page.fill('[data-testid="address-name-input"]', name);
 
   // Fill in the Bitcoin address
-  await page.fill('[aria-label="Bitcoin address"] input', address);
+  await page.fill('[data-testid="address-input"]', address);
 
-  // Click the save button
-  await findAndClick(page, '[aria-label="Save address"]');
+  // Click the save button - allow clicking in overlay since it's in a dialog
+  await findAndClick(page, '[data-testid="address-dialog-save"]', {
+    allowOverlay: true,
+  });
+
+  // Wait for the dialog to disappear
+  await page.waitForSelector('[data-testid="address-dialog"]', {
+    state: "hidden",
+    timeout: 2000,
+  });
 };
 
 export const addExtendedKey = async (
@@ -144,6 +184,7 @@ export const addExtendedKey = async (
   // Wait for dialog to be visible
   await page.waitForSelector('[data-testid="extended-key-dialog"]', {
     state: "visible",
+    timeout: 2000,
   });
 
   // Fill in the form fields
@@ -160,8 +201,16 @@ export const addExtendedKey = async (
     initialAddresses.toString()
   );
 
-  // Click the Add button
-  await page.getByTestId("extended-key-submit-button").click();
+  // Click the Add button - allow clicking in overlay since it's in a dialog
+  await findAndClick(page, '[data-testid="extended-key-submit-button"]', {
+    allowOverlay: true,
+  });
+
+  // Wait for the dialog to disappear
+  await page.waitForSelector('[data-testid="extended-key-dialog"]', {
+    state: "hidden",
+    timeout: 2000,
+  });
 };
 
 export const addDescriptor = async (
@@ -185,9 +234,11 @@ export const addDescriptor = async (
 export const refreshAddressBalance = async (
   page,
   address,
-  expectedBalances
+  expectedBalances,
+  index = 0,
+  parentKey = null
 ) => {
-  // Click the refresh button
+  // Click the refresh button - this still uses the address in the test ID
   await page.getByTestId(`${address}-refresh-button`).click();
 
   // Wait for the notification to appear
@@ -197,32 +248,37 @@ export const refreshAddressBalance = async (
     /MuiAlert-standardSuccess/
   );
 
+  // For balance cells, we use the new format
+  const testIdPrefix = parentKey
+    ? `${parentKey}-address-${index}`
+    : `${address}`;
+
   // Verify all balance values match expected values
   if (expectedBalances.chain_in !== undefined) {
     await expect(
       page
-        .getByTestId(`${address}-chain-in`)
+        .getByTestId(`${testIdPrefix}-chain-in`)
         .and(page.getByLabel("Balance value"))
     ).toHaveText(expectedBalances.chain_in);
   }
   if (expectedBalances.chain_out !== undefined) {
     await expect(
       page
-        .getByTestId(`${address}-chain-out`)
+        .getByTestId(`${testIdPrefix}-chain-out`)
         .and(page.getByLabel("Balance value"))
     ).toHaveText(expectedBalances.chain_out);
   }
   if (expectedBalances.mempool_in !== undefined) {
     await expect(
       page
-        .getByTestId(`${address}-mempool-in`)
+        .getByTestId(`${testIdPrefix}-mempool-in`)
         .and(page.getByLabel("Balance value"))
     ).toHaveText(expectedBalances.mempool_in);
   }
   if (expectedBalances.mempool_out !== undefined) {
     await expect(
       page
-        .getByTestId(`${address}-mempool-out`)
+        .getByTestId(`${testIdPrefix}-mempool-out`)
         .and(page.getByLabel("Balance value"))
     ).toHaveText(expectedBalances.mempool_out);
   }

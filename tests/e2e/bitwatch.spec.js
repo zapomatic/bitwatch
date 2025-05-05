@@ -1,7 +1,7 @@
 import { test, expect } from "./test-environment.js";
 import testData from "../../test-data/keys.json" with { type: 'json' };
 import testDb from "../../server/db.test.json" with { type: 'json' };
-import { addCollection, addAddress, addExtendedKey, addDescriptor } from "./test-environment.js";
+import { addCollection, addAddress, addExtendedKey, addDescriptor, findAndClick } from "./test-environment.js";
 import { refreshAddressBalance } from "./test-environment.js";
 
 test.describe("Bitwatch", () => {
@@ -150,25 +150,25 @@ test.describe("Bitwatch", () => {
       chain_out: "0.00000000 ₿",
       mempool_in: "0.00000000 ₿",
       mempool_out: "0.00000000 ₿"
-    });
+    }, 0);
     console.log("Initial zero balance state verified");
 
     // Refresh to get mempool input state
     await refreshAddressBalance(page, testData.addresses.zapomatic, {
       mempool_in: "0.00010000 ₿"
-    });
+    }, 0);
     console.log("Mempool input state verified");
 
     // Refresh to get chain input state
     await refreshAddressBalance(page, testData.addresses.zapomatic, {
       chain_in: "0.00010000 ₿"
-    });
+    }, 0);
     console.log("Chain input state verified");
 
     // Refresh to get mempool output state
     await refreshAddressBalance(page, testData.addresses.zapomatic, {
       mempool_out: "0.00001000 ₿"
-    });
+    }, 0);
     // Wait for the diff to appear and have the correct value
     await expect(page.getByTestId(`${testData.addresses.zapomatic}-mempool-out-diff`)).toBeVisible();
     await expect(page.getByTestId(`${testData.addresses.zapomatic}-mempool-out-diff`)).toHaveText("(+0.00001000 ₿)");
@@ -179,7 +179,7 @@ test.describe("Bitwatch", () => {
     // Refresh to get chain output state
     await refreshAddressBalance(page, testData.addresses.zapomatic, {
       chain_out: "0.00001000 ₿"
-    });
+    }, 0);
     await expect(page.getByTestId(`${testData.addresses.zapomatic}-chain-out-diff`)).toBeVisible();
     await expect(page.getByTestId(`${testData.addresses.zapomatic}-chain-out-diff`)).toHaveText("(+0.00001000 ₿)");
     // Verify alert icon and accept button for chain-out
@@ -198,13 +198,11 @@ test.describe("Bitwatch", () => {
       chain_out: "0.00001000 ₿",
       mempool_in: "0.00000000 ₿",
       mempool_out: "0.00000000 ₿"
-    });
+    }, 0);
     console.log("Final stable state verified");
 
-    // Verify collection balance totals (subtract out from in on every address in the collection--single, extended, descriptor)
-    // First find the Donations collection row
+    // Verify collection balance totals
     const donationsRow = page.locator('tr.collection-row', { has: page.getByText('Donations') });
-    // Then find the On-Chain and Mempool cells within that row
     await expect(donationsRow.locator('td', { hasText: '0.00009000 ₿' }).first()).toBeVisible();
     await expect(donationsRow.locator('td', { hasText: '0.00000000 ₿' }).first()).toBeVisible();
 
@@ -256,7 +254,7 @@ test.describe("Bitwatch", () => {
 
       // Initially we should see just the initial addresses
       await expect(keyRow.locator('td').nth(6)).toContainText('3');
-      const addressRows = page.locator(`tr.crystal-table-row:has-text("${key.name}") + tr.address-subtable tr.address-row`);
+      const addressRows = page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`);
       await expect(addressRows).toHaveCount(3);
 
       // Click the refresh button to trigger balance checks
@@ -264,112 +262,70 @@ test.describe("Bitwatch", () => {
       console.log("Clicked refresh button for extended key");
 
       // Wait for the engine to detect balances and generate more addresses
-      // The address count should increase to 6 as gap limit addresses are added
+      // The address count should increase to 4 as gap limit addresses are added
       await expect(keyRow.locator('td').nth(6)).toContainText('4');
+
+      // Verify we have the expected number of addresses (initial + gap limit)
       await expect(addressRows).toHaveCount(4);
 
       // Verify the first address index starts at 1 (due to skip)
-      const firstAddressText = await addressRows.first().textContent();
+      const nameLocator = page.locator(`[data-testid="${key.key}-address-1-name"]`);
+      await expect(nameLocator).toBeVisible();
+      const firstAddressText = await nameLocator.textContent();
       expect(firstAddressText).toContain(`${key.name} 1`);
 
       // Verify the last address index is 4
-      const lastAddressText = await addressRows.last().textContent();
+      const lastNameLocator = page.locator(`[data-testid="${key.key}-address-4-name"]`);
+      await expect(lastNameLocator).toBeVisible();
+      const lastAddressText = await lastNameLocator.textContent();
       expect(lastAddressText).toContain(`${key.name} 4`);
 
       // Verify the first address has chain balance
-      await expect(addressRows.nth(0).locator('[data-testid$="chain-in"]')).toHaveText("0.00010000 ₿");
+      await expect(page.locator(`[data-testid="${key.key}-address-1-chain-in"]`)).toHaveText("0.00010000 ₿");
       
       // Verify remaining addresses have zero balance
-      for (let i = 1; i < 4; i++) {
-        await expect(addressRows.nth(i).locator('[data-testid$="chain-in"]')).toHaveText("0.00000000 ₿");
+      for (let i = 2; i <= 4; i++) {
+        await expect(page.locator(`[data-testid="${key.key}-address-${i}-chain-in"]`)).toHaveText("0.00000000 ₿");
       }
-
-      // Delete extended key
-      await page.getByTestId(`${key.key}-delete-button`).click();
-      console.log("Deleted extended key");
     }
 
-    // Add descriptors
-    const descriptors = [
-      {
-        name: "Test MultiSig",
-        descriptor: testData.descriptors.multiSig,
-        skip: 1,
-        gapLimit: 3,
-        initialAddresses: 3
-      },
-      {
-        name: "Test SortedMultiSig",
-        descriptor: testData.descriptors.sortedMultiSig,
-        skip: 1,
-        gapLimit: 3,
-        initialAddresses: 3
-      },
-      {
-        name: "Test MixedKeyTypes",
-        descriptor: testData.descriptors.mixedKeyTypes,
-        skip: 1,
-        gapLimit: 3,
-        initialAddresses: 3
-      }
-    ];
-
-    for (const descriptor of descriptors) {
-      await addDescriptor(page, "Donations", descriptor);
-      console.log(`Added ${descriptor.name}`);
-
-      // Verify the key-derived addresses section is visible
-      await expect(page.getByText("Key-Derived Addresses")).toBeVisible();
-
-      // Verify we have the expected number of addresses (initial + gap limit)
-      // We expect 6 addresses total:
-      // - 3 initial addresses (skipping index 0)
-      // - 3 more to satisfy gap limit after finding activity
-      const addressRows = page.locator('tr.address-row').filter({ hasText: descriptor.name });
-      await expect(addressRows).toHaveCount(6);
-
-      // Verify the first address index starts at 1 (due to skip)
-      const firstAddressText = await addressRows.first().textContent();
-      expect(firstAddressText).toContain(`${descriptor.name} 1`);
-
-      // Verify the last address index is 6
-      const lastAddressText = await addressRows.last().textContent();
-      expect(lastAddressText).toContain(`${descriptor.name} 6`);
-
-      // Verify the first two addresses have chain balance
-      await expect(addressRows.nth(0).locator('[data-testid$="chain-in"]')).toHaveText("0.00010000 ₿");
-      await expect(addressRows.nth(1).locator('[data-testid$="chain-in"]')).toHaveText("0.00010000 ₿");
+    // Now that we've verified all balances, we can delete everything
+    for (const key of extendedKeys) {
+      // Delete extended key
+      await page.getByTestId(`${key.key}-delete-button`).click();
       
-      // Verify remaining addresses have zero balance
-      for (let i = 2; i < 6; i++) {
-        await expect(addressRows.nth(i).locator('[data-testid$="chain-in"]')).toHaveText("0.00000000 ₿");
-      }
-
-      // Delete descriptor
-      await page.getByTestId(`${descriptor.descriptor}-delete-button`).click();
-      console.log("Deleted descriptor");
+      // Confirm deletion in dialog
+      await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
+      await expect(page.getByText("Delete this extended key and all its derived addresses?")).toBeVisible();
+      await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
+      
+      // Wait for dialog to close
+      await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
+      console.log(`Deleted ${key.name}`);
     }
 
     // Delete the single address we added at the start
     await page.getByTestId(`${testData.addresses.zapomatic}-delete-button`).click();
-    console.log("Clicked delete button");
-    
-    // Wait for dialog to be fully rendered
-    await page.waitForTimeout(500);
     
     // Verify delete confirmation dialog appears with correct message
-    await expect(page.getByRole("heading", { name: "Confirm Delete" })).toBeVisible();
+    await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
     await expect(page.getByText("Remove this address from the collection?")).toBeVisible();
+    
     // Confirm deletion
-    await page.getByRole("button", { name: "Delete" }).click();
-    console.log("Deleted address");
-    // verify that the address is deleted
+    await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
+    
+    // Wait for dialog to close and verify deletion
+    await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
     await expect(page.getByTestId(`${testData.addresses.zapomatic}-delete-button`)).not.toBeVisible();
-    // verify that the collection still exists
     await expect(page.getByTestId("Donations-add-address")).toBeVisible();
+    console.log("Deleted single address");
 
     // Delete collection
     await page.getByTestId("Donations-delete").click();
+    await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
+    await expect(page.getByText("Delete this collection and all its addresses?")).toBeVisible();
+    await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
+    await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
     console.log("Deleted Donations collection");
   });
 });

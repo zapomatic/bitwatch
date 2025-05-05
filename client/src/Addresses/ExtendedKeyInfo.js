@@ -116,6 +116,8 @@ const ExtendedKeyInfo = ({
       <TableRow
         className="crystal-table-row address-row"
         sx={{ "& > *": { borderBottom: "unset" } }}
+        data-testid={`${extendedKey.key}-row`}
+        aria-label={`Extended key ${extendedKey.name}`}
       >
         <TableCell>
           <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -132,7 +134,9 @@ const ExtendedKeyInfo = ({
             >
               {isExpanded ? <ExpandLess /> : <ExpandMore />}
             </IconButton>
-            <Typography variant="body2">{extendedKey.name}</Typography>
+            <Typography variant="body2" data-testid={`${extendedKey.key}-name`}>
+              {extendedKey.name}
+            </Typography>
           </Box>
         </TableCell>
         <TableCell>
@@ -198,7 +202,11 @@ const ExtendedKeyInfo = ({
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
           <Collapse in={isExpanded} timeout="auto" unmountOnExit>
             <Box sx={{ margin: 1 }}>
-              <Table size="small" className="crystal-table address-subtable">
+              <Table
+                size="small"
+                className="crystal-table address-subtable"
+                data-testid={`${extendedKey.key}-address-table`}
+              >
                 <TableHead>
                   <TableRow>
                     <TableCell>Name</TableCell>
@@ -208,7 +216,7 @@ const ExtendedKeyInfo = ({
                     <TableCell>Actions</TableCell>
                   </TableRow>
                 </TableHead>
-                <TableBody>
+                <TableBody data-testid={`${extendedKey.key}-address-list`}>
                   {(extendedKey.addresses || []).map((address) => (
                     <AddressRow
                       key={address.address}
@@ -216,6 +224,8 @@ const ExtendedKeyInfo = ({
                       collection={collection}
                       displayBtc={displayBtc}
                       setNotification={setNotification}
+                      parentKey={extendedKey.key}
+                      index={address.index}
                     />
                   ))}
                 </TableBody>
