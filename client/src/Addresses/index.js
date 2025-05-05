@@ -306,6 +306,12 @@ export default function Addresses() {
             message: response.error,
             severity: "error",
           });
+        } else if (response.success) {
+          setNotification({
+            open: true,
+            message: "Successfully deleted",
+            severity: "success",
+          });
         }
         setDeleteDialog({
           open: false,
@@ -474,7 +480,7 @@ export default function Addresses() {
   const handleEditAddress = (collection, address) => {
     setEditDialog({
       open: true,
-      collection,
+      collection: collection.name,
       address,
     });
   };

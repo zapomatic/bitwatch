@@ -65,6 +65,7 @@ const AddressRow = ({
   parentKey,
   index,
   onDelete,
+  onEditAddress,
 }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -106,16 +107,13 @@ const AddressRow = ({
   const handleEdit = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    socketIO.emit("editAddress", {
-      collection: collection.name,
-      address: address,
-    });
+    onEditAddress(collection, address);
   };
 
   const handleDelete = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    onDelete({ collection, address: address.address });
+    onDelete({ collection: collection.name, address: address.address });
   };
 
   const handleSaveExpected = (e) => {

@@ -270,6 +270,7 @@ const CollectionRow = ({
                           displayBtc={displayBtc}
                           setNotification={setNotification}
                           onDelete={onDelete}
+                          onEditAddress={onEditAddress}
                         />
                       ))}
                     </TableBody>

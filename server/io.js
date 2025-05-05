@@ -551,7 +551,41 @@ const socketIO = {
           // Save changes and emit update
           memory.saveDb();
           socketIO.io.emit("updateState", { collections: memory.db.collections });
-          cb && cb({ status: "ok" });
+          cb && cb({ success: true });
+          return true;
+        },
+
+        updateAddress: async (data, cb) => {
+          const { collection, address } = data;
+          
+          if (!collection || !address) {
+            cb && cb({ error: "Missing collection or address data" });
+            return;
+          }
+
+          const targetCollection = memory.db.collections[collection];
+          if (!targetCollection) {
+            cb && cb({ error: "Collection not found" });
+            return;
+          }
+
+          // Find the address in the collection
+          const addressIndex = targetCollection.addresses.findIndex(a => a.address === address.address);
+          if (addressIndex === -1) {
+            cb && cb({ error: "Address not found" });
+            return;
+          }
+
+          // Update the address properties while preserving the structure
+          targetCollection.addresses[addressIndex] = {
+            ...targetCollection.addresses[addressIndex],
+            name: address.name,
+            monitor: address.monitor || targetCollection.addresses[addressIndex].monitor
+          };
+
+          memory.saveDb();
+          socketIO.io.emit("updateState", { collections: memory.db.collections });
+          cb && cb({ success: true });
           return true;
         }
       };

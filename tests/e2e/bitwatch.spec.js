@@ -206,6 +206,22 @@ test.describe("Bitwatch", () => {
     await expect(donationsRow.locator('td', { hasText: '0.00009000 ₿' }).first()).toBeVisible();
     await expect(donationsRow.locator('td', { hasText: '0.00000000 ₿' }).first()).toBeVisible();
 
+    // Test editing the single address
+    await page.getByTestId(`${testData.addresses.zapomatic}-edit-button`).click();
+    await expect(page.locator('[data-testid="address-dialog"]')).toBeVisible();
+    await expect(page.getByTestId("address-name-input")).toHaveValue("zapomatic");
+    await expect(page.getByTestId("address-input")).toHaveValue(testData.addresses.zapomatic);
+    
+    // Change the name
+    await page.getByTestId("address-name-input").fill("test rename");
+    await page.getByTestId("address-dialog-save").click();
+    
+    // Verify the dialog closed and name was updated
+    await expect(page.locator('[data-testid="address-dialog"]')).not.toBeVisible();
+    await expect(page.getByText("Address updated successfully")).toBeVisible();
+    await expect(page.getByText("test rename")).toBeVisible();
+    console.log("Address rename verified");
+
     // Add extended keys (xpub, ypub, zpub)
     const extendedKeys = [
       {
