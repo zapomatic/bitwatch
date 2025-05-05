@@ -6,6 +6,391 @@ import memory from "./memory.js";
 import * as url from "node:url";
 import logger from "./logger.js";
 import socketIO from "./io.js";
+import telegram from "./telegram.js";
+import { deriveExtendedKeyAddresses, deriveAddresses } from "./addressDeriver.js";
+
+// Helper to check if an address has any activity
+const hasAddressActivity = (addr) => {
+  if (!addr?.actual) return false;
+  return (
+    addr.actual.chain_in > 0 ||
+    addr.actual.chain_out > 0 ||
+    addr.actual.mempool_in > 0 ||
+    addr.actual.mempool_out > 0
+  );
+};
+
+// Helper to find the last used address and empty count
+const findLastUsedAndEmpty = (addresses) => {
+  let lastUsedIndex = -1;
+  let emptyCount = 0;
+  let foundActivity = false;
+
+  // Sort addresses by index to ensure we check them in order
+  const sortedAddresses = [...addresses].sort((a, b) => a.index - b.index);
+
+  for (const addr of sortedAddresses) {
+    if (hasAddressActivity(addr)) {
+      lastUsedIndex = addr.index;
+      emptyCount = 0;
+      foundActivity = true;
+    } else if (foundActivity) {
+      emptyCount++;
+    }
+  }
+
+  return { lastUsedIndex, emptyCount };
+};
+
+// Check if we need to generate more addresses to maintain gap limit
+const checkAndUpdateGapLimit = async (item) => {
+  if (!item?.addresses) return false;
+
+  const { lastUsedIndex, emptyCount } = findLastUsedAndEmpty(item.addresses);
+
+  // If we haven't found any activity yet, we don't need more addresses
+  if (lastUsedIndex === -1) {
+    return false;
+  }
+
+  // If we have enough empty addresses after the last used one, we're good
+  if (emptyCount >= item.gapLimit) {
+    return false;
+  }
+
+  // Calculate how many more addresses we need
+  const addressesNeeded = item.gapLimit - emptyCount;
+
+  // If we need more addresses, emit an event to trigger address generation
+  logger.info(
+    `Need more addresses for ${item.name}: last used index ${lastUsedIndex}, empty count ${emptyCount}, gap limit ${item.gapLimit}, generating ${addressesNeeded} more`
+  );
+  return addressesNeeded;
+};
+
+// Shared function for checking address balance changes
+const checkAddressBalance = async (addr, newBalance) => {
+  if (!addr) return false;
+
+  // Skip if no actual balance yet
+  if (!addr.actual) {
+    addr.actual = newBalance;
+    return true;
+  }
+
+  // Check if any balance has changed
+  const hasChanged =
+    addr.actual.chain_in !== newBalance.chain_in ||
+    addr.actual.chain_out !== newBalance.chain_out ||
+    addr.actual.mempool_in !== newBalance.mempool_in ||
+    addr.actual.mempool_out !== newBalance.mempool_out;
+
+  if (hasChanged) {
+    logger.scan(`Balance changed for ${addr.address}`);
+    addr.actual = newBalance;
+    addr.error = false;
+    addr.errorMessage = null;
+  }
+
+  return hasChanged;
+};
+
+// Detect balance changes for notifications
+const detectBalanceChanges = (
+  address,
+  balance,
+  collectionName,
+  addressName
+) => {
+  const collections = memory.db.collections;
+  const collection = collections[collectionName];
+  if (!collection) return null;
+
+  // Find address in either main addresses or extended key addresses
+  let addr = collection.addresses.find((a) => a.address === address);
+
+  // If not found in main addresses, check extended keys
+  if (!addr && collection.extendedKeys) {
+    for (const extendedKey of collection.extendedKeys) {
+      addr = extendedKey.addresses.find((a) => a.address === address);
+      if (addr) break;
+    }
+  }
+
+  // If not found in extended keys, check descriptors
+  if (!addr && collection.descriptors) {
+    for (const descriptor of collection.descriptors) {
+      addr = descriptor.addresses.find((a) => a.address === address);
+      if (addr) break;
+    }
+  }
+
+  if (!addr) return null;
+
+  // Initialize alerted field if it doesn't exist
+  if (!addr.alerted) {
+    addr.alerted = {
+      chain_in: false,
+      chain_out: false,
+      mempool_in: false,
+      mempool_out: false,
+    };
+  }
+
+  // Store old balance for comparison
+  const oldBalance = { ...addr.actual };
+  const newBalance = { ...balance };
+
+  // Check for changes that need alerts
+  const changes = {};
+  const needsAlert = (type) => {
+    if (!addr.monitor) return true; // Default to alert if no monitor settings
+    return addr.monitor[type] === "alert" && !addr.alerted[type];
+  };
+
+  // Check each balance type for changes
+  if (newBalance.chain_in !== addr.expect.chain_in) {
+    changes.chain_in = newBalance.chain_in;
+    if (needsAlert("chain_in")) {
+      logger.info(
+        `alert chain_in (${newBalance.chain_in}) for ${address} (${collectionName}/${addressName})`
+      );
+      addr.alerted.chain_in = true;
+    } else {
+      logger.info(
+        `auto-accept chain_in (${newBalance.chain_in}) for ${address} (${collectionName}/${addressName})`
+      );
+      addr.expect.chain_in = newBalance.chain_in;
+      addr.alerted.chain_in = false;
+    }
+  }
+  if (newBalance.chain_out !== addr.expect.chain_out) {
+    changes.chain_out = newBalance.chain_out;
+    if (needsAlert("chain_out")) {
+      logger.info(
+        `alert chain_out (${newBalance.chain_out}) for ${address} (${collectionName}/${addressName})`
+      );
+      addr.alerted.chain_out = true;
+    } else {
+      logger.info(
+        `auto-accept chain_out (${newBalance.chain_out}) for ${address} (${collectionName}/${addressName})`
+      );
+      addr.expect.chain_out = newBalance.chain_out;
+      addr.alerted.chain_out = false;
+    }
+  }
+  if (newBalance.mempool_in !== addr.expect.mempool_in) {
+    changes.mempool_in = newBalance.mempool_in;
+    if (needsAlert("mempool_in")) {
+      logger.info(
+        `alert mempool_in (${newBalance.mempool_in}) for ${address} (${collectionName}/${addressName})`
+      );
+      addr.alerted.mempool_in = true;
+    } else {
+      logger.info(
+        `auto-accept mempool_in (${newBalance.mempool_in}) for ${address} (${collectionName}/${addressName})`
+      );
+      addr.expect.mempool_in = newBalance.mempool_in;
+      addr.alerted.mempool_in = false;
+    }
+  }
+  if (newBalance.mempool_out !== addr.expect.mempool_out) {
+    changes.mempool_out = newBalance.mempool_out;
+    if (needsAlert("mempool_out")) {
+      logger.info(
+        `alert mempool_out (${newBalance.mempool_out}) for ${address} (${collectionName}/${addressName})`
+      );
+      addr.alerted.mempool_out = true;
+    } else {
+      logger.info(
+        `auto-accept mempool_out (${newBalance.mempool_out}) for ${address} (${collectionName}/${addressName})`
+      );
+      addr.expect.mempool_out = newBalance.mempool_out;
+      addr.alerted.mempool_out = false;
+    }
+  }
+
+  // Update the address with new balance
+  addr.actual = newBalance;
+
+  // If there are any changes, log them
+  if (Object.keys(changes).length > 0) {
+    logger.info(`Balance changes detected for ${address} (${collectionName}/${addressName}):
+Expected: chain_in=${addr.expect.chain_in}, chain_out=${addr.expect.chain_out}, mempool_in=${addr.expect.mempool_in}, mempool_out=${addr.expect.mempool_out}
+Actual: chain_in=${newBalance.chain_in}, chain_out=${newBalance.chain_out}, mempool_in=${newBalance.mempool_in}, mempool_out=${newBalance.mempool_out}
+Previous: chain_in=${oldBalance.chain_in}, chain_out=${oldBalance.chain_out}, mempool_in=${oldBalance.mempool_in}, mempool_out=${oldBalance.mempool_out}`);
+
+    // Save the database if changes were detected
+    memory.saveDb();
+  }
+
+  return Object.keys(changes).length > 0 ? changes : null;
+};
+
+// Centralized function to handle balance updates and gap limit checks
+const handleBalanceUpdate = async (address, balance, collectionName) => {
+  const collection = memory.db.collections[collectionName];
+  if (!collection) return { error: "Collection not found" };
+
+  // Find address in either main addresses or extended key addresses
+  let addr = collection.addresses.find((a) => a.address === address);
+  let parentItem = null;
+  let isExtendedKeyAddress = false;
+  let isDescriptorAddress = false;
+
+  // If not found in main addresses, check extended keys
+  if (!addr && collection.extendedKeys) {
+    for (const extendedKey of collection.extendedKeys) {
+      addr = extendedKey.addresses.find((a) => a.address === address);
+      if (addr) {
+        parentItem = extendedKey;
+        isExtendedKeyAddress = true;
+        break;
+      }
+    }
+  }
+
+  // If not found in extended keys, check descriptors
+  if (!addr && collection.descriptors) {
+    for (const descriptor of collection.descriptors) {
+      addr = descriptor.addresses.find((a) => a.address === address);
+      if (addr) {
+        parentItem = descriptor;
+        isDescriptorAddress = true;
+        break;
+      }
+    }
+  }
+
+  if (!addr) return { error: "Address not found" };
+
+  // Store old balance for comparison
+  const oldBalance = addr.actual || {
+    chain_in: 0,
+    chain_out: 0,
+    mempool_in: 0,
+    mempool_out: 0
+  };
+
+  // Ensure balance.actual exists and has all required fields
+  const newBalance = {
+    chain_in: balance.actual?.chain_in ?? 0,
+    chain_out: balance.actual?.chain_out ?? 0,
+    mempool_in: balance.actual?.mempool_in ?? 0,
+    mempool_out: balance.actual?.mempool_out ?? 0
+  };
+
+  // Update the address with new balance, preserving expect object
+  addr.actual = newBalance;
+  addr.error = balance.error || false;
+  addr.errorMessage = balance.errorMessage || null;
+  addr.expect = addr.expect || {
+    chain_in: 0,
+    chain_out: 0,
+    mempool_in: 0,
+    mempool_out: 0,
+  };
+
+  // Check if balance changed
+  const balanceChanged =
+    oldBalance.chain_in !== newBalance.chain_in ||
+    oldBalance.chain_out !== newBalance.chain_out ||
+    oldBalance.mempool_in !== newBalance.mempool_in ||
+    oldBalance.mempool_out !== newBalance.mempool_out;
+
+  // If balance changed and this is part of an extended key or descriptor
+  if (balanceChanged && parentItem) {
+    const addressesNeeded = await checkAndUpdateGapLimit(parentItem);
+    if (addressesNeeded) {
+      // Derive more addresses
+      const newAddresses = isExtendedKeyAddress
+        ? await deriveExtendedKeyAddresses(
+            parentItem.key,
+            parentItem.addresses.length,
+            addressesNeeded,
+            parentItem.derivationPath
+          )
+        : await deriveAddresses(
+            parentItem.descriptor,
+            parentItem.addresses.length,
+            addressesNeeded,
+            parentItem.skip || 0
+          );
+
+      if (newAddresses) {
+        // Add new addresses to parent item
+        const newAddressRecords = newAddresses.map((addr) => ({
+          address: addr.address,
+          name: `${parentItem.name} ${addr.index}`,
+          index: addr.index,
+          expect: {
+            chain_in: 0,
+            chain_out: 0,
+            mempool_in: 0,
+            mempool_out: 0,
+          },
+          monitor: {
+            chain_in: "auto-accept",
+            chain_out: "alert",
+            mempool_in: "auto-accept",
+            mempool_out: "alert",
+          },
+          actual: null,
+          error: false,
+          errorMessage: null,
+        }));
+
+        parentItem.addresses = [...parentItem.addresses, ...newAddressRecords];
+
+        // Immediately check balances for new addresses
+        await Promise.all(
+          newAddressRecords.map(async (addr) => {
+            const balance = await getAddressBalance(addr.address);
+            if (balance.error) {
+              addr.error = true;
+              addr.errorMessage = balance.message;
+            } else {
+              addr.actual = {
+                chain_in: balance.actual?.chain_in ?? 0,
+                chain_out: balance.actual?.chain_out ?? 0,
+                mempool_in: balance.actual?.mempool_in ?? 0,
+                mempool_out: balance.actual?.mempool_out ?? 0
+              };
+              addr.error = false;
+              addr.errorMessage = null;
+            }
+          })
+        );
+      }
+    }
+  }
+
+  // If balance changed, check for notifications
+  if (balanceChanged) {
+    const changes = detectBalanceChanges(
+      address,
+      newBalance,
+      collectionName,
+      addr.name
+    );
+    if (changes) {
+      // Notify via telegram if needed
+      telegram.notifyBalanceChange(
+        address,
+        changes,
+        collectionName,
+        addr.name
+      );
+    }
+  }
+
+  // Save state if there were changes
+  if (balanceChanged) {
+    memory.saveDb();
+  }
+
+  return { success: true, balanceChanged, addr };
+};
 
 const attemptCall = async (addr) => {
   return new Promise((resolve, reject) => {
@@ -30,7 +415,6 @@ const attemptCall = async (addr) => {
     currentOpt.path = `${options.path}/${addr}`;
     
     const fullUrl = `${api.protocol}//${api.hostname}${api.port ? `:${api.port}` : ''}${currentOpt.path}`;
-    // logger.network(`Fetching balance: ${fullUrl}`);
     
     const req = (api.protocol === "https:" ? https : http).request(
       currentOpt,
@@ -132,4 +516,4 @@ const getAddressBalance = async (addr, onRateLimit) => {
   return { error: true, message: "Max retries exceeded" };
 };
 
-export default getAddressBalance;
+export { getAddressBalance, handleBalanceUpdate };

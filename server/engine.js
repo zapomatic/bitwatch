@@ -1,142 +1,33 @@
-import getAddressBalance from "./getAddressBalance.js";
+import { getAddressBalance, handleBalanceUpdate } from "./getAddressBalance.js";
 import { parallelLimit } from "async";
 import socketIO from "./io.js";
 import memory from "./memory.js";
 import logger from "./logger.js";
-import { checkAndUpdateGapLimit } from "./balance.js";
-import {
-  deriveExtendedKeyAddresses,
-  deriveAddresses,
-} from "./addressDeriver.js";
 
-const updateAddressAndEmit = async (addr, balance) => {
-  const collections = { ...memory.db.collections };
-  const collection = collections[addr.collection];
-  if (!collection) return;
+// Helper function to check balances for a set of addresses
+const checkAddressBalances = async (addresses) => {
+  // Process addresses in parallel with a limit and delay
+  const queue = addresses.map((addr) => async () => {
+    const balance = await getAddressBalance(addr.address);
 
-  // Try to find the address in regular addresses first
-  let index = collection.addresses.findIndex((a) => a.address === addr.address);
-  let addressArray = collection.addresses;
-  let isExtendedKeyAddress = false;
-  let isDescriptorAddress = false;
-  let parentItem = null;
-
-  // If not found in regular addresses, check extended keys
-  if (index === -1 && collection.extendedKeys) {
-    for (let i = 0; i < collection.extendedKeys.length; i++) {
-      const extendedKey = collection.extendedKeys[i];
-      index = extendedKey.addresses.findIndex(
-        (a) => a.address === addr.address
+    if (balance.error) {
+      logger.error(
+        `Failed to fetch balance for ${addr.address}: ${balance.message}`
       );
-      if (index !== -1) {
-        addressArray = extendedKey.addresses;
-        isExtendedKeyAddress = true;
-        parentItem = extendedKey;
-        break;
-      }
+      addr.error = true;
+      addr.errorMessage = balance.message;
+      addr.actual = null;
+    } else {
+      // Use centralized balance update handler
+      await handleBalanceUpdate(addr.address, balance, addr.collection);
     }
-  }
 
-  // If not found in extended keys, check descriptors
-  if (index === -1 && collection.descriptors) {
-    for (let i = 0; i < collection.descriptors.length; i++) {
-      const descriptor = collection.descriptors[i];
-      index = descriptor.addresses.findIndex((a) => a.address === addr.address);
-      if (index !== -1) {
-        addressArray = descriptor.addresses;
-        isDescriptorAddress = true;
-        parentItem = descriptor;
-        break;
-      }
-    }
-  }
-
-  if (index === -1) return;
-
-  // Update the address with new balance
-  const oldBalance = addressArray[index].actual;
-  addressArray[index] = {
-    ...addressArray[index],
-    actual: balance.actual,
-    error: balance.error,
-    errorMessage: balance.errorMessage,
-    expect: addressArray[index].expect || {
-      chain_in: 0,
-      chain_out: 0,
-      mempool_in: 0,
-      mempool_out: 0,
-    },
-  };
-
-  // Check if balance changed
-  const balanceChanged =
-    !oldBalance ||
-    oldBalance.chain_in !== balance.actual.chain_in ||
-    oldBalance.chain_out !== balance.actual.chain_out ||
-    oldBalance.mempool_in !== balance.actual.mempool_in ||
-    oldBalance.mempool_out !== balance.actual.mempool_out;
-
-  // If this is an extended key or descriptor address and balance changed,
-  // check gap limit and generate more addresses if needed
-  if (
-    balanceChanged &&
-    (isExtendedKeyAddress || isDescriptorAddress) &&
-    parentItem
-  ) {
-    const needsMoreAddresses = await checkAndUpdateGapLimit(parentItem);
-    if (needsMoreAddresses) {
-      // Derive more addresses
-      const newAddresses = isExtendedKeyAddress
-        ? await deriveExtendedKeyAddresses(
-            parentItem.key,
-            parentItem.addresses.length,
-            parentItem.gapLimit,
-            parentItem.derivationPath
-          )
-        : await deriveAddresses(
-            parentItem.descriptor,
-            parentItem.addresses.length,
-            parentItem.gapLimit,
-            parentItem.skip || 0
-          );
-
-      if (newAddresses) {
-        // Add new addresses to parent item
-        parentItem.addresses = [
-          ...parentItem.addresses,
-          ...newAddresses.map((addr) => ({
-            address: addr.address,
-            name: `${parentItem.name} ${addr.index}`,
-            index: addr.index,
-            expect: {
-              chain_in: 0,
-              chain_out: 0,
-              mempool_in: 0,
-              mempool_out: 0,
-            },
-            monitor: {
-              chain_in: "auto-accept",
-              chain_out: "alert",
-              mempool_in: "auto-accept",
-              mempool_out: "alert",
-            },
-            actual: null,
-            error: false,
-            errorMessage: null,
-          })),
-        ];
-      }
-    }
-  }
-
-  memory.db.collections = collections;
-  memory.saveDb();
-
-  // Emit state update
-  socketIO.io.emit("updateState", {
-    collections: memory.db.collections,
-    apiState: memory.state.apiState,
+    // Add delay between API calls
+    await new Promise((resolve) => setTimeout(resolve, memory.db.apiDelay));
   });
+
+  // Process the queue with parallelLimit
+  await parallelLimit(queue, memory.db.apiParallelLimit);
 };
 
 const engine = async () => {
@@ -178,12 +69,6 @@ const engine = async () => {
     }
   }
 
-  // Log the addresses we're about to check
-
-  // logger.info(
-  //   `Memory state: ${JSON.stringify(memory.db.collections, null, 2)}`
-  // );
-
   // Set API state to CHECKING when starting a new check
   memory.state.apiState = "CHECKING";
   socketIO.io.emit("updateState", {
@@ -195,34 +80,15 @@ const engine = async () => {
     `Starting balance check for ${allAddresses.length} addresses (${memory.db.apiParallelLimit} concurrent, ${memory.db.apiDelay}ms delay)`
   );
 
-  // Process addresses in parallel with a limit and delay
-  const queue = allAddresses.map((addr) => async () => {
-    const balance = await getAddressBalance(addr.address);
+  // Check balances for all addresses
+  await checkAddressBalances(allAddresses);
 
-    if (balance.error) {
-      logger.error(
-        `Failed to fetch balance for ${addr.address}: ${balance.message}`
-      );
-      updateAddressAndEmit(addr, {
-        actual: null,
-        error: true,
-        errorMessage: balance.message,
-      });
-      return;
-    }
-
-    updateAddressAndEmit(addr, {
-      actual: balance.actual,
-      error: false,
-      errorMessage: null,
-    });
-
-    // Add delay between API calls
-    await new Promise((resolve) => setTimeout(resolve, memory.db.apiDelay));
+  // Save state and emit update
+  memory.saveDb();
+  socketIO.io.emit("updateState", {
+    collections: memory.db.collections,
+    apiState: "GOOD",
   });
-
-  // Process the queue with parallelLimit
-  await parallelLimit(queue, memory.db.apiParallelLimit);
 
   // Schedule next update
   setTimeout(engine, memory.db.interval);

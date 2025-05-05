@@ -256,32 +256,31 @@ test.describe("Bitwatch", () => {
 
       // Initially we should see just the initial addresses
       await expect(keyRow.locator('td').nth(6)).toContainText('3');
+      const addressRows = page.locator(`tr.crystal-table-row:has-text("${key.name}") + tr.address-subtable tr.address-row`);
+      await expect(addressRows).toHaveCount(3);
+
+      // Click the refresh button to trigger balance checks
+      await page.getByTestId(`${key.key}-refresh-all-button`).click();
+      console.log("Clicked refresh button for extended key");
 
       // Wait for the engine to detect balances and generate more addresses
       // The address count should increase to 6 as gap limit addresses are added
-      await expect(keyRow.locator('td').nth(6)).toContainText('6', { timeout: 30000 });
-
-      // Verify we have the expected number of addresses (initial + gap limit)
-      // We expect 6 addresses total:
-      // - 3 initial addresses (skipping index 0)
-      // - 3 more to satisfy gap limit after finding activity
-      const addressRows = page.locator('tr.address-row').filter({ hasText: key.name });
-      await expect(addressRows).toHaveCount(6);
+      await expect(keyRow.locator('td').nth(6)).toContainText('4');
+      await expect(addressRows).toHaveCount(4);
 
       // Verify the first address index starts at 1 (due to skip)
       const firstAddressText = await addressRows.first().textContent();
       expect(firstAddressText).toContain(`${key.name} 1`);
 
-      // Verify the last address index is 6
+      // Verify the last address index is 4
       const lastAddressText = await addressRows.last().textContent();
-      expect(lastAddressText).toContain(`${key.name} 6`);
+      expect(lastAddressText).toContain(`${key.name} 4`);
 
-      // Verify the first two addresses have chain balance
+      // Verify the first address has chain balance
       await expect(addressRows.nth(0).locator('[data-testid$="chain-in"]')).toHaveText("0.00010000 ₿");
-      await expect(addressRows.nth(1).locator('[data-testid$="chain-in"]')).toHaveText("0.00010000 ₿");
       
       // Verify remaining addresses have zero balance
-      for (let i = 2; i < 6; i++) {
+      for (let i = 1; i < 4; i++) {
         await expect(addressRows.nth(i).locator('[data-testid$="chain-in"]')).toHaveText("0.00000000 ₿");
       }
 

@@ -6,8 +6,7 @@ import logger from "./logger.js";
 import { BIP32Factory } from 'bip32';
 import * as bitcoin from 'bitcoinjs-lib';
 import * as ecc from 'tiny-secp256k1';
-import getAddressBalance from "./getAddressBalance.js";
-import { hasAddressActivity } from "./balance.js";
+import { getAddressBalance, handleBalanceUpdate } from "./getAddressBalance.js";
 import { deriveAddresses, validateDescriptor } from './descriptors.js';
 
 const bip32 = BIP32Factory(ecc);
@@ -82,53 +81,18 @@ const socketIO = {
           }
 
           logger.info(`Refreshing balance for ${data.address} in ${data.collection}`);
-          
-          const collection = memory.db.collections[data.collection];
-          if (!collection) {
-            return cb({ error: "Collection not found" });
-          }
-
-          // Find address in either main addresses or extended key addresses
-          let addr = collection.addresses.find((a) => a.address === data.address);
-
-          // If not found in main addresses, check extended keys
-          if (!addr && collection.extendedKeys) {
-            for (const extendedKey of collection.extendedKeys) {
-              addr = extendedKey.addresses.find((a) => a.address === data.address);
-              if (addr) break;
-            }
-          }
-
-          // If not found in extended keys, check descriptors
-          if (!addr && collection.descriptors) {
-            for (const descriptor of collection.descriptors) {
-              addr = descriptor.addresses.find((a) => a.address === data.address);
-              if (addr) break;
-            }
-          }
-
-          if (!addr) {
-            return cb({ error: "Address not found" });
-          }
 
           // Fetch new balance
           const balance = await getAddressBalance(data.address);
           if (balance.error) {
-            addr.error = true;
-            addr.errorMessage = balance.message;
-            // Save state
-            memory.saveDb();
-            // Emit update to all clients
-            socketIO.io.emit("updateState", { collections: memory.db.collections });
             return cb({ error: balance.message });
           }
 
-          addr.actual = balance.actual;
-          addr.error = false;
-          addr.errorMessage = null;
-
-          // Save state
-          memory.saveDb();
+          // Use centralized balance update handler
+          const result = await handleBalanceUpdate(data.address, balance, data.collection);
+          if (result.error) {
+            return cb({ error: result.error });
+          }
 
           // Emit update to all clients
           socketIO.io.emit("updateState", { collections: memory.db.collections });

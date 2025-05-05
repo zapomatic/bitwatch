@@ -15,8 +15,10 @@ import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import IconButtonStyled from "../components/IconButtonStyled";
 import AddressRow from "./AddressRow";
+import socketIO from "../io";
 
 const ExtendedKeyInfo = ({
   extendedKey,
@@ -37,6 +39,7 @@ const ExtendedKeyInfo = ({
   }, [extendedKey.addresses?.length]);
 
   const [copied, setCopied] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleExpandClick = (e) => {
     e.preventDefault();
@@ -62,6 +65,50 @@ const ExtendedKeyInfo = ({
     navigator.clipboard.writeText(extendedKey.key);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+  };
+
+  const handleRefreshAll = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsRefreshing(true);
+    setNotification({
+      open: true,
+      message: `Refreshing balances for all addresses in ${extendedKey.name}...`,
+      severity: "info",
+    });
+
+    // Refresh each address in sequence
+    const refreshAddresses = async () => {
+      for (const address of extendedKey.addresses || []) {
+        await new Promise((resolve) => {
+          socketIO.emit(
+            "refreshBalance",
+            {
+              collection: collection.name,
+              address: address.address,
+            },
+            (response) => {
+              if (response.error) {
+                setNotification({
+                  open: true,
+                  message: `Failed to refresh balance for ${address.name}: ${response.error}`,
+                  severity: "error",
+                });
+              }
+              resolve();
+            }
+          );
+        });
+      }
+      setIsRefreshing(false);
+      setNotification({
+        open: true,
+        message: "All balances refreshed successfully",
+        severity: "success",
+      });
+    };
+
+    refreshAddresses();
   };
 
   return (
@@ -125,6 +172,13 @@ const ExtendedKeyInfo = ({
         </TableCell>
         <TableCell>
           <Box sx={{ display: "flex", gap: 1 }}>
+            <IconButtonStyled
+              onClick={handleRefreshAll}
+              icon={<RefreshIcon />}
+              data-testid={`${extendedKey.key}-refresh-all-button`}
+              aria-label="Refresh all addresses"
+              disabled={isRefreshing}
+            />
             <IconButtonStyled
               onClick={handleEditClick}
               icon={<EditIcon />}

@@ -318,6 +318,7 @@ const CollectionRow = ({
                           onDelete={() => onDelete({ extendedKey })}
                           onSaveExpected={onSaveExpected}
                           displayBtc={displayBtc}
+                          setNotification={setNotification}
                         />
                       ))}
                       {(collection.descriptors || []).map((descriptor) => (

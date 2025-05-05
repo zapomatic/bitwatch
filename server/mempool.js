@@ -1,16 +1,8 @@
 import memory from "./memory.js";
 import logger from "./logger.js";
-import {
-  detectBalanceChanges,
-  checkAddressBalance,
-  checkAndUpdateGapLimit,
-} from "./balance.js";
+import { handleBalanceUpdate } from "./getAddressBalance.js";
 import telegram from "./telegram.js";
 import mempoolJS from "@mempool/mempool.js";
-import {
-  deriveExtendedKeyAddresses,
-  deriveAddresses,
-} from "./addressDeriver.js";
 
 let mempoolClient = null;
 let trackedAddresses = new Set();
@@ -150,185 +142,19 @@ const calculateAddressBalance = (transactions, address) => {
 };
 
 const updateAddressBalance = async (address, balance, io) => {
-  // Find the address in our collections
-  for (const [collectionName, collection] of Object.entries(
-    memory.db.collections
-  )) {
-    // Check regular addresses
-    const addr = collection.addresses.find((a) => a.address === address);
-    if (addr) {
-      const balanceChanged = await checkAddressBalance(addr, balance);
-      if (balanceChanged) {
-        const changes = detectBalanceChanges(
-          address,
-          balance,
-          collectionName,
-          addr.name
-        );
-        if (changes) {
-          // Emit update for this address
-          io.emit("updateState", { collections: memory.db.collections });
-          // Notify via telegram if needed
-          telegram.notifyBalanceChange(
-            address,
-            changes,
-            collectionName,
-            addr.name
-          );
-        }
-      }
-      return true;
-    }
-
-    // Check extended key addresses
-    if (collection.extendedKeys) {
-      for (const extendedKey of collection.extendedKeys) {
-        const addr = extendedKey.addresses.find((a) => a.address === address);
-        if (addr) {
-          const balanceChanged = await checkAddressBalance(addr, balance);
-          if (balanceChanged) {
-            const changes = detectBalanceChanges(
-              address,
-              balance,
-              collectionName,
-              addr.name
-            );
-            if (changes) {
-              // Check gap limit if balance changed
-              const needsMoreAddresses = await checkAndUpdateGapLimit(
-                extendedKey
-              );
-              if (needsMoreAddresses) {
-                // Derive more addresses
-                const newAddresses = await deriveExtendedKeyAddresses(
-                  extendedKey.key,
-                  extendedKey.addresses.length,
-                  extendedKey.gapLimit,
-                  extendedKey.derivationPath
-                );
-
-                if (newAddresses) {
-                  // Add new addresses to extended key
-                  extendedKey.addresses = [
-                    ...extendedKey.addresses,
-                    ...newAddresses.map((addr) => ({
-                      address: addr.address,
-                      name: `${extendedKey.name} ${addr.index}`,
-                      index: addr.index,
-                      expect: {
-                        chain_in: 0,
-                        chain_out: 0,
-                        mempool_in: 0,
-                        mempool_out: 0,
-                      },
-                      monitor: {
-                        chain_in: "auto-accept",
-                        chain_out: "alert",
-                        mempool_in: "auto-accept",
-                        mempool_out: "alert",
-                      },
-                      actual: null,
-                      error: false,
-                      errorMessage: null,
-                    })),
-                  ];
-
-                  // Update tracked addresses with new ones
-                  updateTrackedAddresses();
-                }
-              }
-
-              // Emit update for this address
-              io.emit("updateState", { collections: memory.db.collections });
-              // Notify via telegram if needed
-              telegram.notifyBalanceChange(
-                address,
-                changes,
-                collectionName,
-                addr.name
-              );
-            }
-          }
-          return true;
-        }
-      }
-    }
-
-    // Check descriptor addresses
-    if (collection.descriptors) {
-      for (const descriptor of collection.descriptors) {
-        const addr = descriptor.addresses.find((a) => a.address === address);
-        if (addr) {
-          const balanceChanged = await checkAddressBalance(addr, balance);
-          if (balanceChanged) {
-            const changes = detectBalanceChanges(
-              address,
-              balance,
-              collectionName,
-              addr.name
-            );
-            if (changes) {
-              // Check gap limit if balance changed
-              const needsMoreAddresses = await checkAndUpdateGapLimit(
-                descriptor
-              );
-              if (needsMoreAddresses) {
-                // Derive more addresses
-                const result = await deriveAddresses(
-                  descriptor.descriptor,
-                  descriptor.addresses.length,
-                  descriptor.gapLimit,
-                  descriptor.skip || 0
-                );
-
-                if (result.success) {
-                  // Add new addresses to descriptor
-                  descriptor.addresses = [
-                    ...descriptor.addresses,
-                    ...result.data.map((addr) => ({
-                      address: addr.address,
-                      name: `${descriptor.name} ${addr.index}`,
-                      index: addr.index,
-                      expect: {
-                        chain_in: 0,
-                        chain_out: 0,
-                        mempool_in: 0,
-                        mempool_out: 0,
-                      },
-                      monitor: {
-                        chain_in: "auto-accept",
-                        chain_out: "alert",
-                        mempool_in: "auto-accept",
-                        mempool_out: "alert",
-                      },
-                      actual: null,
-                      error: false,
-                      errorMessage: null,
-                    })),
-                  ];
-
-                  // Update tracked addresses with new ones
-                  updateTrackedAddresses();
-                }
-              }
-
-              // Emit update for this address
-              io.emit("updateState", { collections: memory.db.collections });
-              // Notify via telegram if needed
-              telegram.notifyBalanceChange(
-                address,
-                changes,
-                collectionName,
-                addr.name
-              );
-            }
-          }
-          return true;
-        }
-      }
-    }
+  // Use centralized balance update handler
+  const result = await handleBalanceUpdate(address, balance, collectionName);
+  if (result.error) {
+    logger.error(`Failed to update balance for ${address}: ${result.error}`);
+    return false;
   }
-  return false;
+
+  // If balance changed, emit update for this address
+  if (result.balanceChanged) {
+    io.emit("updateState", { collections: memory.db.collections });
+  }
+
+  return true;
 };
 
 const processTransaction = (tx, io) => {
