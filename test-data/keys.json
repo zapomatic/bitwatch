@@ -5,6 +5,7 @@
     "ypub1": "ypub6X5eVGRZkU7vbBGfaGPBjHaQNPjq6kDwEhNhtAdKFbN6Gv2icT8sFGRL1sW3RhqbMyrEazfZSXBNJXtH833Z3AnGaea5iCpxx1fATkYGN7R",
     "zpub1": "zpub6qdM5Htkw8VUWXggDVWp3GfWKiYr5pxmtfY77CHeTZrjwHpZ2db51GEt6TTcXHLvB7c8aqSo3XcDd8p8cJZUpBoVKWLaz4jDVcynP8MunLH",
     "desc_xpub": "xpub6CbzHkhutHQHSknNTyhKUzZCK3GjVFdrWzDv5PGN3eXZYkQm1haUj3U99tNseuGvTNUW7Qe3CWmvBUC5f14jnsvEkXZr85mQEv1GB9cz3k9",
+    "desc_xpub2": "xpub6C6orDqWqKq12mqWTj3QPc5s7uyrh3CXFXspQbPVTWB7UVXBKpjvYDSirU7s7vxF1pS8eRsHVgqdm1pBvxnVmrZiAqD2armJ4WKaJKmgiAN",
     "desc_ypub": "ypub6YMNXZr26msX2hrwDhoWXzXKFQBMLCTaxkVQct4yg7J66qaALz951PHkMSgfuhuzpQbVzRz5Xyj6E37ZVVA5oJx7RgSmwqtpojtFJSvdrXw",
     "desc_zpub": "zpub6s2YKL5rZ6iMZxsNfrLg6vmzoVXaAmzKwK52RkU3cqtATevDa3zxzcubdiKZ6Ga4pAKkNFSbajgbtX4mqE2QtTAXp4cGqs65MFGAboabK9d"
   },
@@ -113,7 +114,7 @@
   },
   "descriptors": {
     "multiSig": "wsh(multi(2,xpub6CbzHkhutHQHSknNTyhKUzZCK3GjVFdrWzDv5PGN3eXZYkQm1haUj3U99tNseuGvTNUW7Qe3CWmvBUC5f14jnsvEkXZr85mQEv1GB9cz3k9/0/*,xpub6CbzHkhutHQHSknNTyhKUzZCK3GjVFdrWzDv5PGN3eXZYkQm1haUj3U99tNseuGvTNUW7Qe3CWmvBUC5f14jnsvEkXZr85mQEv1GB9cz3k9/0/*))",
-    "sortedMultiSig": "wsh(sortedmulti(2,xpub6CbzHkhutHQHSknNTyhKUzZCK3GjVFdrWzDv5PGN3eXZYkQm1haUj3U99tNseuGvTNUW7Qe3CWmvBUC5f14jnsvEkXZr85mQEv1GB9cz3k9/0/*,xpub6CbzHkhutHQHSknNTyhKUzZCK3GjVFdrWzDv5PGN3eXZYkQm1haUj3U99tNseuGvTNUW7Qe3CWmvBUC5f14jnsvEkXZr85mQEv1GB9cz3k9/0/*))",
+    "sortedMultiSig": "wsh(sortedmulti(2,xpub6C6orDqWqKq12mqWTj3QPc5s7uyrh3CXFXspQbPVTWB7UVXBKpjvYDSirU7s7vxF1pS8eRsHVgqdm1pBvxnVmrZiAqD2armJ4WKaJKmgiAN/0/*,xpub6C6orDqWqKq12mqWTj3QPc5s7uyrh3CXFXspQbPVTWB7UVXBKpjvYDSirU7s7vxF1pS8eRsHVgqdm1pBvxnVmrZiAqD2armJ4WKaJKmgiAN/0/*))",
     "mixedKeyTypes": "wsh(multi(2,ypub6YMNXZr26msX2hrwDhoWXzXKFQBMLCTaxkVQct4yg7J66qaALz951PHkMSgfuhuzpQbVzRz5Xyj6E37ZVVA5oJx7RgSmwqtpojtFJSvdrXw/0/*,zpub6s2YKL5rZ6iMZxsNfrLg6vmzoVXaAmzKwK52RkU3cqtATevDa3zxzcubdiKZ6Ga4pAKkNFSbajgbtX4mqE2QtTAXp4cGqs65MFGAboabK9d/0/*))",
     "xpubSingle": "pkh(xpub6CbzHkhutHQHSknNTyhKUzZCK3GjVFdrWzDv5PGN3eXZYkQm1haUj3U99tNseuGvTNUW7Qe3CWmvBUC5f14jnsvEkXZr85mQEv1GB9cz3k9/0/*)",
     "ypubSingle": "sh(wpkh(ypub6YMNXZr26msX2hrwDhoWXzXKFQBMLCTaxkVQct4yg7J66qaALz951PHkMSgfuhuzpQbVzRz5Xyj6E37ZVVA5oJx7RgSmwqtpojtFJSvdrXw/0/*))",

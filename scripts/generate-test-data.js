@@ -71,6 +71,10 @@ const generateTestKeys = () => {
       "333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f5051",
       "hex"
     ),
+    desc_xpub2: Buffer.from(
+      "666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f8081828384",
+      "hex"
+    ),
     desc_ypub: Buffer.from(
       "4445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162",
       "hex"
@@ -89,6 +93,7 @@ const generateTestKeys = () => {
     zpub: bip32.fromSeed(seeds.zpub),
     // Descriptors
     desc_xpub: bip32.fromSeed(seeds.desc_xpub),
+    desc_xpub2: bip32.fromSeed(seeds.desc_xpub2),
     desc_ypub: bip32.fromSeed(seeds.desc_ypub),
     desc_zpub: bip32.fromSeed(seeds.desc_zpub),
   };
@@ -110,6 +115,10 @@ const generateTestKeys = () => {
     .derivePath("m/44'/0'/0'")
     .neutered()
     .toBase58();
+  const desc_xpub2 = roots.desc_xpub2
+    .derivePath("m/44'/0'/0'")
+    .neutered()
+    .toBase58();
   const desc_ypub = convertXPubToType(
     roots.desc_ypub.derivePath("m/49'/0'/0'").neutered().toBase58(),
     "ypub"
@@ -127,6 +136,7 @@ const generateTestKeys = () => {
     zpub1,
     // Descriptor keys
     desc_xpub,
+    desc_xpub2,
     desc_ypub,
     desc_zpub,
   };
@@ -195,7 +205,7 @@ const generateTestDescriptors = (keys) => {
   return {
     // Multi-sig descriptors
     multiSig: `wsh(multi(2,${keys.desc_xpub}/0/*,${keys.desc_xpub}/0/*))`,
-    sortedMultiSig: `wsh(sortedmulti(2,${keys.desc_xpub}/0/*,${keys.desc_xpub}/0/*))`,
+    sortedMultiSig: `wsh(sortedmulti(2,${keys.desc_xpub2}/0/*,${keys.desc_xpub2}/0/*))`,
     mixedKeyTypes: `wsh(multi(2,${keys.desc_ypub}/0/*,${keys.desc_zpub}/0/*))`,
 
     // Single key descriptors

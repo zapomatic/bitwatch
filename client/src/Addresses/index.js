@@ -252,8 +252,35 @@ export default function Addresses() {
   }, []);
 
   const handleDelete = useCallback(
-    ({ address, collection, extendedKey, descriptor }) => {
-      if (typeof collection === "string" && !address) {
+    ({ address, collection, extendedKey, descriptor, message }) => {
+      if (message) {
+        setDeleteDialog({
+          open: true,
+          address,
+          collection,
+          extendedKey,
+          descriptor,
+          message,
+        });
+      } else if (address && descriptor) {
+        setDeleteDialog({
+          open: true,
+          address,
+          collection,
+          extendedKey: null,
+          descriptor,
+          message: "Remove this address from the descriptor set?",
+        });
+      } else if (descriptor) {
+        setDeleteDialog({
+          open: true,
+          collection,
+          address: null,
+          extendedKey: null,
+          descriptor: descriptor,
+          message: "Delete this descriptor and all its derived addresses?",
+        });
+      } else if (typeof collection === "string" && !address) {
         // Handle direct collection name string (only for collection deletion)
         setDeleteDialog({
           open: true,
@@ -262,18 +289,6 @@ export default function Addresses() {
           extendedKey: null,
           descriptor: null,
           message: "Delete this collection and all its addresses?",
-        });
-        return;
-      }
-
-      if (address && descriptor) {
-        setDeleteDialog({
-          open: true,
-          address,
-          collection,
-          extendedKey: null,
-          descriptor,
-          message: "Remove this address from the descriptor set?",
         });
       } else if (address && extendedKey) {
         setDeleteDialog({
@@ -292,15 +307,6 @@ export default function Addresses() {
           extendedKey: null,
           descriptor: null,
           message: "Remove this address from the collection?",
-        });
-      } else if (descriptor) {
-        setDeleteDialog({
-          open: true,
-          collection,
-          address: null,
-          extendedKey: null,
-          descriptor: descriptor,
-          message: "Delete this descriptor and all its derived addresses?",
         });
       } else if (extendedKey) {
         setDeleteDialog({

@@ -60,6 +60,7 @@ const ExtendedKeyInfo = ({
     onDelete({
       collection: collection.name,
       extendedKey: extendedKey.key,
+      message: "Delete this extended key and all its derived addresses?",
     });
   };
 

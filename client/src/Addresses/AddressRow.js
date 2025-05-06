@@ -130,6 +130,11 @@ const AddressRow = ({
       address: address.address,
       ...(isExtendedKey ? { extendedKey: parentKey } : {}),
       ...(isDescriptor ? { descriptor: parentKey } : {}),
+      message: isExtendedKey
+        ? "Remove this address from the extended key set?"
+        : isDescriptor
+        ? "Remove this address from the descriptor set?"
+        : "Remove this address from the collection?",
     });
   };
 

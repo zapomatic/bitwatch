@@ -59,6 +59,7 @@ const DescriptorInfo = ({
     onDelete({
       collection: collection.name,
       descriptor: descriptor.descriptor,
+      message: "Delete this descriptor and all its derived addresses?",
     });
   };
 
