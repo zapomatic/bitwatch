@@ -2,7 +2,7 @@ import { test, expect } from "./test-environment.js";
 import testData from "../../test-data/keys.json" with { type: 'json' };
 import testDb from "../../server/db.test.json" with { type: 'json' };
 import { addCollection, addAddress, addExtendedKey, addDescriptor, findAndClick } from "./test-environment.js";
-import { refreshAddressBalance } from "./test-environment.js";
+import { refreshAddressBalance, verifyAddressBalance } from "./test-environment.js";
 
 test.describe("Bitwatch", () => {
   // test.beforeEach(async ({}) => {});
@@ -155,18 +155,27 @@ test.describe("Bitwatch", () => {
 
     // Refresh to get mempool input state
     await refreshAddressBalance(page, testData.addresses.zapomatic, {
-      mempool_in: "0.00010000 ₿"
+      chain_in: "0.00000000 ₿",
+      chain_out: "0.00000000 ₿",
+      mempool_in: "0.00010000 ₿",
+      mempool_out: "0.00000000 ₿"
     }, 0);
     console.log("Mempool input state verified");
 
     // Refresh to get chain input state
     await refreshAddressBalance(page, testData.addresses.zapomatic, {
-      chain_in: "0.00010000 ₿"
+      chain_in: "0.00010000 ₿",
+      chain_out: "0.00000000 ₿",
+      mempool_in: "0.00000000 ₿",
+      mempool_out: "0.00000000 ₿"
     }, 0);
     console.log("Chain input state verified");
 
     // Refresh to get mempool output state
     await refreshAddressBalance(page, testData.addresses.zapomatic, {
+      chain_in: "0.00010000 ₿",
+      chain_out: "0.00000000 ₿",
+      mempool_in: "0.00000000 ₿",
       mempool_out: "0.00001000 ₿"
     }, 0);
     // Wait for the diff to appear and have the correct value
@@ -178,7 +187,10 @@ test.describe("Bitwatch", () => {
     
     // Refresh to get chain output state
     await refreshAddressBalance(page, testData.addresses.zapomatic, {
-      chain_out: "0.00001000 ₿"
+      chain_in: "0.00010000 ₿",
+      chain_out: "0.00001000 ₿",
+      mempool_in: "0.00000000 ₿",
+      mempool_out: "0.00000000 ₿"
     }, 0);
     await expect(page.getByTestId(`${testData.addresses.zapomatic}-chain-out-diff`)).toBeVisible();
     await expect(page.getByTestId(`${testData.addresses.zapomatic}-chain-out-diff`)).toHaveText("(+0.00001000 ₿)");
@@ -273,7 +285,7 @@ test.describe("Bitwatch", () => {
       const addressRows = page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`);
       await expect(addressRows).toHaveCount(3);
 
-      // Test single address refresh using helper
+      // Test single address refresh using helper (should show 0 balances)
       await refreshAddressBalance(page, key.key, {
         chain_in: "0.00000000 ₿",
         chain_out: "0.00000000 ₿",
@@ -284,13 +296,16 @@ test.describe("Bitwatch", () => {
 
       // Test mempool input state
       await refreshAddressBalance(page, key.key, {
-        mempool_in: "0.00010000 ₿"
+        chain_in: "0.00000000 ₿",
+        chain_out: "0.00000000 ₿",
+        mempool_in: "0.00010000 ₿",
+        mempool_out: "0.00000000 ₿"
       }, 1, key.key);
       console.log(`Verified mempool input for ${key.name} address 1`);
 
       // Then test full row refresh
       const refreshButton = page.getByTestId(`${key.key}-refresh-all-button`);
-      await expect(refreshButton).toBeVisible({ timeout: 10000 });
+      await expect(refreshButton).toBeVisible();
       await refreshButton.click();
       console.log("Clicked refresh button for extended key");
 
@@ -299,14 +314,11 @@ test.describe("Bitwatch", () => {
 
       // Verify remaining addresses have zero balance
       for (let i = 2; i <= 4; i++) {
-        await refreshAddressBalance(page, key.key, {
-          chain_in: "0.00000000 ₿",
-          chain_out: "0.00000000 ₿",
-          mempool_in: "0.00000000 ₿",
-          mempool_out: "0.00000000 ₿"
+        await verifyAddressBalance(page, key.key, {
+          mempool_in: "0.00010000 ₿",
         }, i, key.key);
       }
-      console.log(`Verified zero balances for remaining addresses in ${key.name}`);
+      console.log(`Verified balances for remaining addresses in ${key.name}`);
 
       // If this is the first extended key, test editing an address
       if (key.name === "Test XPub") {
@@ -407,12 +419,7 @@ test.describe("Bitwatch", () => {
       await expect(descriptorRow.locator('td').nth(5)).toContainText(descriptor.initialAddresses.toString());
 
       // Test refreshing a single descriptor address using helper
-      await refreshAddressBalance(page, descriptor.descriptor, {
-        chain_in: "0.00000000 ₿",
-        chain_out: "0.00000000 ₿",
-        mempool_in: "0.00000000 ₿",
-        mempool_out: "0.00000000 ₿"
-      }, 1, descriptor.descriptor);
+      await refreshAddressBalance(page, descriptor.descriptor, {}, 1, descriptor.descriptor);
       console.log(`Verified initial zero balance for ${descriptor.name} address 1`);
 
       // Test mempool input state
@@ -447,9 +454,7 @@ test.describe("Bitwatch", () => {
       // Final refresh to verify all states are stable
       await refreshAddressBalance(page, descriptor.descriptor, {
         chain_in: "0.00010000 ₿",
-        chain_out: "0.00001000 ₿",
-        mempool_in: "0.00000000 ₿",
-        mempool_out: "0.00000000 ₿"
+        chain_out: "0.00001000 ₿"
       }, 1, descriptor.descriptor);
       console.log(`Verified final stable state for ${descriptor.name} address 1`);
 

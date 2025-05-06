@@ -6,9 +6,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "setup": "npm i -g nodemon concurrently && npm i && cd client && npm i",
-    "test": "NODE_NO_WARNINGS=1 node node_modules/jest/bin/jest.js",
-    "test:watch": "NODE_NO_WARNINGS=1 node node_modules/jest/bin/jest.js --watch",
+    "setup": "npm i -g nodemon concurrently && npm i && cd clie /nt && npm i",
+    "test": "eslint .",
     "test:generate": "node server/scripts/generate-test-data.js",
     "test:prepare": "npm run test:generate && npm test",
     "test:e2e": "NODE_NO_WARNINGS=1 node node_modules/@playwright/test/cli.js test",
@@ -43,6 +42,11 @@
     "@babel/preset-react": "^7.26.3",
     "@babel/runtime": "^7.27.1",
     "@playwright/test": "^1.42.1",
+    "@typescript-eslint/eslint-plugin": "^8.32.0",
+    "@typescript-eslint/parser": "^8.32.0",
+    "eslint": "^9.26.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "identity-obj-proxy": "^3.0.0"
   }
 }

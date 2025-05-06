@@ -2,7 +2,6 @@ import { BIP32Factory } from "bip32";
 import * as bitcoin from "bitcoinjs-lib";
 import * as ecc from "tiny-secp256k1";
 import logger from "./logger.js";
-import { parseMultiSigDescriptor, getKeyNetwork } from "./descriptors.js";
 
 const bip32 = BIP32Factory(ecc);
 

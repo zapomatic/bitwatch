@@ -83,33 +83,6 @@ const checkAndUpdateGapLimit = async (item) => {
   return addressesNeeded;
 };
 
-// Shared function for checking address balance changes
-const checkAddressBalance = async (addr, newBalance) => {
-  if (!addr) return false;
-
-  // Skip if no actual balance yet
-  if (!addr.actual) {
-    addr.actual = newBalance;
-    return true;
-  }
-
-  // Check if any balance has changed
-  const hasChanged =
-    addr.actual.chain_in !== newBalance.chain_in ||
-    addr.actual.chain_out !== newBalance.chain_out ||
-    addr.actual.mempool_in !== newBalance.mempool_in ||
-    addr.actual.mempool_out !== newBalance.mempool_out;
-
-  if (hasChanged) {
-    logger.scan(`Balance changed for ${addr.address}`);
-    addr.actual = newBalance;
-    addr.error = false;
-    addr.errorMessage = null;
-  }
-
-  return hasChanged;
-};
-
 // Detect balance changes for notifications
 const detectBalanceChanges = (
   address,
