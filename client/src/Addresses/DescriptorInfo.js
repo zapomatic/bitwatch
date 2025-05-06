@@ -77,33 +77,39 @@ const DescriptorInfo = ({
       severity: "info",
     });
 
-    let hasError = false;
+    let anyErrors = false;
 
     // Refresh all addresses in sequence
     for (const address of descriptor.addresses) {
-      try {
-        await new Promise((resolve, reject) => {
-          socketIO.emit(
-            "refreshBalance",
-            {
-              collection: collection.name,
-              address: address.address,
-            },
-            (response) => {
-              if (response.error) {
-                hasError = true;
-                reject(response.error);
-              } else {
-                resolve();
-              }
+      const { hasError, response } = await new Promise((resolve) => {
+        let hasError = false;
+        socketIO.emit(
+          "refreshBalance",
+          {
+            collection: collection.name,
+            address: address.address,
+          },
+          (response) => {
+            if (response.error) {
+              hasError = true;
+              setNotification({
+                open: true,
+                message: `Failed to refresh balance: ${response.error}`,
+                severity: "error",
+              });
             }
-          );
-        });
-      } catch (error) {
-        setNotification({
-          open: true,
-          message: `Failed to refresh balance: ${error}`,
-          severity: "error",
+            resolve({ hasError, response });
+          }
+        );
+      });
+      if (hasError) anyErrors = true;
+
+      // Emit the response to trigger state update
+      if (!hasError && response) {
+        socketIO.emit("balanceUpdate", {
+          collection: collection.name,
+          address: address.address,
+          ...response,
         });
       }
     }
@@ -111,10 +117,10 @@ const DescriptorInfo = ({
     setIsRefreshing(false);
     setNotification({
       open: true,
-      message: hasError
+      message: anyErrors
         ? "Some balances failed to refresh"
         : "Balances refreshed successfully",
-      severity: hasError ? "warning" : "success",
+      severity: anyErrors ? "warning" : "success",
     });
   };
 
@@ -123,7 +129,7 @@ const DescriptorInfo = ({
       <TableRow
         className="crystal-table-row descriptor-row"
         sx={{ "& > *": { borderBottom: "unset" } }}
-        data-testid={`${descriptor.name}-descriptor-row`}
+        data-testid={`${descriptor.descriptor}-descriptor-row`}
       >
         <TableCell>
           <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -131,7 +137,7 @@ const DescriptorInfo = ({
               size="small"
               onClick={handleExpandClick}
               sx={{ mr: 1 }}
-              data-testid={`${descriptor.name}-expand-button`}
+              data-testid={`${descriptor.descriptor}-expand-button`}
               aria-label={
                 isExpanded
                   ? "Collapse descriptor details"
@@ -153,11 +159,16 @@ const DescriptorInfo = ({
                 size="small"
                 onClick={handleCopy}
                 icon={<ContentCopyIcon fontSize="small" />}
-                data-testid={`${descriptor.name}-copy-button`}
+                data-testid={`${descriptor.descriptor}-copy-button`}
                 aria-label="Copy descriptor"
               />
             </Tooltip>
           </Box>
+        </TableCell>
+        <TableCell>
+          <Typography variant="body2">
+            {descriptor.derivationPath || "m/0"}
+          </Typography>
         </TableCell>
         <TableCell>
           <Typography variant="body2">{descriptor.gapLimit}</Typography>
@@ -178,27 +189,27 @@ const DescriptorInfo = ({
             <IconButtonStyled
               onClick={handleRefreshAll}
               icon={<RefreshIcon />}
-              data-testid={`${descriptor.name}-refresh-all-button`}
+              data-testid={`${descriptor.descriptor}-refresh-all-button`}
               aria-label="Refresh all addresses"
               disabled={isRefreshing}
             />
             <IconButtonStyled
               onClick={handleEditClick}
               icon={<EditIcon />}
-              data-testid={`${descriptor.name}-edit-button`}
+              data-testid={`${descriptor.descriptor}-edit-button`}
               aria-label="Edit descriptor"
             />
             <IconButtonStyled
               onClick={handleDeleteClick}
               icon={<DeleteIcon />}
-              data-testid={`${descriptor.name}-delete-button`}
+              data-testid={`${descriptor.descriptor}-delete-button`}
               aria-label="Delete descriptor"
             />
           </Box>
         </TableCell>
       </TableRow>
       <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={7}>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
           <Collapse in={isExpanded} timeout="auto" unmountOnExit>
             <Box sx={{ margin: 1 }}>
               <Table size="small" className="crystal-table address-subtable">
@@ -206,7 +217,6 @@ const DescriptorInfo = ({
                   <TableRow>
                     <TableCell>Name</TableCell>
                     <TableCell>Address</TableCell>
-                    <TableCell>Derivation Path</TableCell>
                     <TableCell>On-Chain</TableCell>
                     <TableCell>Mempool</TableCell>
                     <TableCell>Actions</TableCell>
@@ -223,10 +233,7 @@ const DescriptorInfo = ({
                       parentKey={descriptor.descriptor}
                       index={address.index}
                       onDelete={onDelete}
-                      onEditAddress={(_, address) =>
-                        onEdit(collection, address)
-                      }
-                      derivationPath={`${descriptor.name} ${address.index}`}
+                      onEditAddress={onEdit}
                     />
                   ))}
                 </TableBody>

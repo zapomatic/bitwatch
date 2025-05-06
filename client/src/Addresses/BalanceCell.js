@@ -23,7 +23,7 @@ const BalanceCell = ({
         <Typography
           className="crystal-text"
           sx={{ opacity: 0.5 }}
-          data-testid={`${dataTestId}-loading`}
+          data-testid={dataTestId}
         >
           Loading...
         </Typography>

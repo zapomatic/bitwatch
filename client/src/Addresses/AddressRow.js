@@ -66,7 +66,6 @@ const AddressRow = ({
   index,
   onDelete,
   onEditAddress,
-  derivationPath,
 }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -111,7 +110,6 @@ const AddressRow = ({
     onEditAddress(collection, {
       ...address,
       parentKey: parentKey,
-      derivationPath: derivationPath,
     });
   };
 
@@ -176,16 +174,6 @@ const AddressRow = ({
       <TableCell>
         <AddressCell address={address.address} />
       </TableCell>
-      {derivationPath && (
-        <TableCell>
-          <Typography
-            className="crystal-text"
-            data-testid={`${testId}-derivation-path`}
-          >
-            {derivationPath}
-          </Typography>
-        </TableCell>
-      )}
       <TableCell className="crystal-table-cell">
         <Box className="crystal-flex crystal-flex-start">
           <BalanceCell

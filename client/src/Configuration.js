@@ -65,7 +65,7 @@ function Config() {
   });
 
   useEffect(() => {
-    socketIO.emit("getConfig", (response) => {
+    socketIO.emit("getConfig", {}, (response) => {
       const mergedConfig = { ...DEFAULT_CONFIG, ...response };
       console.log(`getConfig`, { response, mergedConfig });
       setConfig(mergedConfig);

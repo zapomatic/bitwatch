@@ -17,7 +17,7 @@ function Integrations() {
   });
 
   useEffect(() => {
-    socketIO.emit("getIntegrations", (response) => {
+    socketIO.emit("getIntegrations", {}, (response) => {
       setConfig(response || {});
     });
   }, []);

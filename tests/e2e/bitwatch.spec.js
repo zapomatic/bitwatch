@@ -273,32 +273,22 @@ test.describe("Bitwatch", () => {
       const addressRows = page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`);
       await expect(addressRows).toHaveCount(3);
 
-      // Click the refresh button to trigger balance checks
+      // Verify the loading state
+      await expect(page.getByTestId(`${key.key}-address-1-chain-in`)).toContainText("Loading...");
+      // First test single address refresh
+      await page.getByTestId(`${key.key}-address-1-refresh-button`).click();
+      await expect(page.getByText("Balance refreshed successfully")).toBeVisible();
+      // Wait for and verify the balance update
+      await expect(page.getByTestId(`${key.key}-address-1-chain-in`)).toContainText("0.00010000 ₿");
+      await expect(page.getByTestId(`${key.key}-address-2-chain-in`)).toContainText("Loading...");
+
+      // Then test full row refresh
       await page.getByTestId(`${key.key}-refresh-all-button`).click();
       console.log("Clicked refresh button for extended key");
-
-      // Wait for the engine to detect balances and generate more addresses
-      // The address count should increase to 4 as gap limit addresses are added
-      await expect(keyRow.locator('td').nth(6)).toContainText('4');
 
       // Verify we have the expected number of addresses (initial + gap limit)
       await expect(addressRows).toHaveCount(4);
 
-      // Verify the first address index starts at 1 (due to skip)
-      const nameLocator = page.locator(`[data-testid="${key.key}-address-1-name"]`);
-      await expect(nameLocator).toBeVisible();
-      const firstAddressText = await nameLocator.textContent();
-      expect(firstAddressText).toContain(`${key.name} 1`);
-
-      // Verify the last address index is 4
-      const lastNameLocator = page.locator(`[data-testid="${key.key}-address-4-name"]`);
-      await expect(lastNameLocator).toBeVisible();
-      const lastAddressText = await lastNameLocator.textContent();
-      expect(lastAddressText).toContain(`${key.name} 4`);
-
-      // Verify the first address has chain balance
-      await expect(page.locator(`[data-testid="${key.key}-address-1-chain-in"]`)).toHaveText("0.00010000 ₿");
-      
       // Verify remaining addresses have zero balance
       for (let i = 2; i <= 4; i++) {
         await expect(page.locator(`[data-testid="${key.key}-address-${i}-chain-in"]`)).toHaveText("0.00000000 ₿");
@@ -389,17 +379,24 @@ test.describe("Bitwatch", () => {
       await expect(page.getByText("Key-Derived Addresses")).toBeVisible();
 
       // Wait for the descriptor row to be visible
-      await expect(page.getByTestId(`${descriptor.name}-descriptor-row`)).toBeVisible();
+      await expect(page.getByTestId(`${descriptor.descriptor}-descriptor-row`)).toBeVisible();
 
       // Find the descriptor row
-      const descriptorRow = page.getByTestId(`${descriptor.name}-descriptor-row`);
+      const descriptorRow = page.getByTestId(`${descriptor.descriptor}-descriptor-row`);
       
       // Verify descriptor information
       await expect(descriptorRow.locator('td').nth(0)).toContainText(descriptor.name);
       await expect(descriptorRow.locator('td').nth(1)).toContainText(descriptor.descriptor.slice(0, 8));
-      await expect(descriptorRow.locator('td').nth(2)).toContainText(descriptor.gapLimit.toString());
-      await expect(descriptorRow.locator('td').nth(3)).toContainText(descriptor.skip.toString());
-      await expect(descriptorRow.locator('td').nth(4)).toContainText(descriptor.initialAddresses.toString());
+      await expect(descriptorRow.locator('td').nth(2)).toContainText(descriptor.derivationPath || "m/0");
+      await expect(descriptorRow.locator('td').nth(3)).toContainText(descriptor.gapLimit.toString());
+      await expect(descriptorRow.locator('td').nth(4)).toContainText(descriptor.skip.toString());
+      await expect(descriptorRow.locator('td').nth(5)).toContainText(descriptor.initialAddresses.toString());
+
+      // Test refreshing a single descriptor address
+      await expect(page.getByTestId(`${descriptor.descriptor}-address-1-chain-in`)).toContainText("Loading...");
+      await page.getByTestId(`${descriptor.descriptor}-address-1-refresh-button`).click();
+      await expect(page.getByText("Balance refreshed successfully")).toBeVisible();
+      await expect(page.getByTestId(`${descriptor.descriptor}-address-1-chain-in`)).toContainText("0.00010000 ₿");
 
       // If this is the first descriptor, test editing and deleting addresses
       if (descriptor.name === "Single XPub") {

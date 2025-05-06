@@ -59,6 +59,15 @@ const logger = {
   scan: (message) => {
     console.log(`[${new Date().toISOString()}] 🔄 ${message}`);
   },
+
+  // Helper for error handling with callbacks
+  errorCallback: (message, cb) => {
+    console.log(`[${new Date().toISOString()}] ❌ ${message}`);
+    if (cb && typeof cb === "function") {
+      cb({ success: false, error: message });
+    }
+    return false;
+  },
 };
 
 export default logger;
