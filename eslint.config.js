@@ -17,6 +17,12 @@ export default [
           jsx: true,
         },
       },
+      globals: {
+        process: "readonly",
+        window: "readonly",
+        console: "readonly",
+        Buffer: "readonly",
+      },
     },
     plugins: {
       "@typescript-eslint": tseslint,
@@ -36,7 +42,7 @@ export default [
       "react-hooks/exhaustive-deps": "warn",
 
       // General rules
-      "no-console": ["warn", { allow: ["warn", "error"] }],
+      "no-console": ["warn", { allow: ["warn", "error", "log"] }],
       "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": [
         "warn",
@@ -45,11 +51,20 @@ export default [
           varsIgnorePattern: "^_",
         },
       ],
+      "no-empty-pattern": "off",
     },
     settings: {
       react: {
         version: "detect",
       },
+    },
+  },
+  // Override rules for test files
+  {
+    files: ["**/*.test.js", "**/test-*.js", "tests/**/*.js"],
+    rules: {
+      "react-hooks/rules-of-hooks": "off",
+      "no-console": "off",
     },
   },
 ];
