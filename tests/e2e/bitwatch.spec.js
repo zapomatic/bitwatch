@@ -66,17 +66,17 @@ test.describe("Bitwatch", () => {
     await expect(page.getByTestId("config-api")).toHaveValue("http://10.21.21.26:3006");
     await expect(page.getByTestId("config-interval")).toHaveValue("60000");
     await expect(page.getByTestId("config-apiDelay")).toHaveValue("100");
-    await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue("100");
+    await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue("100"); 
+    await page.getByTestId("config-debugLogging").click();
+    await expect(page.getByTestId("config-debugLogging")).toBeChecked();
 
     // Return to test settings
-    await page.getByTestId("use-public-api").click();
-    console.log("Returned to public mode");
     await page.getByTestId("config-api").fill(testDb.api);
     await page.getByTestId("config-interval").fill(testDb.interval.toString());
     await page.getByTestId("config-apiDelay").fill(testDb.apiDelay.toString());
     await page.getByTestId("config-apiParallelLimit").fill(testDb.apiParallelLimit.toString());
     await page.getByTestId("config-debugLogging").click();
-    await expect(page.getByTestId("config-debugLogging")).toBeChecked();
+     await expect(page.getByTestId("config-debugLogging")).not.toBeChecked();
     console.log("Restored test settings");
 
     // Save configuration
