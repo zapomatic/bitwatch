@@ -33,7 +33,7 @@ app.get("/manifest.json", (req, res, next) => {
 app.use(express.static(memory.dirUI));
 
 // Add catch-all route for client-side routing
-app.get("*", (req, res) => {
+app.get("/{*any}", (req, res) => {
   res.sendFile("index.html", { root: memory.dirUI });
 });
 

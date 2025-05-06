@@ -9,17 +9,12 @@ const socketIO = {
     if (socketIO.io) return socketIO.io;
 
     socketIO.io = new io(server, {
-      forceNew: true,
       maxHttpBufferSize: 100e6,
-      rememberUpgrade: true,
-      handlePreflightRequest: function (req, res) {
-        var headers = {
-          "Access-Control-Allow-Headers": "Content-Type, Authorization",
-          "Access-Control-Allow-Origin": req.headers.origin,
-          "Access-Control-Allow-Credentials": true,
-        };
-        res.writeHead(200, headers);
-        res.end();
+      cors: {
+        origin: true,
+        credentials: true,
+        methods: ["GET", "POST"],
+        allowedHeaders: ["Content-Type", "Authorization"],
       },
     });
 

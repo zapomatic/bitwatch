@@ -7,7 +7,7 @@
   "type": "module",
   "scripts": {
     "setup": "npm i -g nodemon concurrently && npm i && cd clie /nt && npm i",
-    "test": "eslint .",
+    "test": "eslint . && npm run test:e2e",
     "test:generate": "node server/scripts/generate-test-data.js",
     "test:prepare": "npm run test:generate && npm test",
     "test:e2e": "NODE_NO_WARNINGS=1 node node_modules/@playwright/test/cli.js test",
