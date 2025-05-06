@@ -17,7 +17,7 @@ export const saveConfig = async (data) => {
     !data?.api ||
     !data?.interval ||
     !data?.apiDelay ||
-    !data?.apiParallelLimit === undefined
+    data?.apiParallelLimit === undefined
   ) {
     logger.error("Missing required config fields");
     return { error: "Missing required config fields" };

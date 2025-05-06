@@ -410,7 +410,7 @@ const setupWebSocket = (io) => {
   ws.addEventListener("error", (error) => {
     cleanup();
     logger.error(`Mempool WebSocket error: ${error.message}`);
-    logger.error(`Error details:`, error);
+    logger.error(`Error details: ${error.message}`);
     logger.error(`Websocket state at error: ${getWebSocketState(ws)}`);
     updateWebSocketState(io, "ERROR");
     handleDisconnect(io);

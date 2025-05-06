@@ -52,7 +52,7 @@ server.listen(PORT, () => {
   // Initialize mempool after socket.io is set up
   logger.info("Initializing mempool websocket connection...");
   initMempool(socketIO.io)
-    .then((ws) => {
+    .then((__ws) => {
       logger.success("Mempool websocket initialized");
     })
     .catch((err) => {

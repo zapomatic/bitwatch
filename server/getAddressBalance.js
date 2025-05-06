@@ -433,7 +433,7 @@ const attemptCall = async (addr) => {
     const currentOpt = { ...options };
     currentOpt.path = `${options.path}/${addr}`;
     
-    const fullUrl = `${api.protocol}//${api.hostname}${api.port ? `:${api.port}` : ''}${currentOpt.path}`;
+    // const fullUrl = `${api.protocol}//${api.hostname}${api.port ? `:${api.port}` : ''}${currentOpt.path}`;
     
     const req = (api.protocol === "https:" ? https : http).request(
       currentOpt,

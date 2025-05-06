@@ -1,4 +1,4 @@
-const io = require("socket.io-client");
+import io from "socket.io-client";
 
 // in test mode, we connect to a server running on 3119, in production, it's 3117
 const SERVER_PORT = window.location.port === "3120" ? 3119 : 3117;
