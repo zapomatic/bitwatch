@@ -57,7 +57,10 @@ const ExtendedKeyInfo = ({
   const handleDeleteClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    onDelete({ extendedKey });
+    onDelete({
+      collection: collection.name,
+      extendedKey: extendedKey.key,
+    });
   };
 
   const handleCopy = (e) => {
