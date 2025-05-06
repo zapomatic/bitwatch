@@ -42,7 +42,7 @@ test.describe("Bitwatch", () => {
     expect(websocketState).toBe("WebSocket");
     console.log("WebSocket connected");
     // Click the settings button
-    await page.getByTestId("settings-button").click();
+    await findAndClick(page, '[data-testid="settings-button"]');
     console.log("Settings opened");
 
     // Verify default test values first
@@ -53,7 +53,7 @@ test.describe("Bitwatch", () => {
     await expect(page.getByTestId("config-debugLogging")).not.toBeChecked();
 
     // Switch to public mode and verify public settings
-    await page.getByTestId("use-public-api").click();
+    await findAndClick(page, '[data-testid="use-public-api"]');
     console.log("Switched to public mode");
     await expect(page.getByTestId("config-api")).toHaveValue("https://mempool.space");
     await expect(page.getByTestId("config-interval")).toHaveValue("600000");
@@ -61,13 +61,13 @@ test.describe("Bitwatch", () => {
     await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue("1");
 
     // Switch to private mode and verify private settings
-    await page.getByTestId("use-local-node").click();
+    await findAndClick(page, '[data-testid="use-local-node"]');
     console.log("Switched to private mode");
     await expect(page.getByTestId("config-api")).toHaveValue("http://10.21.21.26:3006");
     await expect(page.getByTestId("config-interval")).toHaveValue("60000");
     await expect(page.getByTestId("config-apiDelay")).toHaveValue("100");
     await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue("100"); 
-    await page.getByTestId("config-debugLogging").click();
+    await findAndClick(page, '[data-testid="config-debugLogging"]');
     await expect(page.getByTestId("config-debugLogging")).toBeChecked();
 
     // Return to test settings
@@ -75,25 +75,26 @@ test.describe("Bitwatch", () => {
     await page.getByTestId("config-interval").fill(testDb.interval.toString());
     await page.getByTestId("config-apiDelay").fill(testDb.apiDelay.toString());
     await page.getByTestId("config-apiParallelLimit").fill(testDb.apiParallelLimit.toString());
-    await page.getByTestId("config-debugLogging").click();
-     await expect(page.getByTestId("config-debugLogging")).not.toBeChecked();
+    await findAndClick(page, '[data-testid="config-debugLogging"]');
+    await expect(page.getByTestId("config-debugLogging")).not.toBeChecked();
     console.log("Restored test settings");
 
     // Save configuration
-    await page.getByTestId("save-configuration").click();
+    await findAndClick(page, '[data-testid="save-configuration"]');
     console.log("Saved configuration");
 
     // Verify success notification
-    await expect(page.getByTestId("config-notification")).toBeVisible();
-    await expect(page.getByTestId("config-notification")).toContainText(
+    const configNotification = page.getByTestId("config-notification");
+    await expect(configNotification).toBeVisible();
+    await expect(configNotification).toContainText(
       "Configuration saved successfully"
     );
     // Dismiss the notification
-    await page.getByTestId("config-notification").getByRole("button", { name: "Close" }).click();
+    await findAndClick(page, '[data-testid="config-notification"] button', { allowOverlay: true });
     console.log("Verified success notification");
 
     // Navigate to integrations
-    await page.getByTestId("integrations-button").click();
+    await findAndClick(page, '[data-testid="integrations-button"]');
     console.log("Integrations opened");
     // Fill in Telegram configuration
     await page.fill(
@@ -104,24 +105,20 @@ test.describe("Bitwatch", () => {
     console.log("Telegram config filled");
 
     // Save the configuration
-    await page.getByRole("button", { name: "Save Integrations" }).click();
+    await findAndClick(page, '[data-testid="save-integrations"]');
     console.log("Integrations saved");
 
     // Wait for the success notification
-    await page.waitForSelector("text=Integrations saved successfully");
-    console.log("Success notification shown");
-
-    // Verify the success notification
     const notification = page.getByRole("alert");
     await expect(notification).toBeVisible();
     await expect(notification).toContainText("Integrations saved successfully");
     await expect(notification).toHaveClass(/MuiAlert-standardSuccess/);
     // Dismiss the notification
-    await notification.getByRole("button", { name: "Close" }).click();
+    await findAndClick(page, '[role="alert"] button', { allowOverlay: true });
     console.log("Success notification verified");
 
     // Navigate to addresses page
-    await page.getByTestId("watch-list-button").click();
+    await findAndClick(page, '[data-testid="watch-list-button"]');
     console.log("Navigated to addresses page");
 
     // Add a new collection
@@ -200,7 +197,7 @@ test.describe("Bitwatch", () => {
     console.log("Chain output state verified");
 
     // Accept the chain-out change
-    await page.getByTestId(`${testData.addresses.zapomatic}-accept-button`).click();
+    await findAndClick(page, `[data-testid="${testData.addresses.zapomatic}-accept-button"]`);
     // verify that the change took (no longer showing a diff)
     await expect(page.getByTestId(`${testData.addresses.zapomatic}-chain-out-diff`)).not.toBeVisible();
 
@@ -219,17 +216,17 @@ test.describe("Bitwatch", () => {
     await expect(donationsRow.locator('td', { hasText: '0.00000000 ₿' }).first()).toBeVisible();
 
     // Test editing the single address
-    await page.getByTestId(`${testData.addresses.zapomatic}-edit-button`).click();
+    await findAndClick(page, `[data-testid="${testData.addresses.zapomatic}-edit-button"]`);
     await expect(page.locator('[data-testid="address-dialog"]')).toBeVisible();
     await expect(page.getByTestId("address-name-input")).toHaveValue("zapomatic");
     await expect(page.getByTestId("address-input")).toHaveValue(testData.addresses.zapomatic);
     
     // Change the name
     await page.getByTestId("address-name-input").fill("test rename");
-    await page.getByTestId("address-dialog-save").click();
+    await findAndClick(page, '[data-testid="address-dialog-save"]', { allowOverlay: true });
     
     // Verify the dialog closed and name was updated
-    await expect(page.locator('[data-testid="address-dialog"]')).not.toBeVisible();
+    await page.waitForSelector('[data-testid="address-dialog"]', { state: "hidden", timeout: 2000 });
     await expect(page.getByText("Address updated successfully")).toBeVisible();
     await expect(page.getByText("test rename")).toBeVisible();
     console.log("Address rename verified");
@@ -304,9 +301,7 @@ test.describe("Bitwatch", () => {
       console.log(`Verified mempool input for ${key.name} address 1`);
 
       // Then test full row refresh
-      const refreshButton = page.getByTestId(`${key.key}-refresh-all-button`);
-      await expect(refreshButton).toBeVisible();
-      await refreshButton.click();
+      await findAndClick(page, `[data-testid="${key.key}-refresh-all-button"]`);
       console.log("Clicked refresh button for extended key");
 
       // Verify we have the expected number of addresses (initial + gap limit)
@@ -341,7 +336,7 @@ test.describe("Bitwatch", () => {
       // If this is the first extended key, test editing an address
       if (key.name === "Test XPub") {
         // Edit the first derived address
-        await page.getByTestId(`${key.key}-address-1-edit-button`).click();
+        await findAndClick(page, `[data-testid="${key.key}-address-1-edit-button"]`);
         
         // Wait for the dialog to be visible
         await expect(page.locator('[data-testid="address-dialog"]')).toBeVisible();
@@ -349,17 +344,17 @@ test.describe("Bitwatch", () => {
         
         // Change the name
         await page.getByTestId("address-name-input").fill(`${key.name} 1 Edited`);
-        await page.getByTestId("address-dialog-save").click();
+        await findAndClick(page, '[data-testid="address-dialog-save"]', { allowOverlay: true });
         
         // Verify the dialog closed and name was updated
-        await expect(page.locator('[data-testid="address-dialog"]')).not.toBeVisible();
+        await page.waitForSelector('[data-testid="address-dialog"]', { state: "hidden", timeout: 2000 });
         await expect(page.getByText("Address updated successfully")).toBeVisible();
         await expect(page.getByTestId(`${key.key}-address-1-name`)).toContainText(`${key.name} 1 Edited`);
         console.log(`Edited address name in ${key.name}`);
       }
 
       // Collapse the extended key section after testing
-      await page.getByTestId(`${key.key}-expand-button`).click();
+      await findAndClick(page, `[data-testid="${key.key}-expand-button"]`);
       console.log(`Collapsed ${key.name} section`);
     }
 
@@ -465,7 +460,7 @@ test.describe("Bitwatch", () => {
       console.log(`Verified chain output for ${descriptor.name} address 1`);
 
       // Accept the chain-out change
-      await page.getByTestId(`${descriptor.descriptor}-address-1-accept-button`).click();
+      await findAndClick(page, `[data-testid="${descriptor.descriptor}-address-1-accept-button"]`);
       await expect(page.getByTestId(`${descriptor.descriptor}-address-1-chain-out-diff`)).not.toBeVisible();
       console.log(`Accepted balance changes for ${descriptor.name} address 1`);
 
@@ -479,7 +474,7 @@ test.describe("Bitwatch", () => {
       // If this is the first descriptor, test editing and deleting addresses
       if (descriptor.name === "Single XPub") {
         // Edit the first derived address
-        await page.getByTestId(`${descriptor.descriptor}-address-1-edit-button`).click();
+        await findAndClick(page, `[data-testid="${descriptor.descriptor}-address-1-edit-button"]`);
         
         // Wait for the dialog to be visible
         await expect(page.locator('[data-testid="address-dialog"]')).toBeVisible();
@@ -487,17 +482,17 @@ test.describe("Bitwatch", () => {
         
         // Change the name
         await page.getByTestId("address-name-input").fill(`${descriptor.name} 1 Edited`);
-        await page.getByTestId("address-dialog-save").click();
+        await findAndClick(page, '[data-testid="address-dialog-save"]', { allowOverlay: true });
         
         // Verify the dialog closed and name was updated
-        await expect(page.locator('[data-testid="address-dialog"]')).not.toBeVisible();
+        await page.waitForSelector('[data-testid="address-dialog"]', { state: "hidden", timeout: 2000 });
         await expect(page.getByText("Address updated successfully")).toBeVisible();
         await expect(page.getByTestId(`${descriptor.descriptor}-address-1-name`)).toContainText(`${descriptor.name} 1 Edited`);
         console.log(`Edited address name in ${descriptor.name}`);
       }
 
       // Collapse the descriptor section after testing
-      await page.getByTestId(`${descriptor.descriptor}-expand-button`).click();
+      await findAndClick(page, `[data-testid="${descriptor.descriptor}-expand-button"]`);
       console.log(`Collapsed ${descriptor.name} section`);
     }
 
@@ -505,7 +500,7 @@ test.describe("Bitwatch", () => {
     console.log("Starting deletion sequence...");
 
     // 1. Delete a single address from the collection
-    await page.getByTestId(`${testData.addresses.zapomatic}-delete-button`).click();
+    await findAndClick(page, `[data-testid="${testData.addresses.zapomatic}-delete-button"]`);
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
     await expect(page.getByText("Remove this address from the collection?")).toBeVisible();
     await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
@@ -515,34 +510,36 @@ test.describe("Bitwatch", () => {
 
     // 2. Delete a single address from the first extended key
     const firstExtendedKey = extendedKeys[0];
-    await page.getByTestId(`${firstExtendedKey.key}-expand-button`).click();
+    await findAndClick(page, `[data-testid="${firstExtendedKey.key}-expand-button"]`);
     console.log(`Expanded ${firstExtendedKey.name} section for deletion`);
-    await page.getByTestId(`${firstExtendedKey.key}-address-1-delete-button`).click();
+    await findAndClick(page, `[data-testid="${firstExtendedKey.key}-address-1-delete-button"]`);
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
     await expect(page.getByText("Remove this address from the extended key set?")).toBeVisible();
     await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
     await expect(page.getByTestId(`${firstExtendedKey.key}-address-1-delete-button`)).not.toBeVisible();
     console.log("Deleted single address from extended key");
-    await page.getByTestId(`${firstExtendedKey.key}-expand-button`).click();
+    const expandButton = page.getByTestId(`${firstExtendedKey.key}-expand-button`);
+    await expect(expandButton).toBeVisible();
+    await findAndClick(page, `[data-testid="${firstExtendedKey.key}-expand-button"]`);
     console.log(`Collapsed ${firstExtendedKey.name} section`);
 
     // 3. Delete a single address from the first descriptor
     const firstDescriptor = descriptors[0];
-    await page.getByTestId(`${firstDescriptor.descriptor}-expand-button`).click();
+    await findAndClick(page, `[data-testid="${firstDescriptor.descriptor}-expand-button"]`);
     console.log(`Expanded ${firstDescriptor.name} section for deletion`);
-    await page.getByTestId(`${firstDescriptor.descriptor}-address-1-delete-button`).click();
+    await findAndClick(page, `[data-testid="${firstDescriptor.descriptor}-address-1-delete-button"]`);
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
     await expect(page.getByText("Remove this address from the descriptor set?")).toBeVisible();
     await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
     await expect(page.getByTestId(`${firstDescriptor.descriptor}-address-1-delete-button`)).not.toBeVisible();
     console.log("Deleted single address from descriptor");
-    await page.getByTestId(`${firstDescriptor.descriptor}-expand-button`).click();
+    await findAndClick(page, `[data-testid="${firstDescriptor.descriptor}-expand-button"]`);
     console.log(`Collapsed ${firstDescriptor.name} section`);
 
     // 4. Delete the first extended key
-    await page.getByTestId(`${firstExtendedKey.key}-delete-button`).click();
+    await findAndClick(page, `[data-testid="${firstExtendedKey.key}-delete-button"]`);
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
     await expect(page.getByText("Delete this extended key and all its derived addresses?")).toBeVisible();
     await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
@@ -550,7 +547,7 @@ test.describe("Bitwatch", () => {
     console.log(`Deleted ${firstExtendedKey.name}`);
 
     // 5. Delete the first descriptor
-    await page.getByTestId(`${firstDescriptor.descriptor}-delete-button`).click();
+    await findAndClick(page, `[data-testid="${firstDescriptor.descriptor}-delete-button"]`);
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
     await expect(page.getByText("Delete this descriptor and all its derived addresses?")).toBeVisible();
     await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
@@ -558,7 +555,7 @@ test.describe("Bitwatch", () => {
     console.log(`Deleted ${firstDescriptor.name}`);
 
     // 6. Finally, delete the collection
-    await page.getByTestId("Donations-delete").click();
+    await findAndClick(page, '[data-testid="Donations-delete"]');
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
     await expect(page.getByText("Delete this collection and all its addresses?")).toBeVisible();
     await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });

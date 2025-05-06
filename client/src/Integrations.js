@@ -135,6 +135,8 @@ function Integrations() {
               className="crystal-button crystal-button-primary"
               onClick={saveConfig}
               disabled={saving}
+              data-testid="save-integrations"
+              aria-label="Save Integrations"
             >
               {saving ? "Saving..." : "Save Integrations"}
             </Button>
