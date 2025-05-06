@@ -494,36 +494,11 @@ test.describe("Bitwatch", () => {
         await expect(page.getByText("Address updated successfully")).toBeVisible();
         await expect(page.getByTestId(`${descriptor.descriptor}-address-1-name`)).toContainText(`${descriptor.name} 1 Edited`);
         console.log(`Edited address name in ${descriptor.name}`);
-
-        // Delete the first derived address
-        await page.getByTestId(`${descriptor.descriptor}-address-1-delete-button`).click();
-        
-        // Confirm deletion in dialog
-        await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
-        await expect(page.getByText("Remove this address from the descriptor set?")).toBeVisible();
-        await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
-        
-        // Wait for dialog to close and verify deletion
-        await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
-        await expect(page.getByTestId(`${descriptor.descriptor}-address-1-delete-button`)).not.toBeVisible();
-        console.log("Deleted single address from descriptor");
       }
 
       // Collapse the descriptor section after testing
       await page.getByTestId(`${descriptor.descriptor}-expand-button`).click();
       console.log(`Collapsed ${descriptor.name} section`);
-
-      // Delete the descriptor
-      await page.getByTestId(`${descriptor.descriptor}-delete-button`).click();
-      
-      // Confirm deletion in dialog
-      await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
-      await expect(page.getByText("Delete this descriptor and all its derived addresses?")).toBeVisible();
-      await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
-      
-      // Wait for dialog to close
-      await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
-      console.log(`Deleted ${descriptor.name}`);
     }
 
     // Now that we've verified all balances, we can delete everything in a structured way
