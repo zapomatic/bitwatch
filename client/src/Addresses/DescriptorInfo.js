@@ -56,7 +56,10 @@ const DescriptorInfo = ({
   const handleDeleteClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    onDelete({ descriptor });
+    onDelete({
+      collection: collection.name,
+      descriptor,
+    });
   };
 
   const handleCopy = (e) => {
