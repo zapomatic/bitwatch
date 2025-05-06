@@ -128,8 +128,8 @@ const AddressRow = ({
     onDelete({
       collection: collection.name,
       address: address.address,
-      ...(isExtendedKey ? { extendedKey: { key: parentKey } } : {}),
-      ...(isDescriptor ? { descriptor: { descriptor: parentKey } } : {}),
+      ...(isExtendedKey ? { extendedKey: parentKey } : {}),
+      ...(isDescriptor ? { descriptor: parentKey } : {}),
     });
   };
 

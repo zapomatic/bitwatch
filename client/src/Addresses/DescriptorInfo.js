@@ -58,7 +58,7 @@ const DescriptorInfo = ({
     e.stopPropagation();
     onDelete({
       collection: collection.name,
-      descriptor: descriptor,
+      descriptor: descriptor.descriptor,
     });
   };
 

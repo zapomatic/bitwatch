@@ -20,7 +20,7 @@ export const deleteHandler = async (data) => {
     // If it's an extended key address
     if (extendedKey) {
       const keyIndex = targetCollection.extendedKeys.findIndex(
-        (k) => k.key === extendedKey.key
+        (k) => k.key === extendedKey
       );
       if (keyIndex === -1) {
         logger.error("Extended key not found");
@@ -36,7 +36,7 @@ export const deleteHandler = async (data) => {
       targetCollection.extendedKeys[keyIndex].addresses.splice(addressIndex, 1);
     } else if (descriptor) {
       const descIndex = targetCollection.descriptors.findIndex(
-        (d) => d.descriptor === descriptor.descriptor
+        (d) => d.descriptor === descriptor
       );
       if (descIndex === -1) {
         logger.error("Descriptor not found");
@@ -62,7 +62,7 @@ export const deleteHandler = async (data) => {
     }
   } else if (extendedKey) {
     const keyIndex = targetCollection.extendedKeys.findIndex(
-      (k) => k.key === extendedKey.key
+      (k) => k.key === extendedKey
     );
     if (keyIndex === -1) {
       logger.error("Extended key not found");
@@ -71,7 +71,7 @@ export const deleteHandler = async (data) => {
     targetCollection.extendedKeys.splice(keyIndex, 1);
   } else if (descriptor) {
     const descIndex = targetCollection.descriptors.findIndex(
-      (d) => d.descriptor === descriptor.descriptor
+      (d) => d.descriptor === descriptor
     );
     if (descIndex === -1) {
       logger.error("Descriptor not found");

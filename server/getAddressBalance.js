@@ -63,8 +63,18 @@ const checkAndUpdateGapLimit = async (item) => {
     return false;
   }
 
-  // Calculate how many more addresses we need
-  const addressesNeeded = item.gapLimit - emptyCount;
+  // Only generate addresses if we have less than gapLimit empty addresses
+  // AND we're not already at our maximum address count
+  const maxAddresses = item.initialAddresses + item.gapLimit;
+  if (item.addresses.length >= maxAddresses) {
+    return false;
+  }
+
+  // Calculate how many more addresses we need, but don't exceed maxAddresses
+  const addressesNeeded = Math.min(
+    item.gapLimit - emptyCount,
+    maxAddresses - item.addresses.length
+  );
 
   // If we need more addresses, emit an event to trigger address generation
   logger.info(

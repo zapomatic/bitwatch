@@ -296,10 +296,10 @@ export default function Addresses() {
       } else if (descriptor) {
         setDeleteDialog({
           open: true,
-          collection: descriptor.collection,
+          collection,
           address: null,
           extendedKey: null,
-          descriptor,
+          descriptor: descriptor,
           message: "Delete this descriptor and all its derived addresses?",
         });
       } else if (extendedKey) {
