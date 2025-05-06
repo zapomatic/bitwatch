@@ -30,10 +30,10 @@ const init = async (sendTestMessage = false) => {
     bot = {
       stopPolling: () => logger.info("Test bot: stopPolling called"),
       startPolling: () => logger.info("Test bot: startPolling called"),
-      onText: (pattern, callback) =>
+      onText: (_pattern, _callback) =>
         logger.info("Test bot: onText handler registered"),
-      on: (event, callback) =>
-        logger.info(`Test bot: ${event} handler registered`),
+      on: (_event, _callback) =>
+        logger.info(`Test bot: ${_event} handler registered`),
       sendMessage: (chatId, message, options) => {
         logger.info("Test bot: sendMessage called", {
           chatId,

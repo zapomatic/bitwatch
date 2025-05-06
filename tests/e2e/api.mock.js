@@ -2,18 +2,7 @@
 
 import { WebSocketServer } from "ws";
 import http from "http";
-import { readFileSync } from "fs";
-import { fileURLToPath } from "url";
-import { dirname, join } from "path";
-
-// Get the directory name of the current module
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-
-// Read and parse the test data
-const testData = JSON.parse(
-  readFileSync(join(__dirname, "../../test-data/keys.json"), "utf8")
-);
+import { URL } from "url";
 
 // State
 let wss = null;
@@ -49,7 +38,7 @@ const getNextState = (currentState) => {
 };
 
 // Helper function to get balance based on state
-const getBalanceForState = (state, address) => {
+const getBalanceForState = (state) => {
   switch (state) {
     case ADDRESS_STATES.INITIAL:
       return {
@@ -219,7 +208,7 @@ const handleHttpRequest = (req, res) => {
       addressCheckCounts.set(address, checkCount);
 
       // Get balance for current state, passing the address
-      const balance = getBalanceForState(currentState, address);
+      const balance = getBalanceForState(currentState);
       addressBalances.set(address, balance);
 
       // Send response first

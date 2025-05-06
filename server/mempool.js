@@ -3,6 +3,7 @@ import logger from "./logger.js";
 import { handleBalanceUpdate } from "./getAddressBalance.js";
 import telegram from "./telegram.js";
 import mempoolJS from "@mempool/mempool.js";
+import { URL } from "url";
 
 let mempoolClient = null;
 let trackedAddresses = new Set();
@@ -142,6 +143,16 @@ const calculateAddressBalance = (transactions, address) => {
 };
 
 const updateAddressBalance = async (address, balance, io) => {
+  // Find the collection and address name
+  let collectionName = null;
+  for (const [name, collection] of Object.entries(memory.db.collections)) {
+    const addr = collection.addresses.find((a) => a.address === address);
+    if (addr) {
+      collectionName = name;
+      break;
+    }
+  }
+
   // Use centralized balance update handler
   const result = await handleBalanceUpdate(address, balance, collectionName);
   if (result.error) {

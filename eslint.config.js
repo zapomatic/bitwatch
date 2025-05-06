@@ -22,6 +22,19 @@ export default [
         window: "readonly",
         console: "readonly",
         Buffer: "readonly",
+        document: "readonly",
+        test: "readonly",
+        expect: "readonly",
+        describe: "readonly",
+        beforeAll: "readonly",
+        afterAll: "readonly",
+        beforeEach: "readonly",
+        afterEach: "readonly",
+        URL: "readonly",
+        setTimeout: "readonly",
+        clearTimeout: "readonly",
+        setInterval: "readonly",
+        clearInterval: "readonly",
       },
     },
     plugins: {
@@ -61,10 +74,11 @@ export default [
   },
   // Override rules for test files
   {
-    files: ["**/*.test.js", "**/test-*.js", "tests/**/*.js"],
+    files: ["**/*.test.js", "**/test-*.js", "tests/**/*.js", "**/api.mock.js"],
     rules: {
       "react-hooks/rules-of-hooks": "off",
       "no-console": "off",
+      "@typescript-eslint/no-unused-vars": "off",
     },
   },
 ];
