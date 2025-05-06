@@ -198,20 +198,34 @@ export default function Addresses() {
   };
 
   const handleAddAddress = (collection, name, address, setNewAddress) => {
-    socketIO.emit("add", { collection, name, address }, (response) => {
-      console.log("add", response);
-      if (response.error) {
-        setNotification({
-          open: true,
-          message: response.error,
-          severity: "error",
-        });
-      } else if (response.status === "ok" && response.record) {
-        // The address was added successfully and is in a loading state
-        // The UI will update automatically when the updateState event is received
-        setNewAddress(null);
+    socketIO.emit(
+      "add",
+      {
+        collection,
+        name,
+        address,
+        monitor: {
+          chain_in: "auto-accept",
+          chain_out: "alert",
+          mempool_in: "auto-accept",
+          mempool_out: "alert",
+        },
+      },
+      (response) => {
+        console.log("add", response);
+        if (response.error) {
+          setNotification({
+            open: true,
+            message: response.error,
+            severity: "error",
+          });
+        } else if (response.status === "ok" && response.record) {
+          // The address was added successfully and is in a loading state
+          // The UI will update automatically when the updateState event is received
+          setNewAddress(null);
+        }
       }
-    });
+    );
   };
 
   const saveExpected = useCallback((row) => {
@@ -266,16 +280,7 @@ export default function Addresses() {
         return;
       }
 
-      if (address && extendedKey) {
-        setDeleteDialog({
-          open: true,
-          address,
-          collection,
-          extendedKey,
-          descriptor: null,
-          message: "Remove this address from the extended key set?",
-        });
-      } else if (address && descriptor) {
+      if (address && descriptor) {
         setDeleteDialog({
           open: true,
           address,
@@ -283,6 +288,15 @@ export default function Addresses() {
           extendedKey: null,
           descriptor,
           message: "Remove this address from the descriptor set?",
+        });
+      } else if (address && extendedKey) {
+        setDeleteDialog({
+          open: true,
+          address,
+          collection,
+          extendedKey,
+          descriptor: null,
+          message: "Remove this address from the extended key set?",
         });
       } else if (address) {
         setDeleteDialog({
@@ -293,15 +307,6 @@ export default function Addresses() {
           descriptor: null,
           message: "Remove this address from the collection?",
         });
-      } else if (extendedKey) {
-        setDeleteDialog({
-          open: true,
-          collection: extendedKey.collection,
-          address: null,
-          extendedKey,
-          descriptor: null,
-          message: "Delete this extended key and all its derived addresses?",
-        });
       } else if (descriptor) {
         setDeleteDialog({
           open: true,
@@ -310,6 +315,15 @@ export default function Addresses() {
           extendedKey: null,
           descriptor,
           message: "Delete this descriptor and all its derived addresses?",
+        });
+      } else if (extendedKey) {
+        setDeleteDialog({
+          open: true,
+          collection: extendedKey.collection,
+          address: null,
+          extendedKey,
+          descriptor: null,
+          message: "Delete this extended key and all its derived addresses?",
         });
       }
     },

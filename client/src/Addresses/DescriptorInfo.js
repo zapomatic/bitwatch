@@ -73,55 +73,42 @@ const DescriptorInfo = ({
     setIsRefreshing(true);
     setNotification({
       open: true,
-      message: `Refreshing balances for ${descriptor.name}...`,
+      message: `Refreshing balances for all addresses in ${descriptor.name}...`,
       severity: "info",
     });
 
-    let anyErrors = false;
-
-    // Refresh all addresses in sequence
-    for (const address of descriptor.addresses) {
-      const { hasError, response } = await new Promise((resolve) => {
-        let hasError = false;
-        socketIO.emit(
-          "refreshBalance",
-          {
-            collection: collection.name,
-            address: address.address,
-          },
-          (response) => {
-            if (response.error) {
-              hasError = true;
-              setNotification({
-                open: true,
-                message: `Failed to refresh balance: ${response.error}`,
-                severity: "error",
-              });
+    // Refresh each address in sequence
+    const refreshAddresses = async () => {
+      for (const address of descriptor.addresses || []) {
+        await new Promise((resolve) => {
+          socketIO.emit(
+            "refreshBalance",
+            {
+              collection: collection.name,
+              address: address.address,
+            },
+            (response) => {
+              if (response.error) {
+                setNotification({
+                  open: true,
+                  message: `Failed to refresh balance for ${address.name}: ${response.error}`,
+                  severity: "error",
+                });
+              }
+              resolve();
             }
-            resolve({ hasError, response });
-          }
-        );
-      });
-      if (hasError) anyErrors = true;
-
-      // Emit the response to trigger state update
-      if (!hasError && response) {
-        socketIO.emit("balanceUpdate", {
-          collection: collection.name,
-          address: address.address,
-          ...response,
+          );
         });
       }
-    }
+      setIsRefreshing(false);
+      setNotification({
+        open: true,
+        message: "All balances refreshed successfully",
+        severity: "success",
+      });
+    };
 
-    setIsRefreshing(false);
-    setNotification({
-      open: true,
-      message: anyErrors
-        ? "Some balances failed to refresh"
-        : "Balances refreshed successfully",
-      severity: anyErrors ? "warning" : "success",
-    });
+    refreshAddresses();
   };
 
   return (
@@ -230,7 +217,7 @@ const DescriptorInfo = ({
                       collection={collection}
                       displayBtc={displayBtc}
                       setNotification={setNotification}
-                      parentKey={descriptor.descriptor}
+                      parentKey={descriptor}
                       index={address.index}
                       onDelete={onDelete}
                       onEditAddress={onEdit}

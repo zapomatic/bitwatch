@@ -32,28 +32,6 @@ const ADDRESS_STATES = {
   CHAIN_OUT: "chain_out",
 };
 
-// Get all addresses from extended keys and descriptors
-const getDerivedAddresses = () => {
-  const addresses = new Set();
-
-  // Add addresses from extended keys
-  Object.values(testData.addresses).forEach((keyData) => {
-    if (Array.isArray(keyData.addresses)) {
-      keyData.addresses.forEach((addr) => {
-        addresses.add(addr.address);
-      });
-    }
-  });
-
-  return addresses;
-};
-
-const derivedAddresses = getDerivedAddresses();
-
-const isPlainAddress = (address) => {
-  return !derivedAddresses.has(address);
-};
-
 const log = (level, message) => {
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] [${level}] ${message}`);
@@ -72,63 +50,6 @@ const getNextState = (currentState) => {
 
 // Helper function to get balance based on state
 const getBalanceForState = (state, address) => {
-  // Get all derived addresses from test data
-  const derivedAddresses = getDerivedAddresses();
-
-  // If this is a derived address, check its position in its parent's address list
-  const isDerived = derivedAddresses.has(address);
-  let addressIndex = -1;
-
-  if (isDerived) {
-    // Find which key/descriptor this address belongs to and its index
-    let keyData;
-    for (const kd of Object.values(testData.addresses)) {
-      if (Array.isArray(kd.addresses)) {
-        const addrInfo = kd.addresses.find((a) => a.address === address);
-        if (addrInfo) {
-          keyData = kd;
-          addressIndex = addrInfo.index;
-          break;
-        }
-      }
-    }
-
-    // First two addresses in the derived set should have chain_in values
-    if (addressIndex <= 1) {
-      return {
-        chain_stats: {
-          funded_txo_count: 1,
-          funded_txo_sum: 10000,
-          spent_txo_count: 0,
-          spent_txo_sum: 0,
-        },
-        mempool_stats: {
-          funded_txo_count: 0,
-          funded_txo_sum: 0,
-          spent_txo_count: 0,
-          spent_txo_sum: 0,
-        },
-      };
-    }
-
-    // All other derived addresses should have zero balance
-    return {
-      chain_stats: {
-        funded_txo_count: 0,
-        funded_txo_sum: 0,
-        spent_txo_count: 0,
-        spent_txo_sum: 0,
-      },
-      mempool_stats: {
-        funded_txo_count: 0,
-        funded_txo_sum: 0,
-        spent_txo_count: 0,
-        spent_txo_sum: 0,
-      },
-    };
-  }
-
-  // For plain addresses, use the original state-based logic
   switch (state) {
     case ADDRESS_STATES.INITIAL:
       return {
@@ -305,8 +226,8 @@ const handleHttpRequest = (req, res) => {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(balance));
 
-      // Then increment state for plain addresses after 1 check
-      if (isPlainAddress(address) && checkCount >= 1) {
+      // Increment state for all addresses after 1 check
+      if (checkCount >= 1) {
         const nextState = getNextState(currentState);
         addressStates.set(address, nextState);
         addressCheckCounts.set(address, 0); // Reset check count for next state
@@ -392,8 +313,7 @@ const simulateTransaction = (tx) => {
       tx.vin.forEach((input) => {
         if (
           input?.prevout?.scriptpubkey_address &&
-          trackedAddresses.has(input.prevout.scriptpubkey_address) &&
-          isPlainAddress(input.prevout.scriptpubkey_address)
+          trackedAddresses.has(input.prevout.scriptpubkey_address)
         ) {
           relevantAddresses.add(input.prevout.scriptpubkey_address);
           // Update balance for input address
@@ -413,8 +333,7 @@ const simulateTransaction = (tx) => {
       tx.vout.forEach((output) => {
         if (
           output?.scriptpubkey_address &&
-          trackedAddresses.has(output.scriptpubkey_address) &&
-          isPlainAddress(output.scriptpubkey_address)
+          trackedAddresses.has(output.scriptpubkey_address)
         ) {
           relevantAddresses.add(output.scriptpubkey_address);
           // Update balance for output address

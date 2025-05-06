@@ -228,6 +228,7 @@ const ExtendedKeyInfo = ({
                       parentKey={extendedKey.key}
                       index={address.index}
                       onEditAddress={onEditAddress}
+                      onDelete={onDelete}
                     />
                   ))}
                 </TableBody>

@@ -279,7 +279,9 @@ test.describe("Bitwatch", () => {
       await page.getByTestId(`${key.key}-address-1-refresh-button`).click();
       await expect(page.getByText("Balance refreshed successfully")).toBeVisible();
       // Wait for and verify the balance update
-      await expect(page.getByTestId(`${key.key}-address-1-chain-in`)).toContainText("0.00010000 ₿");
+      await expect(page.getByTestId(`${key.key}-address-1-chain-in`)).toContainText("0.00000000 ₿");
+      await page.getByTestId(`${key.key}-address-1-refresh-button`).click();
+      await expect(page.getByTestId(`${key.key}-address-1-mempool-in`)).toContainText("0.00010000 ₿");
       await expect(page.getByTestId(`${key.key}-address-2-chain-in`)).toContainText("Loading...");
 
       // Then test full row refresh
@@ -396,7 +398,9 @@ test.describe("Bitwatch", () => {
       await expect(page.getByTestId(`${descriptor.descriptor}-address-1-chain-in`)).toContainText("Loading...");
       await page.getByTestId(`${descriptor.descriptor}-address-1-refresh-button`).click();
       await expect(page.getByText("Balance refreshed successfully")).toBeVisible();
-      await expect(page.getByTestId(`${descriptor.descriptor}-address-1-chain-in`)).toContainText("0.00010000 ₿");
+      await expect(page.getByTestId(`${descriptor.descriptor}-address-1-chain-in`)).toContainText("0.00000000 ₿");
+            await page.getByTestId(`${descriptor.descriptor}-address-1-refresh-button`).click();
+      await expect(page.getByTestId(`${descriptor.descriptor}-address-1-mempool-in`)).toContainText("0.00010000 ₿");
 
       // If this is the first descriptor, test editing and deleting addresses
       if (descriptor.name === "Single XPub") {

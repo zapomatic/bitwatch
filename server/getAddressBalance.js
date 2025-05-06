@@ -1,6 +1,5 @@
 import https from "https";
 import http from "http";
-import { retry } from "async";
 import pjson from "../package.json" with { type: "json" };
 import memory from "./memory.js";
 import * as url from "node:url";
@@ -236,7 +235,12 @@ Previous: chain_in=${oldBalance.chain_in}, chain_out=${oldBalance.chain_out}, me
 // Centralized function to handle balance updates and gap limit checks
 const handleBalanceUpdate = async (address, balance, collectionName) => {
   const collection = memory.db.collections[collectionName];
-  if (!collection) return { error: "Collection not found" };
+  if (!collection) {
+    logger.error(`Collection ${collectionName} not found`);
+    return { error: "Collection not found" };
+  }
+
+  logger.debug(`Handling balance update for ${address} in ${collectionName}`);
 
   // Find address in either main addresses or extended key addresses
   let addr = collection.addresses.find((a) => a.address === address);
@@ -244,11 +248,15 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
   let isExtendedKeyAddress = false;
   let isDescriptorAddress = false;
 
+  logger.debug(`Found in main addresses: ${!!addr}`);
+
   // If not found in main addresses, check extended keys
   if (!addr && collection.extendedKeys) {
+    logger.debug(`Checking ${collection.extendedKeys.length} extended keys`);
     for (const extendedKey of collection.extendedKeys) {
       addr = extendedKey.addresses.find((a) => a.address === address);
       if (addr) {
+        logger.debug(`Found in extended key: ${extendedKey.name}`);
         parentItem = extendedKey;
         isExtendedKeyAddress = true;
         break;
@@ -258,9 +266,12 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
 
   // If not found in extended keys, check descriptors
   if (!addr && collection.descriptors) {
+    logger.debug(`Checking ${collection.descriptors.length} descriptors`);
     for (const descriptor of collection.descriptors) {
+      logger.debug(`Checking descriptor ${descriptor.name} with ${descriptor.addresses?.length || 0} addresses`);
       addr = descriptor.addresses.find((a) => a.address === address);
       if (addr) {
+        logger.debug(`Found in descriptor: ${descriptor.name}`);
         parentItem = descriptor;
         isDescriptorAddress = true;
         break;
@@ -268,7 +279,12 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
     }
   }
 
-  if (!addr) return { error: "Address not found" };
+  if (!addr) {
+    logger.error(`Address ${address} not found in any location`);
+    return { error: "Address not found" };
+  }
+
+  logger.debug(`Found address ${address} in ${isDescriptorAddress ? 'descriptor' : isExtendedKeyAddress ? 'extended key' : 'main addresses'}`);
 
   // Store old balance for comparison
   const oldBalance = addr.actual || {
@@ -285,6 +301,8 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
     mempool_in: balance.actual?.mempool_in ?? 0,
     mempool_out: balance.actual?.mempool_out ?? 0
   };
+
+  logger.debug(`Updating balance from ${JSON.stringify(oldBalance)} to ${JSON.stringify(newBalance)}`);
 
   // Update the address with new balance, preserving expect object
   addr.actual = newBalance;
@@ -304,6 +322,8 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
     oldBalance.mempool_in !== newBalance.mempool_in ||
     oldBalance.mempool_out !== newBalance.mempool_out;
 
+  logger.debug(`Balance changed: ${balanceChanged}`);
+
   // If balance changed and this is part of an extended key or descriptor
   if (balanceChanged && parentItem) {
     const addressesNeeded = await checkAndUpdateGapLimit(parentItem);
@@ -311,6 +331,8 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
       // Calculate the next index to derive from
       const maxIndex = Math.max(...parentItem.addresses.map(addr => addr.index));
       const nextIndex = maxIndex + 1;
+
+      logger.debug(`Need to derive ${addressesNeeded} more addresses starting at index ${nextIndex}`);
 
       // Derive more addresses
       const newAddresses = isExtendedKeyAddress
@@ -351,6 +373,7 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
         }));
 
         parentItem.addresses = [...parentItem.addresses, ...newAddressRecords];
+        logger.debug(`Added ${newAddressRecords.length} new addresses to ${isDescriptorAddress ? 'descriptor' : 'extended key'}`);
 
         // Immediately check balances for new addresses
         await Promise.all(
@@ -396,6 +419,7 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
 
   // Save state if there were changes
   if (balanceChanged) {
+    logger.debug(`Saving state changes to database`);
     memory.saveDb();
     // Emit state update to all clients
     socketIO.io.emit("updateState", { collections: memory.db.collections });
@@ -496,7 +520,14 @@ const getAddressBalance = async (addr, onRateLimit) => {
           apiState: "GOOD"
         });
       }
-      return result;
+      return {
+        actual: {
+          chain_in: result.actual?.chain_in ?? 0,
+          chain_out: result.actual?.chain_out ?? 0,
+          mempool_in: result.actual?.mempool_in ?? 0,
+          mempool_out: result.actual?.mempool_out ?? 0
+        }
+      };
     }
 
     // Check if it's a rate limit error
