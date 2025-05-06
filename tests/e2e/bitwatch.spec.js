@@ -312,12 +312,30 @@ test.describe("Bitwatch", () => {
       // Verify we have the expected number of addresses (initial + gap limit)
       await expect(addressRows).toHaveCount(4);
 
-      // Verify remaining addresses have zero balance
-      for (let i = 2; i <= 4; i++) {
-        await verifyAddressBalance(page, key.key, {
-          mempool_in: "0.00010000 ₿",
-        }, i, key.key);
-      }
+      await verifyAddressBalance(page, key.key, {
+        chain_in: "0.00000000 ₿",
+        chain_out: "0.00000000 ₿",
+        mempool_in: "0.00000000 ₿",
+        mempool_out: "0.00000000 ₿"
+      }, 2, key.key);
+
+      await verifyAddressBalance(page, key.key, {
+        chain_in: "0.00000000 ₿",
+        chain_out: "0.00000000 ₿",
+        mempool_in: "0.00000000 ₿",
+        mempool_out: "0.00000000 ₿"
+      }, 3, key.key);
+
+      await verifyAddressBalance(page, key.key, {
+        chain_in: "0.00000000 ₿",
+        chain_out: "0.00000000 ₿",
+        mempool_in: "0.00010000 ₿",
+        mempool_out: "0.00000000 ₿"
+      }, 4, key.key);
+      // because our mock api is checking balance on derivation, we get activity on address 4
+      // and generate more
+      await expect(addressRows).toHaveCount(6);
+
       console.log(`Verified balances for remaining addresses in ${key.name}`);
 
       // If this is the first extended key, test editing an address
