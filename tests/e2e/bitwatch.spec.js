@@ -452,62 +452,63 @@ test.describe("Bitwatch", () => {
       console.log(`Deleted ${descriptor.name}`);
     }
 
-    // Now that we've verified all balances, we can delete everything
-    for (const key of extendedKeys) {
-      // First delete a single address from the extended key
-      if (key.name === "Test XPub") {
-        // Expand the section before deleting
-        await page.getByTestId(`${key.key}-expand-button`).click();
-        console.log(`Expanded ${key.name} section for deletion`);
+    // Now that we've verified all balances, we can delete everything in a structured way
+    console.log("Starting deletion sequence...");
 
-        // Delete the first derived address
-        await page.getByTestId(`${key.key}-address-1-delete-button`).click();
-        
-        // Confirm deletion in dialog
-        await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
-        await expect(page.getByText("Remove this address from the extended key set?")).toBeVisible();
-        await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
-        
-        // Wait for dialog to close and verify deletion
-        await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
-        await expect(page.getByTestId(`${key.key}-address-1-delete-button`)).not.toBeVisible();
-        console.log("Deleted single address from extended key");
-
-        // Collapse the section after deletion
-        await page.getByTestId(`${key.key}-expand-button`).click();
-        console.log(`Collapsed ${key.name} section after deletion`);
-      }
-
-      // Delete extended key
-      await page.getByTestId(`${key.key}-delete-button`).click();
-      
-      // Confirm deletion in dialog
-      await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
-      await expect(page.getByText("Delete this extended key and all its derived addresses?")).toBeVisible();
-      await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
-      
-      // Wait for dialog to close
-      await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
-      console.log(`Deleted ${key.name}`);
-    }
-
-    // Delete the single address we added at the start
+    // 1. Delete a single address from the collection
     await page.getByTestId(`${testData.addresses.zapomatic}-delete-button`).click();
-    
-    // Verify delete confirmation dialog appears with correct message
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
     await expect(page.getByText("Remove this address from the collection?")).toBeVisible();
-    
-    // Confirm deletion
     await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
-    
-    // Wait for dialog to close and verify deletion
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
     await expect(page.getByTestId(`${testData.addresses.zapomatic}-delete-button`)).not.toBeVisible();
-    await expect(page.getByTestId("Donations-add-address")).toBeVisible();
-    console.log("Deleted single address");
+    console.log("Deleted single address from collection");
 
-    // Delete collection
+    // 2. Delete a single address from the first extended key
+    const firstExtendedKey = extendedKeys[0];
+    await page.getByTestId(`${firstExtendedKey.key}-expand-button`).click();
+    console.log(`Expanded ${firstExtendedKey.name} section for deletion`);
+    await page.getByTestId(`${firstExtendedKey.key}-address-1-delete-button`).click();
+    await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
+    await expect(page.getByText("Remove this address from the extended key set?")).toBeVisible();
+    await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
+    await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
+    await expect(page.getByTestId(`${firstExtendedKey.key}-address-1-delete-button`)).not.toBeVisible();
+    console.log("Deleted single address from extended key");
+    await page.getByTestId(`${firstExtendedKey.key}-expand-button`).click();
+    console.log(`Collapsed ${firstExtendedKey.name} section`);
+
+    // 3. Delete a single address from the first descriptor
+    const firstDescriptor = descriptors[0];
+    await page.getByTestId(`${firstDescriptor.descriptor}-expand-button`).click();
+    console.log(`Expanded ${firstDescriptor.name} section for deletion`);
+    await page.getByTestId(`${firstDescriptor.descriptor}-address-1-delete-button`).click();
+    await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
+    await expect(page.getByText("Remove this address from the descriptor set?")).toBeVisible();
+    await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
+    await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
+    await expect(page.getByTestId(`${firstDescriptor.descriptor}-address-1-delete-button`)).not.toBeVisible();
+    console.log("Deleted single address from descriptor");
+    await page.getByTestId(`${firstDescriptor.descriptor}-expand-button`).click();
+    console.log(`Collapsed ${firstDescriptor.name} section`);
+
+    // 4. Delete the first extended key
+    await page.getByTestId(`${firstExtendedKey.key}-delete-button`).click();
+    await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
+    await expect(page.getByText("Delete this extended key and all its derived addresses?")).toBeVisible();
+    await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
+    await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
+    console.log(`Deleted ${firstExtendedKey.name}`);
+
+    // 5. Delete the first descriptor
+    await page.getByTestId(`${firstDescriptor.descriptor}-delete-button`).click();
+    await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
+    await expect(page.getByText("Delete this descriptor and all its derived addresses?")).toBeVisible();
+    await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
+    await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
+    console.log(`Deleted ${firstDescriptor.name}`);
+
+    // 6. Finally, delete the collection
     await page.getByTestId("Donations-delete").click();
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
     await expect(page.getByText("Delete this collection and all its addresses?")).toBeVisible();
