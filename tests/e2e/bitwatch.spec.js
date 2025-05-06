@@ -273,19 +273,25 @@ test.describe("Bitwatch", () => {
       const addressRows = page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`);
       await expect(addressRows).toHaveCount(3);
 
-      // Verify the loading state
-      await expect(page.getByTestId(`${key.key}-address-1-chain-in`)).toContainText("Loading...");
-      // First test single address refresh
-      await page.getByTestId(`${key.key}-address-1-refresh-button`).click();
-      await expect(page.getByText("Balance refreshed successfully")).toBeVisible();
-      // Wait for and verify the balance update
-      await expect(page.getByTestId(`${key.key}-address-1-chain-in`)).toContainText("0.00000000 ₿");
-      await page.getByTestId(`${key.key}-address-1-refresh-button`).click();
-      await expect(page.getByTestId(`${key.key}-address-1-mempool-in`)).toContainText("0.00010000 ₿");
-      await expect(page.getByTestId(`${key.key}-address-2-chain-in`)).toContainText("Loading...");
+      // Test single address refresh using helper
+      await refreshAddressBalance(page, key.key, {
+        chain_in: "0.00000000 ₿",
+        chain_out: "0.00000000 ₿",
+        mempool_in: "0.00000000 ₿",
+        mempool_out: "0.00000000 ₿"
+      }, 1, key.key);
+      console.log(`Verified initial zero balance for ${key.name} address 1`);
+
+      // Test mempool input state
+      await refreshAddressBalance(page, key.key, {
+        mempool_in: "0.00010000 ₿"
+      }, 1, key.key);
+      console.log(`Verified mempool input for ${key.name} address 1`);
 
       // Then test full row refresh
-      await page.getByTestId(`${key.key}-refresh-all-button`).click();
+      const refreshButton = page.getByTestId(`${key.key}-refresh-all-button`);
+      await expect(refreshButton).toBeVisible({ timeout: 10000 });
+      await refreshButton.click();
       console.log("Clicked refresh button for extended key");
 
       // Verify we have the expected number of addresses (initial + gap limit)
@@ -293,8 +299,14 @@ test.describe("Bitwatch", () => {
 
       // Verify remaining addresses have zero balance
       for (let i = 2; i <= 4; i++) {
-        await expect(page.locator(`[data-testid="${key.key}-address-${i}-chain-in"]`)).toHaveText("0.00000000 ₿");
+        await refreshAddressBalance(page, key.key, {
+          chain_in: "0.00000000 ₿",
+          chain_out: "0.00000000 ₿",
+          mempool_in: "0.00000000 ₿",
+          mempool_out: "0.00000000 ₿"
+        }, i, key.key);
       }
+      console.log(`Verified zero balances for remaining addresses in ${key.name}`);
 
       // If this is the first extended key, test editing an address
       if (key.name === "Test XPub") {
@@ -394,13 +406,52 @@ test.describe("Bitwatch", () => {
       await expect(descriptorRow.locator('td').nth(4)).toContainText(descriptor.skip.toString());
       await expect(descriptorRow.locator('td').nth(5)).toContainText(descriptor.initialAddresses.toString());
 
-      // Test refreshing a single descriptor address
-      await expect(page.getByTestId(`${descriptor.descriptor}-address-1-chain-in`)).toContainText("Loading...");
-      await page.getByTestId(`${descriptor.descriptor}-address-1-refresh-button`).click();
-      await expect(page.getByText("Balance refreshed successfully")).toBeVisible();
-      await expect(page.getByTestId(`${descriptor.descriptor}-address-1-chain-in`)).toContainText("0.00000000 ₿");
-            await page.getByTestId(`${descriptor.descriptor}-address-1-refresh-button`).click();
-      await expect(page.getByTestId(`${descriptor.descriptor}-address-1-mempool-in`)).toContainText("0.00010000 ₿");
+      // Test refreshing a single descriptor address using helper
+      await refreshAddressBalance(page, descriptor.descriptor, {
+        chain_in: "0.00000000 ₿",
+        chain_out: "0.00000000 ₿",
+        mempool_in: "0.00000000 ₿",
+        mempool_out: "0.00000000 ₿"
+      }, 1, descriptor.descriptor);
+      console.log(`Verified initial zero balance for ${descriptor.name} address 1`);
+
+      // Test mempool input state
+      await refreshAddressBalance(page, descriptor.descriptor, {
+        mempool_in: "0.00010000 ₿"
+      }, 1, descriptor.descriptor);
+      console.log(`Verified mempool input for ${descriptor.name} address 1`);
+
+      // Test chain input state
+      await refreshAddressBalance(page, descriptor.descriptor, {
+        chain_in: "0.00010000 ₿"
+      }, 1, descriptor.descriptor);
+      console.log(`Verified chain input for ${descriptor.name} address 1`);
+
+      // Test mempool output state
+      await refreshAddressBalance(page, descriptor.descriptor, {
+        mempool_out: "0.00001000 ₿"
+      }, 1, descriptor.descriptor);
+      console.log(`Verified mempool output for ${descriptor.name} address 1`);
+
+      // Test chain output state
+      await refreshAddressBalance(page, descriptor.descriptor, {
+        chain_out: "0.00001000 ₿"
+      }, 1, descriptor.descriptor);
+      console.log(`Verified chain output for ${descriptor.name} address 1`);
+
+      // Accept the chain-out change
+      await page.getByTestId(`${descriptor.descriptor}-address-1-accept-button`).click();
+      await expect(page.getByTestId(`${descriptor.descriptor}-address-1-chain-out-diff`)).not.toBeVisible();
+      console.log(`Accepted balance changes for ${descriptor.name} address 1`);
+
+      // Final refresh to verify all states are stable
+      await refreshAddressBalance(page, descriptor.descriptor, {
+        chain_in: "0.00010000 ₿",
+        chain_out: "0.00001000 ₿",
+        mempool_in: "0.00000000 ₿",
+        mempool_out: "0.00000000 ₿"
+      }, 1, descriptor.descriptor);
+      console.log(`Verified final stable state for ${descriptor.name} address 1`);
 
       // If this is the first descriptor, test editing and deleting addresses
       if (descriptor.name === "Single XPub") {

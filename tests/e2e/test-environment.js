@@ -255,8 +255,13 @@ export const refreshAddressBalance = async (
   index = 0,
   parentKey = null
 ) => {
-  // Click the refresh button - this still uses the address in the test ID
-  await page.getByTestId(`${address}-refresh-button`).click();
+  // For balance cells, we use the new format
+  const testIdPrefix = parentKey ? `${parentKey}-address-${index}` : address;
+
+  // Find and verify the refresh button exists and is visible
+  const refreshButton = page.getByTestId(`${testIdPrefix}-refresh-button`);
+  await expect(refreshButton).toBeVisible();
+  await refreshButton.click();
 
   // Wait for the notification to appear
   await expect(page.getByTestId("notification")).toBeVisible();
@@ -264,11 +269,6 @@ export const refreshAddressBalance = async (
   await expect(page.getByTestId("notification")).toHaveClass(
     /MuiAlert-standardSuccess/
   );
-
-  // For balance cells, we use the new format
-  const testIdPrefix = parentKey
-    ? `${parentKey}-address-${index}`
-    : `${address}`;
 
   // Verify all balance values match expected values
   if (expectedBalances.chain_in !== undefined) {
