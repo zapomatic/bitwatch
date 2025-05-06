@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { TableRow, TableCell, Box, Typography, Tooltip } from "@mui/material";
+import { TableRow, TableCell, Box, Typography } from "@mui/material";
 import IconButtonStyled from "../components/IconButtonStyled";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -15,22 +15,44 @@ const AddressCell = ({ address }) => {
   const handleCopy = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    navigator.clipboard.writeText(address.address);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+
+    const textarea = document.createElement("textarea");
+    textarea.value = address;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+
+    textarea.select();
+    const successful = document.execCommand("copy");
+    if (successful) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
+
+    document.body.removeChild(textarea);
   };
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-      <Typography variant="body2">{address.address.slice(0, 8)}...</Typography>
-      <Tooltip title={copied ? "Copied!" : "Copy full address"}>
-        <IconButtonStyled
-          size="small"
-          onClick={handleCopy}
-          icon={<ContentCopyIcon fontSize="small" />}
-          aria-label="Copy address"
-        />
-      </Tooltip>
+    <Box
+      className="crystal-flex crystal-flex-start crystal-gap-1"
+      sx={{ width: "100%" }}
+    >
+      <Box
+        component="a"
+        href={`https://mempool.space/address/${address}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="crystal-link"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {`${address.slice(0, 8)}...`}
+      </Box>
+      <IconButtonStyled
+        size="small"
+        onClick={handleCopy}
+        icon={<ContentCopyIcon fontSize="small" />}
+        title={copied ? "Copied!" : "Copy full address"}
+      />
     </Box>
   );
 };
@@ -95,21 +117,19 @@ const AddressRow = ({
     e.preventDefault();
     e.stopPropagation();
 
-    // Find the descriptor that contains this address
-    const descriptor = collection.descriptors?.find((d) =>
-      d.addresses?.some((a) => a.address === address.address)
+    // Determine if this is an extended key or descriptor address
+    const isExtendedKey = collection.extendedKeys?.some(
+      (k) => k.key === parentKey
+    );
+    const isDescriptor = collection.descriptors?.some(
+      (d) => d.descriptor === parentKey
     );
 
     onDelete({
       collection: collection.name,
       address: address.address,
-      ...(parentKey?.key ? { extendedKey: parentKey } : {}),
-      ...(parentKey?.descriptor
-        ? { descriptor: { descriptor: parentKey.descriptor } }
-        : {}),
-      ...(descriptor && !parentKey
-        ? { descriptor: { descriptor: descriptor.descriptor } }
-        : {}),
+      ...(isExtendedKey ? { extendedKey: { key: parentKey } } : {}),
+      ...(isDescriptor ? { descriptor: { descriptor: parentKey } } : {}),
     });
   };
 
@@ -150,69 +170,110 @@ const AddressRow = ({
       address.actual.mempool_in !== address.expect.mempool_in ||
       address.actual.mempool_out !== address.expect.mempool_out);
 
+  const testId = parentKey ? `${parentKey}-address-${index}` : address.address;
+
   return (
     <TableRow
       className="crystal-table-row address-row"
-      data-testid={`${
-        parentKey?.descriptor || parentKey?.key || address.address
-      }-address-${index}`}
+      data-testid={`${testId}-row`}
+      aria-label={`Address ${address.name}`}
     >
       <TableCell>
-        <Typography
-          variant="body2"
-          data-testid={`${
-            parentKey?.descriptor || parentKey?.key || address.address
-          }-address-${index}-name`}
-        >
-          {address.name}
-        </Typography>
+        <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+          <Typography className="crystal-text" data-testid={`${testId}-name`}>
+            {address.name}
+          </Typography>
+        </Box>
       </TableCell>
       <TableCell>
-        <AddressCell address={address} />
+        <AddressCell address={address.address} />
+      </TableCell>
+      <TableCell className="crystal-table-cell">
+        <Box className="crystal-flex crystal-flex-start">
+          <BalanceCell
+            label="⬅️"
+            value={address.actual?.chain_in}
+            expect={address.expect?.chain_in}
+            displayBtc={displayBtc}
+            error={address.error}
+            pending={!address.actual && !address.error}
+            monitor={address.monitor}
+            type="chain_in"
+            dataTestId={`${testId}-chain-in`}
+          />
+        </Box>
+        <Box className="crystal-flex crystal-flex-start" sx={{ mt: 1 }}>
+          <BalanceCell
+            label="➡️"
+            value={address.actual?.chain_out}
+            expect={address.expect?.chain_out}
+            displayBtc={displayBtc}
+            error={address.error}
+            pending={!address.actual && !address.error}
+            monitor={address.monitor}
+            type="chain_out"
+            dataTestId={`${testId}-chain-out`}
+          />
+        </Box>
+      </TableCell>
+      <TableCell className="crystal-table-cell">
+        <Box className="crystal-flex crystal-flex-start">
+          <BalanceCell
+            value={address.actual?.mempool_in}
+            expect={address.expect?.mempool_in}
+            displayBtc={displayBtc}
+            error={address.error}
+            pending={!address.actual && !address.error}
+            monitor={address.monitor}
+            type="mempool_in"
+            dataTestId={`${testId}-mempool-in`}
+          />
+        </Box>
+        <Box className="crystal-flex crystal-flex-start" sx={{ mt: 1 }}>
+          <BalanceCell
+            value={address.actual?.mempool_out}
+            expect={address.expect?.mempool_out}
+            displayBtc={displayBtc}
+            error={address.error}
+            pending={!address.actual && !address.error}
+            monitor={address.monitor}
+            type="mempool_out"
+            dataTestId={`${testId}-mempool-out`}
+          />
+        </Box>
       </TableCell>
       <TableCell>
-        <BalanceCell
-          balance={address.actual?.chain_in}
-          displayBtc={displayBtc}
-          data-testid={`${
-            parentKey?.descriptor || parentKey?.key || address.address
-          }-address-${index}-chain-in`}
-        />
-      </TableCell>
-      <TableCell>
-        <BalanceCell
-          balance={address.actual?.mempool_in}
-          displayBtc={displayBtc}
-          data-testid={`${
-            parentKey?.descriptor || parentKey?.key || address.address
-          }-address-${index}-mempool-in`}
-        />
-      </TableCell>
-      <TableCell>
-        <Box sx={{ display: "flex", gap: 1 }}>
+        <Box className="crystal-flex crystal-flex-center crystal-gap-1">
           <IconButtonStyled
+            size="small"
             onClick={handleRefresh}
-            icon={<RefreshIcon />}
-            data-testid={`${
-              parentKey?.descriptor || parentKey?.key || address.address
-            }-address-${index}-refresh-button`}
+            icon={<RefreshIcon fontSize="small" />}
+            data-testid={`${testId}-refresh-button`}
             aria-label="Refresh balance"
             disabled={isRefreshing}
           />
           <IconButtonStyled
+            size="small"
             onClick={handleEdit}
-            icon={<EditIcon />}
-            data-testid={`${
-              parentKey?.descriptor || parentKey?.key || address.address
-            }-address-${index}-edit-button`}
+            icon={<EditIcon fontSize="small" />}
+            data-testid={`${testId}-edit-button`}
             aria-label="Edit address"
           />
+          {hasBalanceChanges && (
+            <IconButtonStyled
+              size="small"
+              onClick={handleSaveExpected}
+              icon={<CheckIcon fontSize="small" />}
+              data-testid={`${testId}-accept-button`}
+              aria-label="Accept balance changes"
+            />
+          )}
           <IconButtonStyled
+            size="small"
             onClick={handleDelete}
-            icon={<DeleteIcon />}
-            data-testid={`${
-              parentKey?.descriptor || parentKey?.key || address.address
-            }-address-${index}-delete-button`}
+            icon={<DeleteIcon fontSize="small" />}
+            variant="danger"
+            data-testid={`${testId}-delete-button`}
             aria-label="Delete address"
           />
         </Box>

@@ -198,34 +198,20 @@ export default function Addresses() {
   };
 
   const handleAddAddress = (collection, name, address, setNewAddress) => {
-    socketIO.emit(
-      "add",
-      {
-        collection,
-        name,
-        address,
-        monitor: {
-          chain_in: "auto-accept",
-          chain_out: "alert",
-          mempool_in: "auto-accept",
-          mempool_out: "alert",
-        },
-      },
-      (response) => {
-        console.log("add", response);
-        if (response.error) {
-          setNotification({
-            open: true,
-            message: response.error,
-            severity: "error",
-          });
-        } else if (response.status === "ok" && response.record) {
-          // The address was added successfully and is in a loading state
-          // The UI will update automatically when the updateState event is received
-          setNewAddress(null);
-        }
+    socketIO.emit("add", { collection, name, address }, (response) => {
+      console.log("add", response);
+      if (response.error) {
+        setNotification({
+          open: true,
+          message: response.error,
+          severity: "error",
+        });
+      } else if (response.status === "ok" && response.record) {
+        // The address was added successfully and is in a loading state
+        // The UI will update automatically when the updateState event is received
+        setNewAddress(null);
       }
-    );
+    });
   };
 
   const saveExpected = useCallback((row) => {

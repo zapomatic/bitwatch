@@ -53,7 +53,7 @@ export const add = async (data) => {
         mempool_in: 0,
         mempool_out: 0,
       },
-      monitor: data.monitor || {
+      monitor: {
         chain_in: "auto-accept",
         chain_out: "alert",
         mempool_in: "auto-accept",
