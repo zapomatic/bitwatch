@@ -66,6 +66,7 @@ const AddressRow = ({
   index,
   onDelete,
   onEditAddress,
+  derivationPath,
 }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -107,7 +108,11 @@ const AddressRow = ({
   const handleEdit = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    onEditAddress(collection, address);
+    onEditAddress(collection, {
+      ...address,
+      parentKey: parentKey,
+      derivationPath: derivationPath,
+    });
   };
 
   const handleDelete = (e) => {
@@ -153,27 +158,34 @@ const AddressRow = ({
       address.actual.mempool_in !== address.expect.mempool_in ||
       address.actual.mempool_out !== address.expect.mempool_out);
 
+  const testId = parentKey ? `${parentKey}-address-${index}` : address.address;
+
   return (
     <TableRow
       className="crystal-table-row address-row"
-      data-testid={`${parentKey ? `${parentKey}-` : ""}${address.address}-row`}
+      data-testid={`${testId}-row`}
       aria-label={`Address ${address.name}`}
     >
       <TableCell>
         <Box className="crystal-flex crystal-flex-start crystal-gap-1">
-          <Typography
-            className="crystal-text"
-            data-testid={`${
-              parentKey ? `${parentKey}-address-${index}` : address.address
-            }-name`}
-          >
+          <Typography className="crystal-text" data-testid={`${testId}-name`}>
             {address.name}
           </Typography>
         </Box>
       </TableCell>
-      <TableCell className="crystal-table-cell">
+      <TableCell>
         <AddressCell address={address.address} />
       </TableCell>
+      {derivationPath && (
+        <TableCell>
+          <Typography
+            className="crystal-text"
+            data-testid={`${testId}-derivation-path`}
+          >
+            {derivationPath}
+          </Typography>
+        </TableCell>
+      )}
       <TableCell className="crystal-table-cell">
         <Box className="crystal-flex crystal-flex-start">
           <BalanceCell
@@ -185,9 +197,7 @@ const AddressRow = ({
             pending={!address.actual && !address.error}
             monitor={address.monitor}
             type="chain_in"
-            dataTestId={`${
-              parentKey ? `${parentKey}-address-${index}` : address.address
-            }-chain-in`}
+            dataTestId={`${testId}-chain-in`}
           />
         </Box>
         <Box className="crystal-flex crystal-flex-start" sx={{ mt: 1 }}>
@@ -200,9 +210,7 @@ const AddressRow = ({
             pending={!address.actual && !address.error}
             monitor={address.monitor}
             type="chain_out"
-            dataTestId={`${
-              parentKey ? `${parentKey}-address-${index}` : address.address
-            }-chain-out`}
+            dataTestId={`${testId}-chain-out`}
           />
         </Box>
       </TableCell>
@@ -216,9 +224,7 @@ const AddressRow = ({
             pending={!address.actual && !address.error}
             monitor={address.monitor}
             type="mempool_in"
-            dataTestId={`${
-              parentKey ? `${parentKey}-address-${index}` : address.address
-            }-mempool-in`}
+            dataTestId={`${testId}-mempool-in`}
           />
         </Box>
         <Box className="crystal-flex crystal-flex-start" sx={{ mt: 1 }}>
@@ -230,9 +236,7 @@ const AddressRow = ({
             pending={!address.actual && !address.error}
             monitor={address.monitor}
             type="mempool_out"
-            dataTestId={`${
-              parentKey ? `${parentKey}-address-${index}` : address.address
-            }-mempool-out`}
+            dataTestId={`${testId}-mempool-out`}
           />
         </Box>
       </TableCell>
@@ -242,9 +246,7 @@ const AddressRow = ({
             size="small"
             onClick={handleRefresh}
             icon={<RefreshIcon fontSize="small" />}
-            data-testid={`${
-              parentKey ? `${parentKey}-address-${index}` : address.address
-            }-refresh-button`}
+            data-testid={`${testId}-refresh-button`}
             aria-label="Refresh balance"
             disabled={isRefreshing}
           />
@@ -252,9 +254,7 @@ const AddressRow = ({
             size="small"
             onClick={handleEdit}
             icon={<EditIcon fontSize="small" />}
-            data-testid={`${
-              parentKey ? `${parentKey}-address-${index}` : address.address
-            }-edit-button`}
+            data-testid={`${testId}-edit-button`}
             aria-label="Edit address"
           />
           {hasBalanceChanges && (
@@ -262,9 +262,7 @@ const AddressRow = ({
               size="small"
               onClick={handleSaveExpected}
               icon={<CheckIcon fontSize="small" />}
-              data-testid={`${
-                parentKey ? `${parentKey}-address-${index}` : address.address
-              }-accept-button`}
+              data-testid={`${testId}-accept-button`}
               aria-label="Accept balance changes"
             />
           )}
@@ -273,9 +271,7 @@ const AddressRow = ({
             onClick={handleDelete}
             icon={<DeleteIcon fontSize="small" />}
             variant="danger"
-            data-testid={`${
-              parentKey ? `${parentKey}-address-${index}` : address.address
-            }-delete-button`}
+            data-testid={`${testId}-delete-button`}
             aria-label="Delete address"
           />
         </Box>

@@ -303,10 +303,180 @@ test.describe("Bitwatch", () => {
       for (let i = 2; i <= 4; i++) {
         await expect(page.locator(`[data-testid="${key.key}-address-${i}-chain-in"]`)).toHaveText("0.00000000 ₿");
       }
+
+      // If this is the first extended key, test editing an address
+      if (key.name === "Test XPub") {
+        // Edit the first derived address
+        await page.getByTestId(`${key.key}-address-1-edit-button`).click();
+        
+        // Wait for the dialog to be visible
+        await expect(page.locator('[data-testid="address-dialog"]')).toBeVisible();
+        await expect(page.getByTestId("address-name-input")).toHaveValue(`${key.name} 1`);
+        
+        // Change the name
+        await page.getByTestId("address-name-input").fill(`${key.name} 1 Edited`);
+        await page.getByTestId("address-dialog-save").click();
+        
+        // Verify the dialog closed and name was updated
+        await expect(page.locator('[data-testid="address-dialog"]')).not.toBeVisible();
+        await expect(page.getByText("Address updated successfully")).toBeVisible();
+        await expect(page.getByTestId(`${key.key}-address-1-name`)).toContainText(`${key.name} 1 Edited`);
+        console.log(`Edited address name in ${key.name}`);
+      }
+
+      // Collapse the extended key section after testing
+      await page.getByTestId(`${key.key}-expand-button`).click();
+      console.log(`Collapsed ${key.name} section`);
+    }
+
+    // Add descriptors (pkh, sh(wpkh), wpkh, wsh(multi), wsh(sortedmulti), wsh(multi-mixed))
+    const descriptors = [
+      {
+        name: "Single XPub",
+        descriptor: testData.descriptors.xpubSingle,
+        derivationPath: "m/0",
+        skip: 1,
+        gapLimit: 3,
+        initialAddresses: 3
+      },
+      {
+        name: "Single YPub",
+        descriptor: testData.descriptors.ypubSingle,
+        derivationPath: "m/0",
+        skip: 1,
+        gapLimit: 3,
+        initialAddresses: 3
+      },
+      {
+        name: "Single ZPub",
+        descriptor: testData.descriptors.zpubSingle,
+        derivationPath: "m/0",
+        skip: 1,
+        gapLimit: 3,
+        initialAddresses: 3
+      },
+      {
+        name: "Multi-Sig",
+        descriptor: testData.descriptors.multiSig,
+        derivationPath: "m/0",
+        skip: 1,
+        gapLimit: 3,
+        initialAddresses: 3
+      },
+      {
+        name: "Sorted Multi-Sig",
+        descriptor: testData.descriptors.sortedMultiSig,
+        derivationPath: "m/0",
+        skip: 1,
+        gapLimit: 3,
+        initialAddresses: 3
+      },
+      {
+        name: "Mixed Key Types",
+        descriptor: testData.descriptors.mixedKeyTypes,
+        derivationPath: "m/0",
+        skip: 1,
+        gapLimit: 3,
+        initialAddresses: 3
+      }
+    ];
+
+    for (const descriptor of descriptors) {
+      await addDescriptor(page, "Donations", descriptor);
+      console.log(`Added ${descriptor.name}`);
+
+      // Verify the key-derived addresses section is visible
+      await expect(page.getByText("Key-Derived Addresses")).toBeVisible();
+
+      // Wait for the descriptor row to be visible
+      await expect(page.getByTestId(`${descriptor.name}-descriptor-row`)).toBeVisible();
+
+      // Find the descriptor row
+      const descriptorRow = page.getByTestId(`${descriptor.name}-descriptor-row`);
+      
+      // Verify descriptor information
+      await expect(descriptorRow.locator('td').nth(0)).toContainText(descriptor.name);
+      await expect(descriptorRow.locator('td').nth(1)).toContainText(descriptor.descriptor.slice(0, 8));
+      await expect(descriptorRow.locator('td').nth(2)).toContainText(descriptor.gapLimit.toString());
+      await expect(descriptorRow.locator('td').nth(3)).toContainText(descriptor.skip.toString());
+      await expect(descriptorRow.locator('td').nth(4)).toContainText(descriptor.initialAddresses.toString());
+
+      // If this is the first descriptor, test editing and deleting addresses
+      if (descriptor.name === "Single XPub") {
+        // Edit the first derived address
+        await page.getByTestId(`${descriptor.descriptor}-address-1-edit-button`).click();
+        
+        // Wait for the dialog to be visible
+        await expect(page.locator('[data-testid="address-dialog"]')).toBeVisible();
+        await expect(page.getByTestId("address-name-input")).toHaveValue(`${descriptor.name} 1`);
+        
+        // Change the name
+        await page.getByTestId("address-name-input").fill(`${descriptor.name} 1 Edited`);
+        await page.getByTestId("address-dialog-save").click();
+        
+        // Verify the dialog closed and name was updated
+        await expect(page.locator('[data-testid="address-dialog"]')).not.toBeVisible();
+        await expect(page.getByText("Address updated successfully")).toBeVisible();
+        await expect(page.getByTestId(`${descriptor.descriptor}-address-1-name`)).toContainText(`${descriptor.name} 1 Edited`);
+        console.log(`Edited address name in ${descriptor.name}`);
+
+        // Delete the first derived address
+        await page.getByTestId(`${descriptor.descriptor}-address-1-delete-button`).click();
+        
+        // Confirm deletion in dialog
+        await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
+        await expect(page.getByText("Remove this address from the descriptor set?")).toBeVisible();
+        await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
+        
+        // Wait for dialog to close and verify deletion
+        await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
+        await expect(page.getByTestId(`${descriptor.descriptor}-address-1-delete-button`)).not.toBeVisible();
+        console.log("Deleted single address from descriptor");
+      }
+
+      // Collapse the descriptor section after testing
+      await page.getByTestId(`${descriptor.descriptor}-expand-button`).click();
+      console.log(`Collapsed ${descriptor.name} section`);
+
+      // Delete the descriptor
+      await page.getByTestId(`${descriptor.descriptor}-delete-button`).click();
+      
+      // Confirm deletion in dialog
+      await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
+      await expect(page.getByText("Delete this descriptor and all its derived addresses?")).toBeVisible();
+      await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
+      
+      // Wait for dialog to close
+      await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
+      console.log(`Deleted ${descriptor.name}`);
     }
 
     // Now that we've verified all balances, we can delete everything
     for (const key of extendedKeys) {
+      // First delete a single address from the extended key
+      if (key.name === "Test XPub") {
+        // Expand the section before deleting
+        await page.getByTestId(`${key.key}-expand-button`).click();
+        console.log(`Expanded ${key.name} section for deletion`);
+
+        // Delete the first derived address
+        await page.getByTestId(`${key.key}-address-1-delete-button`).click();
+        
+        // Confirm deletion in dialog
+        await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
+        await expect(page.getByText("Remove this address from the extended key set?")).toBeVisible();
+        await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
+        
+        // Wait for dialog to close and verify deletion
+        await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
+        await expect(page.getByTestId(`${key.key}-address-1-delete-button`)).not.toBeVisible();
+        console.log("Deleted single address from extended key");
+
+        // Collapse the section after deletion
+        await page.getByTestId(`${key.key}-expand-button`).click();
+        console.log(`Collapsed ${key.name} section after deletion`);
+      }
+
       // Delete extended key
       await page.getByTestId(`${key.key}-delete-button`).click();
       

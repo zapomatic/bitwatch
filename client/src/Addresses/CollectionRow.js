@@ -316,11 +316,12 @@ const CollectionRow = ({
                         <ExtendedKeyInfo
                           key={extendedKey.key}
                           extendedKey={extendedKey}
+                          onEdit={() => setExtendedKeyDialogOpen(true)}
+                          onDelete={onDelete}
                           collection={collection}
-                          onDelete={() => onDelete({ extendedKey })}
-                          onSaveExpected={onSaveExpected}
                           displayBtc={displayBtc}
                           setNotification={setNotification}
+                          onEditAddress={onEditAddress}
                         />
                       ))}
                       {(collection.descriptors || []).map((descriptor) => (
@@ -333,6 +334,7 @@ const CollectionRow = ({
                           onEditAddress={onEditAddress}
                           onSaveExpected={onSaveExpected}
                           displayBtc={displayBtc}
+                          setNotification={setNotification}
                         />
                       ))}
                     </TableBody>

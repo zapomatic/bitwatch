@@ -7,7 +7,8 @@ import * as url from "node:url";
 import logger from "./logger.js";
 import socketIO from "./io.js";
 import telegram from "./telegram.js";
-import { deriveExtendedKeyAddresses, deriveAddresses } from "./addressDeriver.js";
+import { deriveExtendedKeyAddresses } from "./addressDeriver.js";
+import { deriveAddresses } from "./descriptors.js";
 
 // Helper to check if an address has any activity
 const hasAddressActivity = (addr) => {
@@ -326,9 +327,9 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
             parentItem.skip || 0
           );
 
-      if (newAddresses) {
+      if (isExtendedKeyAddress ? newAddresses : newAddresses?.success) {
         // Add new addresses to parent item
-        const newAddressRecords = newAddresses.map((addr) => ({
+        const newAddressRecords = (isExtendedKeyAddress ? newAddresses : newAddresses.data).map((addr) => ({
           address: addr.address,
           name: `${parentItem.name} ${addr.index}`,
           index: addr.index,
@@ -396,6 +397,8 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
   // Save state if there were changes
   if (balanceChanged) {
     memory.saveDb();
+    // Emit state update to all clients
+    socketIO.io.emit("updateState", { collections: memory.db.collections });
   }
 
   return { success: true, balanceChanged, addr };

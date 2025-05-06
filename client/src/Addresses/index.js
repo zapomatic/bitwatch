@@ -120,7 +120,29 @@ export default function Addresses() {
       // If we're in a refresh operation, check for errors
       if (refreshing) {
         const hasErrors = Object.values(updatedState.collections || {}).some(
-          (collection) => collection.addresses.some((addr) => addr.error)
+          (collection) => {
+            // Check regular addresses
+            if (collection.addresses.some((addr) => addr.error)) {
+              return true;
+            }
+            // Check extended key addresses
+            if (
+              collection.extendedKeys?.some((key) =>
+                key.addresses.some((addr) => addr.error)
+              )
+            ) {
+              return true;
+            }
+            // Check descriptor addresses
+            if (
+              collection.descriptors?.some((desc) =>
+                desc.addresses.some((addr) => addr.error)
+              )
+            ) {
+              return true;
+            }
+            return false;
+          }
         );
 
         setNotification({
@@ -490,7 +512,11 @@ export default function Addresses() {
       "updateAddress",
       {
         collection: editDialog.collection,
-        address: updatedAddress,
+        address: {
+          address: editDialog.address.address,
+          name: updatedAddress.name,
+          monitor: updatedAddress.monitor,
+        },
       },
       (response) => {
         if (response.error) {
@@ -505,8 +531,11 @@ export default function Addresses() {
             message: "Address updated successfully",
             severity: "success",
           });
+          // Wait for notification to be shown before closing dialog
+          setTimeout(() => {
+            setEditDialog({ open: false, collection: null, address: null });
+          }, 100);
         }
-        setEditDialog({ open: false, collection: null, address: null });
       }
     );
   };

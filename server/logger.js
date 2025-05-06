@@ -17,8 +17,9 @@ const logger = {
   warning: (message) => {
     console.log(`[${new Date().toISOString()}] ⚠️  ${message}`);
   },
-  error: (message) => {
+  error: (message, cb) => {
     console.log(`[${new Date().toISOString()}] ❌ ${message}`);
+    cb && cb({ success: false, error: message });
   },
   debug: (message) => {
     if (memory.db.debugLogging) {

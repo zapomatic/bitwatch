@@ -27,6 +27,7 @@ const ExtendedKeyInfo = ({
   collection,
   displayBtc,
   setNotification,
+  onEditAddress,
 }) => {
   const [isExpanded, setIsExpanded] = useState(
     extendedKey.addresses?.length > 0
@@ -226,6 +227,7 @@ const ExtendedKeyInfo = ({
                       setNotification={setNotification}
                       parentKey={extendedKey.key}
                       index={address.index}
+                      onEditAddress={onEditAddress}
                     />
                   ))}
                 </TableBody>

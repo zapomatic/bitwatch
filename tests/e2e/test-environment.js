@@ -219,16 +219,33 @@ export const addDescriptor = async (
   { name, descriptor, skip, gapLimit, initialAddresses }
 ) => {
   await findAndClick(page, `[data-testid="${collection}-add-descriptor"]`);
-  await findAndFill(page, '[aria-label="Descriptor name"]', name);
-  await findAndFill(page, '[aria-label="Output descriptor"]', descriptor);
-  await findAndFill(page, '[aria-label="Skip addresses"]', skip.toString());
-  await findAndFill(page, '[aria-label="Gap limit"]', gapLimit.toString());
-  await findAndFill(
-    page,
-    '[aria-label="Initial addresses"]',
+
+  // Wait for dialog to be visible
+  await page.waitForSelector('[aria-label="Descriptor name"] input', {
+    state: "visible",
+    timeout: 2000,
+  });
+
+  // Fill in the form fields
+  await page.fill('[aria-label="Descriptor name"] input', name);
+  await page.fill('[aria-label="Output descriptor"] input', descriptor);
+  await page.fill('[aria-label="Skip addresses"] input', skip.toString());
+  await page.fill('[aria-label="Gap limit"] input', gapLimit.toString());
+  await page.fill(
+    '[aria-label="Initial addresses"] input',
     initialAddresses.toString()
   );
-  await findAndClick(page, '[aria-label="Add descriptor"]');
+
+  // Click the Add button - allow clicking in overlay since it's in a dialog
+  await findAndClick(page, '[aria-label="Add descriptor"]', {
+    allowOverlay: true,
+  });
+
+  // Wait for the dialog to disappear
+  await page.waitForSelector('[aria-label="Descriptor name"]', {
+    state: "hidden",
+    timeout: 2000,
+  });
 };
 
 export const refreshAddressBalance = async (

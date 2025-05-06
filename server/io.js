@@ -8,6 +8,7 @@ import * as bitcoin from 'bitcoinjs-lib';
 import * as ecc from 'tiny-secp256k1';
 import { getAddressBalance, handleBalanceUpdate } from "./getAddressBalance.js";
 import { deriveAddresses, validateDescriptor } from './descriptors.js';
+import { deriveExtendedKeyAddresses } from "./addressDeriver.js";
 
 const bip32 = BIP32Factory(ecc);
 
@@ -78,7 +79,7 @@ const socketIO = {
 
         refreshBalance: async (data, cb) => {
           if (!data.collection || !data.address) {
-            cb && cb({ error: "Missing collection or address" });
+            logger.error("Missing collection or address", cb);
             return;
           }
 
@@ -87,14 +88,14 @@ const socketIO = {
           // Fetch new balance
           const balance = await getAddressBalance(data.address);
           if (balance.error) {
-            cb && cb({ error: balance.message });
+            logger.error(balance.message, cb);
             return;
           }
 
           // Use centralized balance update handler
           const result = await handleBalanceUpdate(data.address, balance, data.collection);
           if (result.error) {
-            cb && cb({ error: result.error });
+            logger.error(result.error, cb);
             return;
           }
 
@@ -159,7 +160,7 @@ const socketIO = {
           // Handle adding a collection
           if (data.collection && !data.name && !data.address) {
             if (memory.db.collections[data.collection]) {
-              cb && cb({ error: "Collection already exists" });
+              logger.error("Collection already exists", cb);
               return;
             }
             
@@ -179,13 +180,13 @@ const socketIO = {
           if (data.collection && data.name && data.address) {
             const collection = memory.db.collections[data.collection];
             if (!collection) {
-              cb && cb({ error: "Collection not found" });
+              logger.error("Collection not found", cb);
               return;
             }
             
             // Check if address already exists
             if (collection.addresses.some(addr => addr.address === data.address)) {
-              cb && cb({ error: "Address already exists in this collection" });
+              logger.error("Address already exists in this collection", cb);
               return;
             }
             
@@ -216,7 +217,7 @@ const socketIO = {
             return true;
           }
           
-          cb && cb({ error: "Invalid request" });
+          logger.error("Invalid request", cb);
           return;
         },
 
@@ -224,7 +225,7 @@ const socketIO = {
           logger.processing(`Saving expected state for ${data.collection}/${data.address}`);
           const collection = memory.db.collections[data.collection];
           if (!collection) {
-            cb && cb({ error: "Collection not found" });
+            logger.error("Collection not found", cb);
             return;
           }
           
@@ -248,7 +249,7 @@ const socketIO = {
           }
           
           if (!record) {
-            cb && cb({ error: "Address not found" });
+            logger.error("Address not found", cb);
             return;
           }
           
@@ -269,7 +270,7 @@ const socketIO = {
 
         addDescriptor: async (data, cb) => {
           if (!data.collection || !data.name || !data.descriptor) {
-            cb && cb({ success: false, error: "Missing required fields" });
+            logger.error("Missing required fields", cb);
             return;
           }
 
@@ -278,7 +279,7 @@ const socketIO = {
           // Validate descriptor
           const validation = validateDescriptor(data.descriptor);
           if (!validation.success) {
-            cb && cb({ success: false, error: validation.error });
+            logger.error(validation.error, cb);
             return;
           }
 
@@ -294,14 +295,19 @@ const socketIO = {
           // Check if descriptor already exists
           const collection = memory.db.collections[data.collection];
           if (collection.descriptors.some(d => d.name === data.name)) {
-            cb && cb({ success: false, error: "Descriptor with this name already exists" });
+            logger.error("Descriptor with this name already exists", cb);
             return;
           }
 
           // Derive addresses
-          const result = await deriveAddresses(data.descriptor, data.gapLimit, data.initialAddresses, data.skip);
+          const result = await deriveAddresses(
+            data.descriptor,
+            0, // start from index 0
+            data.initialAddresses || 10, // number of addresses to derive
+            data.skip || 0 // skip value
+          );
           if (!result.success) {
-            cb && cb({ success: false, error: result.error });
+            logger.error(result.error || "Failed to derive addresses", cb);
             return;
           }
 
@@ -309,9 +315,12 @@ const socketIO = {
           collection.descriptors.push({
             name: data.name,
             descriptor: data.descriptor,
-            gapLimit: data.gapLimit,
+            gapLimit: data.gapLimit || 2,
+            skip: data.skip || 0,
+            initialAddresses: data.initialAddresses || 10,
             addresses: result.data.map(addr => ({
               address: addr.address,
+              name: `${data.name} ${addr.index}`,
               index: addr.index,
               expect: {
                 chain_in: 0,
@@ -339,7 +348,7 @@ const socketIO = {
 
         addExtendedKey: async (data, cb) => {
           if (!data.collection || !data.name || !data.key) {
-            cb && cb({ success: false, error: "Missing required fields" });
+            logger.error("Missing required fields", cb);
             return;
           }
 
@@ -357,7 +366,7 @@ const socketIO = {
           // Check if extended key already exists
           const collection = memory.db.collections[data.collection];
           if (collection.extendedKeys.some(k => k.name === data.name || k.key === data.key)) {
-            cb && cb({ success: false, error: "Extended key with this name or key already exists" });
+            logger.error("Extended key with this name or key already exists", cb);
             return;
           }
 
@@ -370,7 +379,7 @@ const socketIO = {
           );
 
           if (!addresses) {
-            cb && cb({ success: false, error: "Failed to derive addresses" });
+            logger.error("Failed to derive addresses", cb);
             return;
           }
 
@@ -412,13 +421,13 @@ const socketIO = {
 
         editDescriptor: async (data, cb) => {
           if (!data.collection || !data.name || !data.descriptor || data.descriptorIndex === undefined) {
-            cb && cb({ success: false, error: "Missing required fields" });
+            logger.error("Missing required fields", cb);
             return;
           }
 
           const collection = memory.db.collections[data.collection];
           if (!collection || !collection.descriptors[data.descriptorIndex]) {
-            cb && cb({ success: false, error: "Descriptor not found" });
+            logger.error("Descriptor not found", cb);
             return;
           }
 
@@ -431,7 +440,7 @@ const socketIO = {
           );
 
           if (!allAddressesResult.success) {
-            cb && cb({ success: false, error: allAddressesResult.error || "Failed to derive addresses" });
+            logger.error(allAddressesResult.error || "Failed to derive addresses", cb);
             return;
           }
 
@@ -475,13 +484,13 @@ const socketIO = {
           const { address, collection, extendedKey, descriptor } = data;
           
           if (!collection) {
-            cb && cb({ error: "Collection not specified" });
+            logger.error("Collection not specified", cb);
             return;
           }
 
           const targetCollection = memory.db.collections[collection];
           if (!targetCollection) {
-            cb && cb({ error: "Collection not found" });
+            logger.error("Collection not found", cb);
             return;
           }
 
@@ -491,64 +500,53 @@ const socketIO = {
             if (extendedKey) {
               const keyIndex = targetCollection.extendedKeys.findIndex(k => k.key === extendedKey.key);
               if (keyIndex === -1) {
-                cb && cb({ error: "Extended key not found" });
+                logger.error("Extended key not found", cb);
                 return;
               }
               const addressIndex = targetCollection.extendedKeys[keyIndex].addresses.findIndex(a => a.address === address);
               if (addressIndex === -1) {
-                cb && cb({ error: "Address not found in extended key" });
+                logger.error("Address not found in extended key", cb);
                 return;
               }
               targetCollection.extendedKeys[keyIndex].addresses.splice(addressIndex, 1);
-            }
-            // If it's a descriptor address
-            else if (descriptor) {
+            } else if (descriptor) {
               const descIndex = targetCollection.descriptors.findIndex(d => d.descriptor === descriptor.descriptor);
               if (descIndex === -1) {
-                cb && cb({ error: "Descriptor not found" });
+                logger.error("Descriptor not found", cb);
                 return;
               }
               const addressIndex = targetCollection.descriptors[descIndex].addresses.findIndex(a => a.address === address);
               if (addressIndex === -1) {
-                cb && cb({ error: "Address not found in descriptor" });
+                logger.error("Address not found in descriptor", cb);
                 return;
               }
               targetCollection.descriptors[descIndex].addresses.splice(addressIndex, 1);
-            }
-            // Regular address
-            else {
+            } else {
               const addressIndex = targetCollection.addresses.findIndex(a => a.address === address);
               if (addressIndex === -1) {
-                cb && cb({ error: "Address not found" });
+                logger.error("Address not found", cb);
                 return;
               }
               targetCollection.addresses.splice(addressIndex, 1);
             }
-          }
-          // Handle extended key deletion
-          else if (extendedKey) {
+          } else if (extendedKey) {
             const keyIndex = targetCollection.extendedKeys.findIndex(k => k.key === extendedKey.key);
             if (keyIndex === -1) {
-              cb && cb({ error: "Extended key not found" });
+              logger.error("Extended key not found", cb);
               return;
             }
             targetCollection.extendedKeys.splice(keyIndex, 1);
-          }
-          // Handle descriptor deletion
-          else if (descriptor) {
+          } else if (descriptor) {
             const descIndex = targetCollection.descriptors.findIndex(d => d.descriptor === descriptor.descriptor);
             if (descIndex === -1) {
-              cb && cb({ error: "Descriptor not found" });
+              logger.error("Descriptor not found", cb);
               return;
             }
             targetCollection.descriptors.splice(descIndex, 1);
-          }
-          // Handle collection deletion
-          else {
+          } else {
             delete memory.db.collections[collection];
           }
 
-          // Save changes and emit update
           memory.saveDb();
           socketIO.io.emit("updateState", { collections: memory.db.collections });
           cb && cb({ success: true });
@@ -559,29 +557,54 @@ const socketIO = {
           const { collection, address } = data;
           
           if (!collection || !address) {
-            cb && cb({ error: "Missing collection or address data" });
+            logger.error("Missing collection or address data", cb);
             return;
           }
 
           const targetCollection = memory.db.collections[collection];
           if (!targetCollection) {
-            cb && cb({ error: "Collection not found" });
+            logger.error("Collection not found", cb);
             return;
           }
 
-          // Find the address in the collection
-          const addressIndex = targetCollection.addresses.findIndex(a => a.address === address.address);
-          if (addressIndex === -1) {
-            cb && cb({ error: "Address not found" });
-            return;
+          // Try to find the address in the collection's addresses
+          let addressIndex = targetCollection.addresses.findIndex(a => a.address === address.address);
+          if (addressIndex !== -1) {
+            targetCollection.addresses[addressIndex] = {
+              ...targetCollection.addresses[addressIndex],
+              name: address.name,
+              monitor: address.monitor || targetCollection.addresses[addressIndex].monitor
+            };
+          } else {
+            // Try to find the address in extended keys
+            const extendedKey = targetCollection.extendedKeys?.find(key => 
+              key.addresses.some(a => a.address === address.address)
+            );
+            if (extendedKey) {
+              addressIndex = extendedKey.addresses.findIndex(a => a.address === address.address);
+              extendedKey.addresses[addressIndex] = {
+                ...extendedKey.addresses[addressIndex],
+                name: address.name,
+                monitor: address.monitor || extendedKey.addresses[addressIndex].monitor
+              };
+            } else {
+              // Try to find the address in descriptors
+              const descriptor = targetCollection.descriptors?.find(desc => 
+                desc.addresses.some(a => a.address === address.address)
+              );
+              if (descriptor) {
+                addressIndex = descriptor.addresses.findIndex(a => a.address === address.address);
+                descriptor.addresses[addressIndex] = {
+                  ...descriptor.addresses[addressIndex],
+                  name: address.name,
+                  monitor: address.monitor || descriptor.addresses[addressIndex].monitor
+                };
+              } else {
+                logger.error("Address not found", cb);
+                return;
+              }
+            }
           }
-
-          // Update the address properties while preserving the structure
-          targetCollection.addresses[addressIndex] = {
-            ...targetCollection.addresses[addressIndex],
-            name: address.name,
-            monitor: address.monitor || targetCollection.addresses[addressIndex].monitor
-          };
 
           memory.saveDb();
           socketIO.io.emit("updateState", { collections: memory.db.collections });
@@ -606,122 +629,6 @@ const socketIO = {
 
     return socketIO.io;
   },
-};
-
-const deriveExtendedKeyAddresses = async (extendedKey, startIndex, count, derivationPath) => {
-  const addresses = [];
-  
-  // Extract key from extendedKey object if needed
-  const keyString = typeof extendedKey === 'object' ? extendedKey.key : extendedKey;
-  const skipValue = typeof extendedKey === 'object' ? (extendedKey.skip || 0) : 0;
-  
-  logger.scan(`Deriving ${count} addresses starting from index ${startIndex} with skip ${skipValue}`);
-
-  // Create networks for different key types
-  const networks = {
-    xpub: {
-      ...bitcoin.networks.bitcoin,
-      bip32: {
-        public: 0x0488b21e,  // xpub
-        private: 0x0488ade4  // xprv
-      }
-    },
-    ypub: {
-      ...bitcoin.networks.bitcoin,
-      bip32: {
-        public: 0x049d7cb2,  // ypub
-        private: 0x049d7878  // yprv
-      }
-    },
-    zpub: {
-      ...bitcoin.networks.bitcoin,
-      bip32: {
-        public: 0x04b24746, // zpub
-        private: 0x04b2430c  // zprv
-      }
-    }
-  };
-
-  // Determine which network to use based on key prefix
-  const keyLower = keyString.toLowerCase();
-  let network;
-  if (keyLower.startsWith('zpub')) {
-    network = networks.zpub;
-  } else if (keyLower.startsWith('ypub')) {
-    network = networks.ypub;
-  } else {
-    network = networks.xpub;
-  }
-  
-  // Decode the extended key
-  let node;
-  // fromBase58 will throw if invalid, we'll let it return undefined
-  node = bip32.fromBase58(keyString, network);
-  if (!node) {
-    logger.error('Failed to decode extended key');
-    return null;
-  }
-  
-  // Parse derivation path and get the base node
-  const pathParts = derivationPath.split('/').slice(1); // Remove 'm'
-  let baseNode = node;
-  for (const part of pathParts) {
-    const isHardened = part.endsWith("'") || part.endsWith('h');
-    if (isHardened) {
-      logger.error('Cannot derive hardened keys from extended public keys');
-      return null;
-    }
-    const index = parseInt(part.replace(/['h]/g, ''));
-    if (isNaN(index)) {
-      logger.error('Invalid derivation path index');
-      return null;
-    }
-    baseNode = baseNode.derive(index);
-    if (!baseNode) {
-      logger.error('Failed to derive path');
-      return null;
-    }
-  }
-  
-  // Calculate the actual start index including skip
-  const actualStartIndex = startIndex + skipValue;
-  
-  // Derive addresses starting from the actual start index
-  for (let i = 0; i < count; i++) {
-    const derivationIndex = actualStartIndex + i;
-    const child = baseNode.derive(derivationIndex);
-    if (!child) {
-      logger.error(`Failed to derive child at index ${derivationIndex}`);
-      return null;
-    }
-    
-    // Use appropriate address type based on key prefix
-    let address;
-    if (keyLower.startsWith('zpub')) {
-      // Native segwit (P2WPKH)
-      address = bitcoin.payments.p2wpkh({ pubkey: child.publicKey, network }).address;
-    } else if (keyLower.startsWith('ypub')) {
-      // P2SH-wrapped segwit (P2SH-P2WPKH)
-      const p2wpkh = bitcoin.payments.p2wpkh({ pubkey: child.publicKey, network });
-      address = bitcoin.payments.p2sh({ redeem: p2wpkh, network }).address;
-    } else {
-      // Legacy (P2PKH)
-      address = bitcoin.payments.p2pkh({ pubkey: child.publicKey, network }).address;
-    }
-    
-    if (!address) {
-      logger.error(`Failed to generate address at index ${derivationIndex}`);
-      return null;
-    }
-    
-    addresses.push({
-      name: `Address ${derivationIndex}`,
-      address,
-      index: derivationIndex
-    });
-  }
-  
-  return addresses;
 };
 
 export default socketIO;

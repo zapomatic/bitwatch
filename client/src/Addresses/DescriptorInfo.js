@@ -17,6 +17,8 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import IconButtonStyled from "../components/IconButtonStyled";
 import AddressRow from "./AddressRow";
+import RefreshIcon from "@mui/icons-material/Refresh";
+import socketIO from "../io";
 
 const DescriptorInfo = ({
   descriptor,
@@ -29,6 +31,7 @@ const DescriptorInfo = ({
   const [isExpanded, setIsExpanded] = useState(
     descriptor.addresses?.length > 0
   );
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
     if (descriptor.addresses?.length > 0) {
@@ -64,11 +67,63 @@ const DescriptorInfo = ({
     setTimeout(() => setCopied(false), 1500);
   };
 
+  const handleRefreshAll = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsRefreshing(true);
+    setNotification({
+      open: true,
+      message: `Refreshing balances for ${descriptor.name}...`,
+      severity: "info",
+    });
+
+    let hasError = false;
+
+    // Refresh all addresses in sequence
+    for (const address of descriptor.addresses) {
+      try {
+        await new Promise((resolve, reject) => {
+          socketIO.emit(
+            "refreshBalance",
+            {
+              collection: collection.name,
+              address: address.address,
+            },
+            (response) => {
+              if (response.error) {
+                hasError = true;
+                reject(response.error);
+              } else {
+                resolve();
+              }
+            }
+          );
+        });
+      } catch (error) {
+        setNotification({
+          open: true,
+          message: `Failed to refresh balance: ${error}`,
+          severity: "error",
+        });
+      }
+    }
+
+    setIsRefreshing(false);
+    setNotification({
+      open: true,
+      message: hasError
+        ? "Some balances failed to refresh"
+        : "Balances refreshed successfully",
+      severity: hasError ? "warning" : "success",
+    });
+  };
+
   return (
     <>
       <TableRow
         className="crystal-table-row descriptor-row"
         sx={{ "& > *": { borderBottom: "unset" } }}
+        data-testid={`${descriptor.name}-descriptor-row`}
       >
         <TableCell>
           <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -76,7 +131,7 @@ const DescriptorInfo = ({
               size="small"
               onClick={handleExpandClick}
               sx={{ mr: 1 }}
-              data-testid={`${descriptor.descriptor}-expand-button`}
+              data-testid={`${descriptor.name}-expand-button`}
               aria-label={
                 isExpanded
                   ? "Collapse descriptor details"
@@ -98,7 +153,7 @@ const DescriptorInfo = ({
                 size="small"
                 onClick={handleCopy}
                 icon={<ContentCopyIcon fontSize="small" />}
-                data-testid={`${descriptor.descriptor}-copy-button`}
+                data-testid={`${descriptor.name}-copy-button`}
                 aria-label="Copy descriptor"
               />
             </Tooltip>
@@ -121,15 +176,22 @@ const DescriptorInfo = ({
         <TableCell>
           <Box sx={{ display: "flex", gap: 1 }}>
             <IconButtonStyled
+              onClick={handleRefreshAll}
+              icon={<RefreshIcon />}
+              data-testid={`${descriptor.name}-refresh-all-button`}
+              aria-label="Refresh all addresses"
+              disabled={isRefreshing}
+            />
+            <IconButtonStyled
               onClick={handleEditClick}
               icon={<EditIcon />}
-              data-testid={`${descriptor.descriptor}-edit-button`}
+              data-testid={`${descriptor.name}-edit-button`}
               aria-label="Edit descriptor"
             />
             <IconButtonStyled
               onClick={handleDeleteClick}
               icon={<DeleteIcon />}
-              data-testid={`${descriptor.descriptor}-delete-button`}
+              data-testid={`${descriptor.name}-delete-button`}
               aria-label="Delete descriptor"
             />
           </Box>
@@ -144,6 +206,7 @@ const DescriptorInfo = ({
                   <TableRow>
                     <TableCell>Name</TableCell>
                     <TableCell>Address</TableCell>
+                    <TableCell>Derivation Path</TableCell>
                     <TableCell>On-Chain</TableCell>
                     <TableCell>Mempool</TableCell>
                     <TableCell>Actions</TableCell>
@@ -157,6 +220,13 @@ const DescriptorInfo = ({
                       collection={collection}
                       displayBtc={displayBtc}
                       setNotification={setNotification}
+                      parentKey={descriptor.descriptor}
+                      index={address.index}
+                      onDelete={onDelete}
+                      onEditAddress={(_, address) =>
+                        onEdit(collection, address)
+                      }
+                      derivationPath={`${descriptor.name} ${address.index}`}
                     />
                   ))}
                 </TableBody>

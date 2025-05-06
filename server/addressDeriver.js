@@ -2,6 +2,7 @@ import { BIP32Factory } from "bip32";
 import * as bitcoin from "bitcoinjs-lib";
 import * as ecc from "tiny-secp256k1";
 import logger from "./logger.js";
+import { parseMultiSigDescriptor, getKeyNetwork } from "./descriptors.js";
 
 const bip32 = BIP32Factory(ecc);
 
@@ -136,25 +137,4 @@ export const deriveExtendedKeyAddresses = async (
   }
 
   return addresses;
-};
-
-export const deriveAddresses = async (
-  descriptor,
-  startIndex,
-  count,
-  skip = 0
-) => {
-  try {
-    // This is a placeholder - we need to implement descriptor address derivation
-    // For now, just return a success response with empty data
-    return {
-      success: true,
-      data: [],
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error.message,
-    };
-  }
 };
