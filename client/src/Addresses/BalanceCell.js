@@ -80,7 +80,7 @@ const BalanceCell = ({
           sx={{ opacity: pending ? 0.5 : 1 }}
         >
           {pending
-            ? "Loading..."
+            ? "waiting..."
             : error
             ? "—"
             : formatSatoshis(actualValue, displayBtc)}

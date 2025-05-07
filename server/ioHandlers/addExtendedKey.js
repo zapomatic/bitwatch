@@ -16,8 +16,9 @@ export const addExtendedKey = async ({ data, io }) => {
     return { error: "Missing required fields" };
   }
 
-  logger.info(
-    `Adding extended key ${data.name} to collection ${data.collection}`
+  logger.monitor(
+    `Adding extended key ${data.name} to collection ${data.collection}`,
+    data.monitor
   );
 
   // Create collection if it doesn't exist

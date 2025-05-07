@@ -6,6 +6,10 @@ const formatMessage = (message) => {
   return `[${getTimestamp()}] ${message}`;
 };
 
+const monitorIcons = {
+  alert: "🔔",
+  "auto-accept": "✅",
+};
 const logger = {
   // General purpose logging
   info: (message) => {
@@ -24,6 +28,16 @@ const logger = {
     if (memory.db.debugLogging) {
       console.log(`[${new Date().toISOString()}] 🔍 ${message}`);
     }
+  },
+
+  monitor: (message, monitor) => {
+    console.log(
+      `[${new Date().toISOString()}] ${message} with monitor settings: ${
+        monitorIcons[monitor.chain_in]
+      }/${monitorIcons[monitor.chain_out]}+${
+        monitorIcons[monitor.mempool_in]
+      }/${monitorIcons[monitor.mempool_out]}`
+    );
   },
 
   // Network and API related
