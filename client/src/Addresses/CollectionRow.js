@@ -171,7 +171,15 @@ const CollectionRow = ({
           </Box>
         </TableCell>
         <TableCell className="crystal-table-cell">
-          {(collection.addresses || []).length}
+          {(collection.addresses || []).length +
+            (collection.extendedKeys || []).reduce(
+              (sum, key) => sum + (key.addresses.length || 0),
+              0
+            ) +
+            (collection.descriptors || []).reduce(
+              (sum, desc) => sum + (desc.addresses.length || 0),
+              0
+            )}
         </TableCell>
         <TableCell className="crystal-table-cell">
           <Box className="crystal-flex crystal-flex-start">
@@ -303,11 +311,11 @@ const CollectionRow = ({
                       <TableRow>
                         <TableCell>Name</TableCell>
                         <TableCell>Key/Descriptor</TableCell>
-                        <TableCell>Derivation Path</TableCell>
-                        <TableCell>Gap Limit</TableCell>
+                        <TableCell>Path</TableCell>
+                        <TableCell>Gap</TableCell>
                         <TableCell>Skip</TableCell>
-                        <TableCell>Initial Addresses</TableCell>
-                        <TableCell>Address Count</TableCell>
+                        <TableCell>Initial</TableCell>
+                        <TableCell>Count</TableCell>
                         <TableCell>Actions</TableCell>
                       </TableRow>
                     </TableHead>

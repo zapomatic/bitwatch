@@ -45,7 +45,7 @@ const AddressCell = ({ address }) => {
         className="crystal-link"
         onClick={(e) => e.stopPropagation()}
       >
-        {`${address.slice(0, 8)}...`}
+        {`${address.slice(0, 15)}...`}
       </Box>
       <IconButtonStyled
         size="small"

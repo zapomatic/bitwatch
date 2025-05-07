@@ -133,7 +133,7 @@ test.describe("Bitwatch", () => {
     // Verify address is visible in the expanded table
     await expect(page.locator('text=Single Addresses')).toBeVisible();
     await expect(page.locator('table.address-subtable')).toBeVisible();
-    await expect(page.locator(`text=${testData.addresses.zapomatic.slice(0, 8)}...`)).toBeVisible();
+    await expect(page.locator(`text=${testData.addresses.zapomatic.slice(0, 15)}...`)).toBeVisible();
     console.log("Verified address table is visible");
 
     // Test refresh balance functionality for each state transition
@@ -269,7 +269,7 @@ test.describe("Bitwatch", () => {
       
       // Verify extended key information
       await expect(keyRow.locator('td').nth(0)).toContainText(key.name);
-      await expect(keyRow.locator('td').nth(1)).toContainText(key.key.slice(0, 8));
+      await expect(keyRow.locator('td').nth(1)).toContainText(key.key.slice(0, 15));
       await expect(keyRow.locator('td').nth(2)).toContainText(key.derivationPath);
       await expect(keyRow.locator('td').nth(3)).toContainText(key.gapLimit.toString());
       await expect(keyRow.locator('td').nth(4)).toContainText(key.skip.toString());
@@ -423,7 +423,7 @@ test.describe("Bitwatch", () => {
       
       // Verify descriptor information
       await expect(descriptorRow.locator('td').nth(0)).toContainText(descriptor.name);
-      await expect(descriptorRow.locator('td').nth(1)).toContainText(descriptor.descriptor.slice(0, 8));
+      await expect(descriptorRow.locator('td').nth(1)).toContainText(descriptor.descriptor.slice(0, 15));
       await expect(descriptorRow.locator('td').nth(2)).toContainText(descriptor.derivationPath || "m/0");
       await expect(descriptorRow.locator('td').nth(3)).toContainText(descriptor.gapLimit.toString());
       await expect(descriptorRow.locator('td').nth(4)).toContainText(descriptor.skip.toString());

@@ -143,7 +143,7 @@ const DescriptorInfo = ({
         <TableCell>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Typography variant="body2">
-              {descriptor.descriptor.slice(0, 8)}...
+              {descriptor.descriptor.slice(0, 15)}...
             </Typography>
             <Tooltip title={copied ? "Copied!" : "Copy full descriptor"}>
               <IconButtonStyled

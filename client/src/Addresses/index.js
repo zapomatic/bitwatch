@@ -819,7 +819,7 @@ export default function Addresses() {
                   sx={{ cursor: "pointer" }}
                 >
                   <Box className="crystal-flex crystal-flex-start crystal-gap-1">
-                    Info
+                    Addresses
                     {sortConfig.field === "addresses" && (
                       <span>{sortConfig.direction === "asc" ? "↑" : "↓"}</span>
                     )}
