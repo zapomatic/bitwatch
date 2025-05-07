@@ -1,7 +1,7 @@
 import memory from "../memory.js";
 import logger from "../logger.js";
 
-export const deleteHandler = async ({ data }) => {
+export const deleteHandler = async ({ data, io }) => {
   const { address, collection, extendedKey, descriptor } = data;
 
   if (!collection) {
@@ -83,6 +83,6 @@ export const deleteHandler = async ({ data }) => {
   }
 
   memory.saveDb();
-  data.io.emit("updateState", { collections: memory.db.collections });
+  io.emit("updateState", { collections: memory.db.collections });
   return { success: true };
 };

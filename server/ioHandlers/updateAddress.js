@@ -1,7 +1,7 @@
 import memory from "../memory.js";
 import logger from "../logger.js";
 
-export const updateAddress = async ({ data }) => {
+export const updateAddress = async ({ data, io }) => {
   const { collection, address } = data;
 
   if (!collection || !address) {
@@ -63,6 +63,6 @@ export const updateAddress = async ({ data }) => {
   }
 
   memory.saveDb();
-  data.io.emit("updateState", { collections: memory.db.collections });
+  io.emit("updateState", { collections: memory.db.collections });
   return { success: true };
 };

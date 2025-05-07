@@ -1,7 +1,7 @@
 import memory from "../memory.js";
 import logger from "../logger.js";
 
-export const importCollections = async ({ data }) => {
+export const importCollections = async ({ data, io }) => {
   logger.info("Importing collections");
 
   if (!data.collections || typeof data.collections !== "object") {
@@ -65,6 +65,6 @@ export const importCollections = async ({ data }) => {
   }
 
   // Emit the updated state to all clients
-  data.io.emit("updateState", { collections: memory.db.collections });
+  io.emit("updateState", { collections: memory.db.collections });
   return { success: true };
 };

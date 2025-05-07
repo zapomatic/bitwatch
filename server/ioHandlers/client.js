@@ -2,9 +2,9 @@ import pjson from "../../package.json" with { type: "json" };
 import memory from "../memory.js";
 import logger from "../logger.js";
 
-export const client = async ({data}) => {
-  logger.info(`Client connected (ID: ${data.socketID})`);
-  
+export const client = async ({ data, socketID }) => {
+  logger.info(`Client connected (ID: ${socketID})`);
+
   // Determine initial API state based on address data
   const hasActualData = Object.values(memory.db.collections).some(col => 
     col.addresses.some(addr => addr.actual !== null)

@@ -2,7 +2,7 @@ import memory from "../memory.js";
 import logger from "../logger.js";
 import { deriveExtendedKeyAddresses } from "../addressDeriver.js";
 
-export const addExtendedKey = async ({ data }) => {
+export const addExtendedKey = async ({ data, io }) => {
   // Debug log incoming data (excluding io property)
   const debugData = { ...data };
   delete debugData.io; // Remove the Socket.IO instance
@@ -124,6 +124,6 @@ export const addExtendedKey = async ({ data }) => {
     return { error: "Failed to save extended key" };
   }
 
-  data.io.emit("updateState", { collections: memory.db.collections });
+  io.emit("updateState", { collections: memory.db.collections });
   return { success: true };
 };

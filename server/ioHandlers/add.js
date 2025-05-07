@@ -1,7 +1,7 @@
 import memory from "../memory.js";
 import logger from "../logger.js";
 
-export const add = async ({ data }) => {
+export const add = async ({ data, io }) => {
   logger.info(
     `Adding ${data.name || "collection"} to ${data.collection || "root"}`
   );
@@ -25,7 +25,7 @@ export const add = async ({ data }) => {
       return { error: "Failed to save collection" };
     }
 
-    data.io.emit("updateState", { collections: memory.db.collections });
+    io.emit("updateState", { collections: memory.db.collections });
     return { success: true };
   }
 
@@ -65,7 +65,7 @@ export const add = async ({ data }) => {
       return { error: "Failed to save address" };
     }
 
-    data.io.emit("updateState", { collections: memory.db.collections });
+    io.emit("updateState", { collections: memory.db.collections });
     return { success: true, record: true };
   }
 

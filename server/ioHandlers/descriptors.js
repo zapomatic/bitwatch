@@ -2,7 +2,7 @@ import memory from "../memory.js";
 import logger from "../logger.js";
 import { deriveAddresses, validateDescriptor } from "../descriptors.js";
 
-export const addDescriptor = async ({ data }) => {
+export const addDescriptor = async ({ data, io }) => {
   if (!data.collection || !data.name || !data.descriptor) {
     logger.error("Missing required fields");
     return { error: "Missing required fields" };
@@ -79,11 +79,11 @@ export const addDescriptor = async ({ data }) => {
   collection.descriptors.push(desc);
 
   memory.saveDb();
-  data.io.emit("updateState", { collections: memory.db.collections });
+  io.emit("updateState", { collections: memory.db.collections });
   return { success: true };
 };
 
-export const editDescriptor = async ({ data }) => {
+export const editDescriptor = async ({ data, io }) => {
   if (
     !data.collection ||
     !data.name ||
@@ -147,6 +147,6 @@ export const editDescriptor = async ({ data }) => {
   };
 
   memory.saveDb();
-  data.io.emit("updateState", { collections: memory.db.collections });
+  io.emit("updateState", { collections: memory.db.collections });
   return { success: true };
 };
