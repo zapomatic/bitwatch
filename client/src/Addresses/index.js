@@ -108,10 +108,8 @@ export default function Addresses() {
     const handleStateUpdate = (updatedState) => {
       console.log("State update received:", updatedState);
       if (updatedState?.collections) {
-        setCollections((prevCollections) => ({
-          ...prevCollections,
-          ...updatedState.collections,
-        }));
+        // Replace the entire collections state instead of merging
+        setCollections(updatedState.collections);
       }
 
       // If we're in a refresh operation, check for errors
