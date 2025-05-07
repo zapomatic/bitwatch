@@ -9,6 +9,7 @@ import { addExtendedKey } from "./extendedKeys.js";
 import { deleteHandler } from "./delete.js";
 import { updateAddress } from "./updateAddress.js";
 import { requestState } from "./requestState.js";
+import { importCollections } from "./importCollections.js";
 
 // Export an object with event names as keys mapping to their handlers
 export default {
@@ -29,6 +30,7 @@ export default {
   // Collection and address management
   add,
   saveExpected,
+  importCollections,
 
   // Descriptor management
   addDescriptor,
