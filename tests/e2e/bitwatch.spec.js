@@ -1,14 +1,10 @@
-import { test, expect, backupDatabase, restoreDatabase } from "./test-environment.js";
+import { test, expect } from "./test-environment.js";
 import testData from "../../test-data/keys.json" with { type: 'json' };
 import testDb from "../../server/db.test.json" with { type: 'json' };
 import { addCollection, addAddress, addExtendedKey, addDescriptor, findAndClick } from "./test-environment.js";
 import { refreshAddressBalance, verifyAddressBalance } from "./test-environment.js";
 
 test.describe("Bitwatch", () => {
-  test.beforeAll(() => {
-    backupDatabase();
-  });
-
   // NOTE: we put all of the sequences of events in a single test to make the tests faster
   // we don't need to load the page fresh, we want to navigate around it like a real user
   test("Bitwatch full test suite", async ({ page }) => {
@@ -539,8 +535,5 @@ test.describe("Bitwatch", () => {
     console.log("Deleted single address from descriptor");
     await findAndClick(page, `[data-testid="${firstDescriptor.descriptor}-expand-button"]`);
     console.log(`Collapsed ${firstDescriptor.name} section`);
-
-    // Clean up after test
-    await restoreDatabase();
   });
 });

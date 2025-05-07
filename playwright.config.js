@@ -18,7 +18,8 @@ export default defineConfig({
       stderr: "pipe",
     },
     {
-      command: "NODE_ENV=test PORT=3119 npm run dev:server",
+      command:
+        "mv server/data/db.json server/data/db.backup 2>/dev/null || true && NODE_ENV=test PORT=3119 npm run dev:server",
       port: 3119,
       timeout: 60000,
       reuseExistingServer: !process.env.CI,
