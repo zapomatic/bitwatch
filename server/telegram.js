@@ -169,22 +169,33 @@ const sendMessage = async (message) => {
   return true;
 };
 
+const formatSats = (sats) => {
+  if (!sats) return "0 sats";
+  // Remove any non-numeric characters and convert to number
+  const numericSats = parseInt(sats.toString().replace(/[^0-9]/g, ""));
+  if (isNaN(numericSats)) return "0 sats";
+  // Format with commas for thousands
+  return `${numericSats.toLocaleString()} sats`;
+};
+
 const notifyBalanceChange = async (address, changes, collection, name) => {
   if (!bot || !memory.db.telegram?.chatId) return false;
 
   const changeMessages = [];
-  if (changes.chain_in) changeMessages.push(`Chain In: ${changes.chain_in}`);
-  if (changes.chain_out) changeMessages.push(`Chain Out: ${changes.chain_out}`);
+  if (changes.chain_in)
+    changeMessages.push(`Chain In: ${formatSats(changes.chain_in)}`);
+  if (changes.chain_out)
+    changeMessages.push(`Chain Out: ${formatSats(changes.chain_out)}`);
   if (changes.mempool_in)
-    changeMessages.push(`Mempool In: ${changes.mempool_in}`);
+    changeMessages.push(`Mempool In: ${formatSats(changes.mempool_in)}`);
   if (changes.mempool_out)
-    changeMessages.push(`Mempool Out: ${changes.mempool_out}`);
+    changeMessages.push(`Mempool Out: ${formatSats(changes.mempool_out)}`);
 
   if (changeMessages.length === 0) return true;
 
   const message = `
 🔔 <b>Balance Change Detected</b>
-${collection}/${name} (<code>${address}</code>)
+${collection}/${name} (<a href="https://mempool.space/address/${address}">${address}</a>)
 ${changeMessages.join("\n")}
 `;
 
