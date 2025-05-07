@@ -218,20 +218,34 @@ export default function Addresses() {
   };
 
   const handleAddAddress = (collection, name, address, setNewAddress) => {
-    socketIO.emit("add", { collection, name, address }, (response) => {
-      console.log("add", response);
-      if (response.error) {
-        setNotification({
-          open: true,
-          message: response.error,
-          severity: "error",
-        });
-      } else if (response.status === "ok" && response.record) {
-        // The address was added successfully and is in a loading state
-        // The UI will update automatically when the updateState event is received
-        setNewAddress(null);
+    socketIO.emit(
+      "add",
+      {
+        collection,
+        name,
+        address,
+        monitor: {
+          chain_in: "alert",
+          chain_out: "alert",
+          mempool_in: "alert",
+          mempool_out: "alert",
+        },
+      },
+      (response) => {
+        console.log("add", response);
+        if (response.error) {
+          setNotification({
+            open: true,
+            message: response.error,
+            severity: "error",
+          });
+        } else if (response.status === "ok" && response.record) {
+          // The address was added successfully and is in a loading state
+          // The UI will update automatically when the updateState event is received
+          setNewAddress(null);
+        }
       }
-    });
+    );
   };
 
   const saveExpected = useCallback((row) => {
@@ -567,17 +581,12 @@ export default function Addresses() {
   };
 
   const handleAddExtendedKey = (collection, data) => {
+    console.log("handleAddExtendedKey", { collection, data });
     socketIO.emit(
       "addExtendedKey",
       {
         collection,
-        name: data.name,
-        key: data.key,
-        gapLimit: parseInt(data.gapLimit) || 2,
-        initialAddresses: parseInt(data.initialAddresses) || 10,
-        derivationPath: data.derivationPath,
-        skip: parseInt(data.skip) || 0,
-        monitor: data.monitor,
+        ...data,
       },
       (response) => {
         if (response.error) {

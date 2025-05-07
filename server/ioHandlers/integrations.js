@@ -6,7 +6,7 @@ export const getIntegrations = async () => {
   return { telegram: memory.db.telegram || {} };
 };
 
-export const saveIntegrations = async (data) => {
+export const saveIntegrations = async ({ data }) => {
   if (!data?.telegram) {
     logger.error("Missing telegram configuration");
     return { error: "Missing telegram configuration" };

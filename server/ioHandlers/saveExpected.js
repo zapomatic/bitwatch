@@ -1,7 +1,7 @@
 import memory from "../memory.js";
 import logger from "../logger.js";
 
-export const saveExpected = async (data) => {
+export const saveExpected = async ({ data }) => {
   logger.processing(
     `Saving expected state for ${data.collection}/${data.address}`
   );

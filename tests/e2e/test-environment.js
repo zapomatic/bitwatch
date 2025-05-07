@@ -227,20 +227,32 @@ export const addAddress = async (
     });
 
     // Set chain in monitoring
-    await page.getByTestId("address-monitor-chain-in").click();
-    await page.getByRole("option", { name: monitor.chain_in }).click();
+    const chainInSelect = page.getByTestId("address-monitor-chain-in");
+    await chainInSelect.click();
+    await page
+      .getByTestId(`address-monitor-chain-in-${monitor.chain_in}`)
+      .click();
 
     // Set chain out monitoring
-    await page.getByTestId("address-monitor-chain-out").click();
-    await page.getByRole("option", { name: monitor.chain_out }).click();
+    const chainOutSelect = page.getByTestId("address-monitor-chain-out");
+    await chainOutSelect.click();
+    await page
+      .getByTestId(`address-monitor-chain-out-${monitor.chain_out}`)
+      .click();
 
     // Set mempool in monitoring
-    await page.getByTestId("address-monitor-mempool-in").click();
-    await page.getByRole("option", { name: monitor.mempool_in }).click();
+    const mempoolInSelect = page.getByTestId("address-monitor-mempool-in");
+    await mempoolInSelect.click();
+    await page
+      .getByTestId(`address-monitor-mempool-in-${monitor.mempool_in}`)
+      .click();
 
     // Set mempool out monitoring
-    await page.getByTestId("address-monitor-mempool-out").click();
-    await page.getByRole("option", { name: monitor.mempool_out }).click();
+    const mempoolOutSelect = page.getByTestId("address-monitor-mempool-out");
+    await mempoolOutSelect.click();
+    await page
+      .getByTestId(`address-monitor-mempool-out-${monitor.mempool_out}`)
+      .click();
   }
 
   // Click the save button - allow clicking in overlay since it's in a dialog

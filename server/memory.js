@@ -57,7 +57,14 @@ const saveDb = () => {
             address: addr.address,
             name: addr.name,
             expect: addr.expect,
-            monitor: addr.monitor || memory.db.monitor,
+            monitor: addr.monitor
+              ? {
+                  chain_in: addr.monitor.chain_in,
+                  chain_out: addr.monitor.chain_out,
+                  mempool_in: addr.monitor.mempool_in,
+                  mempool_out: addr.monitor.mempool_out,
+                }
+              : memory.db.monitor,
           })),
           extendedKeys: collection.extendedKeys?.map((extKey) => ({
             key: extKey.key,
@@ -66,13 +73,34 @@ const saveDb = () => {
             gapLimit: extKey.gapLimit,
             skip: extKey.skip,
             initialAddresses: extKey.initialAddresses,
-            monitor: extKey.monitor || memory.db.monitor,
+            monitor: extKey.monitor
+              ? {
+                  chain_in: extKey.monitor.chain_in,
+                  chain_out: extKey.monitor.chain_out,
+                  mempool_in: extKey.monitor.mempool_in,
+                  mempool_out: extKey.monitor.mempool_out,
+                }
+              : memory.db.monitor,
             addresses: extKey.addresses.map((addr) => ({
               address: addr.address,
               name: addr.name,
               index: addr.index,
               expect: addr.expect,
-              monitor: addr.monitor || extKey.monitor || memory.db.monitor,
+              monitor: addr.monitor
+                ? {
+                    chain_in: addr.monitor.chain_in,
+                    chain_out: addr.monitor.chain_out,
+                    mempool_in: addr.monitor.mempool_in,
+                    mempool_out: addr.monitor.mempool_out,
+                  }
+                : extKey.monitor
+                ? {
+                    chain_in: extKey.monitor.chain_in,
+                    chain_out: extKey.monitor.chain_out,
+                    mempool_in: extKey.monitor.mempool_in,
+                    mempool_out: extKey.monitor.mempool_out,
+                  }
+                : memory.db.monitor,
             })),
           })),
           descriptors: collection.descriptors?.map((desc) => ({
@@ -85,13 +113,34 @@ const saveDb = () => {
             scriptType: desc.scriptType,
             requiredSignatures: desc.requiredSignatures,
             totalSignatures: desc.totalSignatures,
-            monitor: desc.monitor || memory.db.monitor,
+            monitor: desc.monitor
+              ? {
+                  chain_in: desc.monitor.chain_in,
+                  chain_out: desc.monitor.chain_out,
+                  mempool_in: desc.monitor.mempool_in,
+                  mempool_out: desc.monitor.mempool_out,
+                }
+              : memory.db.monitor,
             addresses: desc.addresses.map((addr) => ({
               address: addr.address,
               name: addr.name,
               index: addr.index,
               expect: addr.expect,
-              monitor: addr.monitor || desc.monitor || memory.db.monitor,
+              monitor: addr.monitor
+                ? {
+                    chain_in: addr.monitor.chain_in,
+                    chain_out: addr.monitor.chain_out,
+                    mempool_in: addr.monitor.mempool_in,
+                    mempool_out: addr.monitor.mempool_out,
+                  }
+                : desc.monitor
+                ? {
+                    chain_in: desc.monitor.chain_in,
+                    chain_out: desc.monitor.chain_out,
+                    mempool_in: desc.monitor.mempool_in,
+                    mempool_out: desc.monitor.mempool_out,
+                  }
+                : memory.db.monitor,
             })),
           })),
         },

@@ -1,7 +1,7 @@
 import memory from "../memory.js";
 import logger from "../logger.js";
 
-export const updateAddress = async (data) => {
+export const updateAddress = async ({ data }) => {
   const { collection, address } = data;
 
   if (!collection || !address) {

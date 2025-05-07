@@ -13,7 +13,7 @@ export const getConfig = async () => {
   };
 };
 
-export const saveConfig = async (data) => {
+export const saveConfig = async ({ data }) => {
   if (
     !data?.api ||
     !data?.interval ||

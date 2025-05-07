@@ -1,7 +1,7 @@
 import memory from "../memory.js";
 import logger from "../logger.js";
 
-export const add = async (data) => {
+export const add = async ({ data }) => {
   logger.info(
     `Adding ${data.name || "collection"} to ${data.collection || "root"}`
   );

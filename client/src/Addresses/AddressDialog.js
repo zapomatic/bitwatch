@@ -16,7 +16,11 @@ import {
 } from "@mui/material";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import { DEFAULT_ADDRESS_FORM, COLLAPSE_ANIMATION_DURATION } from "../config";
+import {
+  DEFAULT_ADDRESS_FORM,
+  COLLAPSE_ANIMATION_DURATION,
+  SYSTEM_MONITOR_SETTINGS,
+} from "../config";
 
 const AddressDialog = ({ open, onClose, address, onSave }) => {
   const [formData, setFormData] = useState(DEFAULT_ADDRESS_FORM);
@@ -29,7 +33,12 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
     if (!formData.name || !formData.address) {
       return;
     }
-    onSave(formData);
+    // Ensure monitor settings are included using system defaults
+    const dataToSave = {
+      ...formData,
+      monitor: formData.monitor || SYSTEM_MONITOR_SETTINGS,
+    };
+    onSave(dataToSave);
     onClose();
   };
 
@@ -77,7 +86,12 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
           },
         }}
       >
-        <MenuItem value="alert">
+        <MenuItem
+          value="alert"
+          data-testid={`address-monitor-${label
+            .toLowerCase()
+            .replace(" ", "-")}-alert`}
+        >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <NotificationsActiveIcon
               color="warning"
@@ -86,7 +100,12 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
             <Typography>Alert</Typography>
           </Box>
         </MenuItem>
-        <MenuItem value="auto-accept">
+        <MenuItem
+          value="auto-accept"
+          data-testid={`address-monitor-${label
+            .toLowerCase()
+            .replace(" ", "-")}-auto-accept`}
+        >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <CheckCircleIcon color="success" sx={{ fontSize: "1rem" }} />
             <Typography>Auto Accept</Typography>

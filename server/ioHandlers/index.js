@@ -5,7 +5,7 @@ import { getIntegrations, saveIntegrations } from "./integrations.js";
 import { add } from "./add.js";
 import { saveExpected } from "./saveExpected.js";
 import { addDescriptor, editDescriptor } from "./descriptors.js";
-import { addExtendedKey } from "./extendedKeys.js";
+import { addExtendedKey } from "./addExtendedKey.js";
 import { deleteHandler } from "./delete.js";
 import { updateAddress } from "./updateAddress.js";
 import { requestState } from "./requestState.js";

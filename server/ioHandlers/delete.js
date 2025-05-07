@@ -1,7 +1,7 @@
 import memory from "../memory.js";
 import logger from "../logger.js";
 
-export const deleteHandler = async (data) => {
+export const deleteHandler = async ({ data }) => {
   const { address, collection, extendedKey, descriptor } = data;
 
   if (!collection) {

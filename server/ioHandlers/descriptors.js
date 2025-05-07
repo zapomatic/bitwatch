@@ -2,7 +2,7 @@ import memory from "../memory.js";
 import logger from "../logger.js";
 import { deriveAddresses, validateDescriptor } from "../descriptors.js";
 
-export const addDescriptor = async (data) => {
+export const addDescriptor = async ({ data }) => {
   if (!data.collection || !data.name || !data.descriptor) {
     logger.error("Missing required fields");
     return { error: "Missing required fields" };
@@ -40,12 +40,12 @@ export const addDescriptor = async (data) => {
     name: data.name,
     descriptor: data.descriptor,
     derivationPath: data.derivationPath || "m/0",
-    gapLimit: data.gapLimit || 10,
+    gapLimit: data.gapLimit || 2,
     skip: data.skip || 0,
-    initialAddresses: data.initialAddresses || 10,
+    initialAddresses: data.initialAddresses || 5,
     addresses: [],
     // Use provided monitor settings or get from database
-    monitor: data.monitor || memory.db.monitor,
+    monitor: { ...data.monitor },
   };
 
   // Derive initial addresses
@@ -67,8 +67,9 @@ export const addDescriptor = async (data) => {
       mempool_in: 0,
       mempool_out: 0,
     },
-    // Use the descriptor's monitor settings
-    monitor: desc.monitor,
+    monitor: {
+      ...desc.monitor,
+    },
   }));
 
   // Add the descriptor to the collection
@@ -82,7 +83,7 @@ export const addDescriptor = async (data) => {
   return { success: true };
 };
 
-export const editDescriptor = async (data) => {
+export const editDescriptor = async ({ data }) => {
   if (
     !data.collection ||
     !data.name ||
@@ -125,7 +126,9 @@ export const editDescriptor = async (data) => {
     name: data.name,
     skip: data.skip || 0,
     initialAddresses: data.initialAddresses || 5,
-    monitor,
+    monitor: {
+      ...monitor,
+    },
     addresses: allAddressesResult.data.map((addr) => ({
       address: addr.address,
       name: `${data.name} ${addr.index}`,
@@ -136,7 +139,7 @@ export const editDescriptor = async (data) => {
         mempool_in: 0,
         mempool_out: 0,
       },
-      monitor,
+      monitor: { ...monitor },
       actual: null,
       error: false,
       errorMessage: null,

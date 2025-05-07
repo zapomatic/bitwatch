@@ -33,16 +33,26 @@ const socketIO = {
       Object.entries(handlers).forEach(([event, handler]) => {
         logger.debug(`Registering handler for ${event}`);
         socket.on(event, async (data = {}, cb) => {
+          logger.debug("socket.on", { event, data });
           const handlerData = {
-            ...(data || {}),
+            data: { ...(data || {}) },
             socketID,
             io: socketIO.io,
           };
           const result = await handler(handlerData);
-          cb && cb(result);
+          cb && cb(result || {});
         });
       });
     });
+  },
+  // Add method to emit clean state
+  emitState: () => {
+    if (socketIO.io) {
+      socketIO.io.emit("updateState", {
+        collections: memory.db.collections,
+        monitor: memory.db.monitor,
+      });
+    }
   },
 };
 

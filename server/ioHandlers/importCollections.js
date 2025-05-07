@@ -1,7 +1,7 @@
 import memory from "../memory.js";
 import logger from "../logger.js";
 
-export const importCollections = async (data) => {
+export const importCollections = async ({ data }) => {
   logger.info("Importing collections");
 
   if (!data.collections || typeof data.collections !== "object") {

@@ -22,33 +22,44 @@ const BalanceCell = ({
 
   // Helper to render monitoring icon
   const renderMonitoringIcon = () => {
-    if (!monitoringSetting) {
-      // Collection row - just show verification status
-      return value === expect ? (
-        <CheckIcon className="crystal-text-success" sx={{ fontSize: "1rem" }} />
+    // Individual address row - must have monitoring status
+    if (monitor) {
+      if (!monitoringSetting) {
+        console.error(
+          `Missing monitoring setting for ${type} on address ${dataTestId}`
+        );
+        return (
+          <WarningIcon
+            className="crystal-text-warning"
+            sx={{ fontSize: "1rem" }}
+            aria-label={`Missing monitoring setting for ${type}`}
+            data-testid={`${dataTestId}-${type}-alert-icon`}
+          />
+        );
+      }
+
+      return monitoringSetting === "auto-accept" ? (
+        <CheckCircleIcon
+          className="crystal-text-success"
+          sx={{ fontSize: "1rem" }}
+          aria-label={`Auto-accept monitoring for ${type}`}
+          data-testid={`${dataTestId}-auto-accept-icon`}
+        />
       ) : (
-        <WarningIcon
+        <NotificationsActiveIcon
           className="crystal-text-warning"
           sx={{ fontSize: "1rem" }}
+          aria-label={`Alert monitoring for ${type}`}
+          data-testid={`${dataTestId}-alert-icon`}
         />
       );
     }
 
-    // Individual address row - show monitoring status
-    return monitoringSetting === "auto-accept" ? (
-      <CheckCircleIcon
-        className="crystal-text-success"
-        sx={{ fontSize: "1rem" }}
-        aria-label={`Auto-accept monitoring for ${type}`}
-        data-testid={`${dataTestId}-auto-accept-icon`}
-      />
+    // Collection row - show verification status
+    return value === expect ? (
+      <CheckIcon className="crystal-text-success" sx={{ fontSize: "1rem" }} />
     ) : (
-      <NotificationsActiveIcon
-        className="crystal-text-warning"
-        sx={{ fontSize: "1rem" }}
-        aria-label={`Alert monitoring for ${type}`}
-        data-testid={`${dataTestId}-alert-icon`}
-      />
+      <WarningIcon className="crystal-text-warning" sx={{ fontSize: "1rem" }} />
     );
   };
 

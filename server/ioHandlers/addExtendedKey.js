@@ -2,7 +2,15 @@ import memory from "../memory.js";
 import logger from "../logger.js";
 import { deriveExtendedKeyAddresses } from "../addressDeriver.js";
 
-export const addExtendedKey = async (data) => {
+export const addExtendedKey = async ({ data }) => {
+  // Debug log incoming data (excluding io property)
+  const debugData = { ...data };
+  delete debugData.io; // Remove the Socket.IO instance
+  logger.info(
+    `Incoming extended key data:`,
+    JSON.stringify(debugData, null, 2)
+  );
+
   if (!data.collection || !data.name || !data.key) {
     logger.error("Missing required fields");
     return { error: "Missing required fields" };
@@ -36,12 +44,12 @@ export const addExtendedKey = async (data) => {
   const key = {
     ...data,
     derivationPath: data.derivationPath || "m/0",
-    gapLimit: data.gapLimit || 10,
+    gapLimit: data.gapLimit || 2,
     skip: data.skip || 0,
-    initialAddresses: data.initialAddresses || 10,
+    initialAddresses: data.initialAddresses || 5,
     addresses: [],
     // Use provided monitor settings or get from database
-    monitor: data.monitor || memory.db.monitor,
+    monitor: { ...data.monitor },
   };
 
   // Derive initial addresses
@@ -58,22 +66,57 @@ export const addExtendedKey = async (data) => {
   }
 
   // Add monitor settings to each address
-  key.addresses = addresses.map((address, index) => ({
-    ...address,
-    name: `${key.name} ${index + 1}`,
-    index: index + 1,
-    expect: {
-      chain_in: 0,
-      chain_out: 0,
-      mempool_in: 0,
-      mempool_out: 0,
-    },
-    // Use the extended key's monitor settings
-    monitor: key.monitor,
-  }));
+  key.addresses = addresses.map((address, index) => {
+    const addr = {
+      ...address,
+      name: `${key.name} ${index + 1}`,
+      index: index + 1,
+      expect: {
+        chain_in: 0,
+        chain_out: 0,
+        mempool_in: 0,
+        mempool_out: 0,
+      },
+      monitor: {
+        ...key.monitor,
+      },
+    };
+    // Debug log the address object
+    logger.debug(
+      `Address ${index + 1} structure:`,
+      JSON.stringify(addr, null, 2)
+    );
+    return addr;
+  });
+
+  // Debug log the key object before adding to collection
+  const debugKey = { ...key };
+  delete debugKey.io; // Remove any Socket.IO instance
+  logger.debug(`Extended key structure:`, JSON.stringify(debugKey, null, 2));
 
   // Add extended key to collection
   collection.extendedKeys.push(key);
+
+  // Debug log the collection before saving
+  const debugCollection = {
+    name: collection.name,
+    addresses: collection.addresses,
+    extendedKeys: collection.extendedKeys.map((k) => ({
+      name: k.name,
+      key: k.key,
+      derivationPath: k.derivationPath,
+      gapLimit: k.gapLimit,
+      skip: k.skip,
+      initialAddresses: k.initialAddresses,
+      monitor: k.monitor,
+      addresses: k.addresses,
+    })),
+    descriptors: collection.descriptors,
+  };
+  logger.debug(
+    `Collection structure:`,
+    JSON.stringify(debugCollection, null, 2)
+  );
 
   const saveResult = memory.saveDb();
   if (!saveResult) {

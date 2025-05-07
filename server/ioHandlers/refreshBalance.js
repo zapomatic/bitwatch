@@ -5,7 +5,7 @@ import {
 import memory from "../memory.js";
 import logger from "../logger.js";
 
-export const refreshBalance = async (data) => {
+export const refreshBalance = async ({ data }) => {
   if (!data.collection || !data.address) {
     logger.error("Missing collection or address");
     return { error: "Missing collection or address" };
