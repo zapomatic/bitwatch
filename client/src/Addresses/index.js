@@ -104,6 +104,9 @@ export default function Addresses() {
   };
 
   useEffect(() => {
+    // Request initial state when component mounts
+    socketIO.emit("requestState");
+
     // Listen for state updates
     const handleStateUpdate = (updatedState) => {
       console.log("State update received:", updatedState);
