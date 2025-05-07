@@ -16,29 +16,29 @@ test.describe("Bitwatch", () => {
     await page.waitForSelector("text=itwatch");
     console.log("Page loaded");
 
-    // Wait for server connection
-    console.log("Waiting for server connection...");
-    await page.waitForSelector('[aria-label="Server status: CONNECTED"]');
+    // Small delay to ensure page is fully loaded
+    await page.waitForTimeout(1000);
+
+    // Wait for status indicators to be present
+    console.log("Waiting for status indicators...");
+    await page.waitForSelector('[data-testid="bitwatch-socket-status"]');
+    await page.waitForSelector('[data-testid="mempool-socket-status"]');
+
+    // Verify the states
     const serverState = await page.evaluate(() => {
-      const statusElement = document.querySelector(
-        '[aria-label="Server status: CONNECTED"]'
-      ).parentElement;
-      return statusElement.querySelector("p").textContent;
+      const statusElement = document.querySelector('[data-testid="bitwatch-socket-status"]');
+      return statusElement.textContent;
     });
-    expect(serverState).toBe("Server");
+    expect(serverState).toBe("Bitwatch Socket");
     console.log("Server connected");
 
-    // Wait for WebSocket connection
-    console.log("Waiting for WebSocket connection...");
-    await page.waitForSelector('[aria-label="WebSocket status: CONNECTED"]');
     const websocketState = await page.evaluate(() => {
-      const statusElement = document.querySelector(
-        '[aria-label="WebSocket status: CONNECTED"]'
-      ).parentElement;
-      return statusElement.querySelector("p").textContent;
+      const statusElement = document.querySelector('[data-testid="mempool-socket-status"]');
+      return statusElement.textContent;
     });
-    expect(websocketState).toBe("WebSocket");
-    console.log("WebSocket connected");
+    expect(websocketState).toBe("Mempool Socket");
+    console.log("Mempool Socket connected");
+
     // Click the settings button
     await findAndClick(page, '[data-testid="settings-button"]');
     console.log("Settings opened");

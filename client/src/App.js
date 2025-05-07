@@ -215,7 +215,11 @@ function AppContent() {
             }}
           />
         </Tooltip>
-        <Typography variant="body2" sx={{ color: "text.secondary" }}>
+        <Typography
+          variant="body2"
+          sx={{ color: "text.secondary" }}
+          data-testid={`${label.toLowerCase().replace(/\s+/g, "-")}-status`}
+        >
           {label}
         </Typography>
       </Box>
