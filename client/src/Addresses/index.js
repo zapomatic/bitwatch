@@ -42,6 +42,7 @@ export default function Addresses() {
   });
   const [displayBtc, setDisplayBtc] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState({
     open: false,
     message: "",
@@ -104,6 +105,9 @@ export default function Addresses() {
   };
 
   useEffect(() => {
+    // Set loading state when component mounts
+    setLoading(true);
+
     // Request initial state when component mounts
     socketIO.emit("requestState");
 
@@ -113,6 +117,7 @@ export default function Addresses() {
       if (updatedState?.collections) {
         // Replace the entire collections state instead of merging
         setCollections(updatedState.collections);
+        setLoading(false);
       }
 
       // If we're in a refresh operation, check for errors
@@ -160,6 +165,7 @@ export default function Addresses() {
     const handleVisibilityChange = () => {
       if (document.visibilityState === "visible") {
         console.log("Page became visible, requesting state update...");
+        setLoading(true);
         socketIO.emit("requestState");
       }
     };
@@ -612,6 +618,39 @@ export default function Addresses() {
       }
     );
   };
+
+  // Add loading state to the UI
+  if (loading) {
+    return (
+      <div className="crystal-panel">
+        <Title>
+          <Toolbar
+            sx={{
+              flexDirection: "row",
+              gap: 2,
+              alignItems: "center",
+              maxWidth: "1200px",
+              margin: "0 auto",
+              width: "100%",
+            }}
+          >
+            <Typography
+              component="h1"
+              variant="h6"
+              color="inherit"
+              noWrap
+              sx={{
+                flexGrow: 1,
+                color: "var(--theme-secondary)",
+              }}
+            >
+              Loading...
+            </Typography>
+          </Toolbar>
+        </Title>
+      </div>
+    );
+  }
 
   return (
     <>
