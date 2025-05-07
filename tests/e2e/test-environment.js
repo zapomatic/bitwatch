@@ -65,45 +65,42 @@ export const findAndClick = async (page, selector, options = {}) => {
   const {
     timeout = 10000,
     exact = false,
-    maxRetries = 3,
     allowOverlay = false,
+    force = false,
   } = options;
   const locator = page.locator(selector);
-  let retryCount = 0;
 
-  while (retryCount < maxRetries) {
-    try {
-      // Wait for any matching element to be visible
-      await page.waitForSelector(selector, { state: "visible", timeout });
+  // Wait for any matching element to be visible
+  await page.waitForSelector(selector, { state: "visible", timeout });
 
-      // Only check for overlays if we're not trying to click something in a dialog
-      if (!allowOverlay) {
-        // Wait for any overlays/dialogs to be gone
-        const overlaySelector = ".MuiDialog-root, .MuiModal-root";
-        const overlay = page.locator(overlaySelector);
-        const hasOverlay = await overlay.isVisible().catch(() => false);
-        if (hasOverlay) {
-          // If there's an overlay, wait a bit and retry
-          await page.waitForTimeout(100);
-          retryCount++;
-          continue;
-        }
-      }
-
-      // Try to click
-      if (exact) {
-        await locator.first().click({ timeout: 1000 });
-      } else {
-        await locator.click({ timeout: 1000 });
-      }
-      return; // Success!
-    } catch (error) {
-      if (retryCount >= maxRetries - 1) {
-        throw error; // Last attempt failed, propagate the error
-      }
-      retryCount++;
-      await page.waitForTimeout(100);
+  // Only check for overlays if we're not trying to click something in a dialog
+  if (!allowOverlay) {
+    // Wait for any overlays/dialogs to be gone
+    const overlaySelector = ".MuiDialog-root, .MuiModal-root";
+    const overlay = page.locator(overlaySelector);
+    const hasOverlay = await overlay.isVisible().catch(() => false);
+    if (hasOverlay) {
+      await page.waitForSelector(overlaySelector, { state: "hidden", timeout });
     }
+  }
+
+  // Wait for the element to be stable
+  await page.waitForFunction(
+    (sel) => {
+      const element = document.querySelector(sel);
+      if (!element) return false;
+      const rect = element.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    },
+    selector,
+    { timeout }
+  );
+
+  // Click with stability checks
+  if (exact) {
+    await locator.first().click({ timeout, force });
+  } else {
+    await locator.click({ timeout, force });
   }
 };
 
@@ -293,17 +290,72 @@ export const refreshAddressBalance = async (
   // For balance cells, we use the new format
   const testIdPrefix = parentKey ? `${parentKey}-address-${index}` : address;
 
+  // If this is a child address, ensure the parent section is expanded
+  if (parentKey) {
+    const expandButton = page.getByTestId(`${parentKey}-expand-button`);
+    const expandedState = await expandButton.getAttribute("aria-expanded");
+    console.log(`expandedState of ${parentKey}-expand-button`, expandedState);
+    // Only expand if explicitly collapsed (aria-expanded="false")
+    // If it's null or "true", we want to leave it as is
+    if (expandedState === "false") {
+      await findAndClick(page, `[data-testid="${parentKey}-expand-button"]`);
+      // Wait for the address list to be visible with a longer timeout
+      // Check if this is a descriptor (starts with pkh, sh, wpkh, etc) or an extended key
+      const isDescriptor =
+        parentKey.startsWith("pkh(") ||
+        parentKey.startsWith("sh(") ||
+        parentKey.startsWith("wpkh(");
+      const addressListSelector = isDescriptor
+        ? `[data-testid="${parentKey}-descriptor-address-list"]`
+        : `[data-testid="${parentKey}-address-list"]`;
+
+      await page.waitForSelector(addressListSelector, {
+        state: "visible",
+      });
+      // Additional wait to ensure the list is fully rendered
+      await page.waitForTimeout(1000);
+    }
+
+    // Wait for the address list to be visible first
+    const isDescriptor =
+      parentKey.startsWith("pkh(") ||
+      parentKey.startsWith("sh(") ||
+      parentKey.startsWith("wpkh(");
+    const addressList = page.locator(
+      isDescriptor
+        ? `[data-testid="${parentKey}-descriptor-address-list"]`
+        : `[data-testid="${parentKey}-address-list"]`
+    );
+
+    // Log whether the element exists and its state
+    const exists = (await addressList.count()) > 0;
+    console.log(`Address list exists: ${exists}`);
+    if (exists) {
+      const isVisible = await addressList.isVisible();
+      console.log(`Address list is visible: ${isVisible}`);
+      const html = await addressList.evaluate((el) => el.outerHTML);
+      console.log(`Address list HTML: ${html}`);
+    }
+
+    await expect(addressList).toBeVisible();
+
+    // Now verify the specific address row is visible
+    const addressRow = page.getByTestId(`${testIdPrefix}-row`);
+    await expect(addressRow).toBeVisible();
+  }
+
   // Find and verify the refresh button exists and is visible
   const refreshButton = page.getByTestId(`${testIdPrefix}-refresh-button`);
   await expect(refreshButton).toBeVisible();
-  await refreshButton.click();
+  await findAndClick(page, `[data-testid="${testIdPrefix}-refresh-button"]`, {
+    force: true,
+  });
 
-  // Wait for the notification to appear
-  await expect(page.getByTestId("notification")).toBeVisible();
+  // Wait for the notification to appear with a longer timeout
+  const notification = page.getByTestId("notification");
+  await expect(notification).toBeVisible();
   // Verify it's a success notification
-  await expect(page.getByTestId("notification")).toHaveClass(
-    /MuiAlert-standardSuccess/
-  );
+  await expect(notification).toHaveClass(/MuiAlert-standardSuccess/);
 
   verifyAddressBalance(page, address, expectedBalances, index, parentKey);
 };

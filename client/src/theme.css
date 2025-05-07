@@ -45,6 +45,12 @@ body {
   backdrop-filter: blur(5px);
 }
 
+.crystal-panel-content {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
 /* Common Layout Classes */
 .crystal-flex {
   display: flex;

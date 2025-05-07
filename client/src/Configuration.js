@@ -7,6 +7,7 @@ import Title from "./Title";
 import "./theme.css";
 import { FormControlLabel, Switch } from "@mui/material";
 import CrystalNotification from "./components/CrystalNotification";
+import { Box } from "@mui/material";
 
 import { DEFAULT_CONFIG, PRIVATE_CONFIG } from "./config";
 
@@ -228,13 +229,26 @@ function Config() {
             </Button>
           </div>
         </div>
-        <Grid container spacing={3}>
-          {Object.keys(Configs).map((key) => (
-            <Grid item xs={12} sm={6} key={key}>
-              {renderConfigField(key)}
-            </Grid>
-          ))}
-          <Grid item xs={12} sx={{ textAlign: "right", marginTop: 2 }}>
+        <div className="crystal-panel-content">
+          <Grid
+            container
+            spacing={3}
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                md: "repeat(2, 1fr)",
+              },
+              gap: 3,
+            }}
+          >
+            {Object.keys(Configs).map((key) => (
+              <Grid item key={key}>
+                {renderConfigField(key)}
+              </Grid>
+            ))}
+          </Grid>
+          <Box sx={{ mt: 3, display: "flex", justifyContent: "flex-end" }}>
             <Button
               className="crystal-button crystal-button-primary"
               onClick={handleSave}
@@ -243,8 +257,8 @@ function Config() {
             >
               Save Configuration
             </Button>
-          </Grid>
-        </Grid>
+          </Box>
+        </div>
       </div>
 
       <CrystalNotification
