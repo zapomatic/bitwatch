@@ -34,42 +34,61 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
     onClose();
   };
 
+  const handleFormChange = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleExpectChange = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      expect: {
+        ...prev.expect,
+        [field]: parseInt(value) || 0,
+      },
+    }));
+  };
+
+  const handleMonitorChange = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      monitor: {
+        ...prev.monitor,
+        [field]: value,
+      },
+    }));
+  };
+
   const renderMonitorSelect = (label, value, onChange) => (
-    <FormControl fullWidth sx={{ mt: 1 }}>
-      <InputLabel sx={{ background: "var(--theme-surface)", px: 1 }}>
-        {label}
-      </InputLabel>
+    <FormControl fullWidth>
+      <InputLabel>{label}</InputLabel>
       <Select
         value={value}
         onChange={onChange}
-        aria-label={label}
+        label={label}
         sx={{
           "& .MuiOutlinedInput-notchedOutline": {
-            borderColor: "rgba(77, 244, 255, 0.3)",
-          },
-          "&:hover .MuiOutlinedInput-notchedOutline": {
             borderColor: "var(--theme-secondary)",
           },
-          "&.Mui-focused .MuiOutlinedInput-notchedOutline": {
+          "&:hover .MuiOutlinedInput-notchedOutline": {
             borderColor: "var(--theme-primary)",
           },
         }}
       >
         <MenuItem value="alert">
-          <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <NotificationsActiveIcon
-              className="crystal-text-warning"
+              color="warning"
               sx={{ fontSize: "1rem" }}
             />
             <Typography>Alert</Typography>
           </Box>
         </MenuItem>
         <MenuItem value="auto-accept">
-          <Box className="crystal-flex crystal-flex-start crystal-gap-1">
-            <CheckCircleIcon
-              className="crystal-text-success"
-              sx={{ fontSize: "1rem" }}
-            />
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <CheckCircleIcon color="success" sx={{ fontSize: "1rem" }} />
             <Typography>Auto Accept</Typography>
           </Box>
         </MenuItem>
@@ -88,185 +107,143 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
     >
       <DialogTitle>{address ? "Edit Address" : "Add Address"}</DialogTitle>
       <DialogContent>
-        <TextField
-          autoFocus
-          margin="dense"
-          label="Name"
-          fullWidth
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          helperText="A friendly name for this address"
-          aria-label="Address name"
-          inputProps={{
-            "data-testid": "address-name-input",
-          }}
-        />
-        <TextField
-          margin="dense"
-          label="Address"
-          fullWidth
-          value={formData.address}
-          onChange={(e) =>
-            setFormData({ ...formData, address: e.target.value })
-          }
-          helperText="The Bitcoin address to watch"
-          aria-label="Bitcoin address"
-          inputProps={{
-            "data-testid": "address-input",
-          }}
-        />
-        <Typography variant="subtitle1" sx={{ mt: 0, mb: 1 }}>
-          Expected Balances
-        </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={6}>
-            <TextField
-              margin="dense"
-              label="Chain In"
-              type="number"
-              fullWidth
-              value={formData.expect.chain_in}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  expect: {
-                    ...formData.expect,
-                    chain_in: parseInt(e.target.value) || 0,
-                  },
-                })
-              }
-              helperText="Expected on-chain incoming balance"
-              aria-label="Expected chain incoming balance"
-              inputProps={{
-                "data-testid": "address-chain-in-input",
-              }}
-            />
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 2 }}>
+          <TextField
+            autoFocus
+            label="Name"
+            value={formData.name}
+            onChange={(e) => handleFormChange("name", e.target.value)}
+            helperText="A friendly name for this address"
+            fullWidth
+            inputProps={{
+              "data-testid": "address-name-input",
+              "aria-label": "Address name",
+            }}
+          />
+          <TextField
+            label="Address"
+            value={formData.address}
+            onChange={(e) => handleFormChange("address", e.target.value)}
+            helperText="The single address to watch (bc1..., 1..., 3..., etc.)"
+            fullWidth
+            inputProps={{
+              "data-testid": "address-input",
+              "aria-label": "Bitcoin address",
+            }}
+          />
+          <Typography variant="subtitle1">Expected Balances</Typography>
+          <Grid
+            container
+            spacing={2}
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                md: "repeat(2, 1fr)",
+              },
+              gap: 2,
+            }}
+          >
+            <Grid item>
+              <TextField
+                label="Chain In"
+                type="number"
+                value={formData.expect.chain_in}
+                onChange={(e) => handleExpectChange("chain_in", e.target.value)}
+                fullWidth
+                inputProps={{
+                  "data-testid": "address-chain-in-input",
+                  "aria-label": "Expected chain incoming balance",
+                }}
+              />
+            </Grid>
+            <Grid item>
+              <TextField
+                label="Chain Out"
+                type="number"
+                value={formData.expect.chain_out}
+                onChange={(e) =>
+                  handleExpectChange("chain_out", e.target.value)
+                }
+                fullWidth
+                inputProps={{
+                  "data-testid": "address-chain-out-input",
+                  "aria-label": "Expected chain outgoing balance",
+                }}
+              />
+            </Grid>
+            <Grid item>
+              <TextField
+                label="Mempool In"
+                type="number"
+                value={formData.expect.mempool_in}
+                onChange={(e) =>
+                  handleExpectChange("mempool_in", e.target.value)
+                }
+                fullWidth
+                inputProps={{
+                  "data-testid": "address-mempool-in-input",
+                  "aria-label": "Expected mempool incoming balance",
+                }}
+              />
+            </Grid>
+            <Grid item>
+              <TextField
+                label="Mempool Out"
+                type="number"
+                value={formData.expect.mempool_out}
+                onChange={(e) =>
+                  handleExpectChange("mempool_out", e.target.value)
+                }
+                fullWidth
+                inputProps={{
+                  "data-testid": "address-mempool-out-input",
+                  "aria-label": "Expected mempool outgoing balance",
+                }}
+              />
+            </Grid>
           </Grid>
-          <Grid item xs={6}>
-            <TextField
-              margin="dense"
-              label="Chain Out"
-              type="number"
-              fullWidth
-              value={formData.expect.chain_out}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  expect: {
-                    ...formData.expect,
-                    chain_out: parseInt(e.target.value) || 0,
-                  },
-                })
-              }
-              helperText="Expected on-chain outgoing balance"
-              aria-label="Expected chain outgoing balance"
-              inputProps={{
-                "data-testid": "address-chain-out-input",
-              }}
-            />
+          <Typography variant="subtitle1">Monitoring Settings</Typography>
+          <Grid
+            container
+            spacing={2}
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                md: "repeat(2, 1fr)",
+              },
+              gap: 2,
+            }}
+          >
+            <Grid item>
+              {renderMonitorSelect("Chain In", formData.monitor.chain_in, (e) =>
+                handleMonitorChange("chain_in", e.target.value)
+              )}
+            </Grid>
+            <Grid item>
+              {renderMonitorSelect(
+                "Chain Out",
+                formData.monitor.chain_out,
+                (e) => handleMonitorChange("chain_out", e.target.value)
+              )}
+            </Grid>
+            <Grid item>
+              {renderMonitorSelect(
+                "Mempool In",
+                formData.monitor.mempool_in,
+                (e) => handleMonitorChange("mempool_in", e.target.value)
+              )}
+            </Grid>
+            <Grid item>
+              {renderMonitorSelect(
+                "Mempool Out",
+                formData.monitor.mempool_out,
+                (e) => handleMonitorChange("mempool_out", e.target.value)
+              )}
+            </Grid>
           </Grid>
-          <Grid item xs={6}>
-            <TextField
-              margin="dense"
-              label="Mempool In"
-              type="number"
-              fullWidth
-              value={formData.expect.mempool_in}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  expect: {
-                    ...formData.expect,
-                    mempool_in: parseInt(e.target.value) || 0,
-                  },
-                })
-              }
-              helperText="Expected mempool incoming balance"
-              aria-label="Expected mempool incoming balance"
-              inputProps={{
-                "data-testid": "address-mempool-in-input",
-              }}
-            />
-          </Grid>
-          <Grid item xs={6}>
-            <TextField
-              margin="dense"
-              label="Mempool Out"
-              type="number"
-              fullWidth
-              value={formData.expect.mempool_out}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  expect: {
-                    ...formData.expect,
-                    mempool_out: parseInt(e.target.value) || 0,
-                  },
-                })
-              }
-              helperText="Expected mempool outgoing balance"
-              aria-label="Expected mempool outgoing balance"
-              inputProps={{
-                "data-testid": "address-mempool-out-input",
-              }}
-            />
-          </Grid>
-        </Grid>
-        <Typography variant="subtitle1" sx={{ mt: 0, mb: 1 }}>
-          Monitoring Settings
-        </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={6}>
-            {renderMonitorSelect("Chain In", formData.monitor.chain_in, (e) =>
-              setFormData({
-                ...formData,
-                monitor: {
-                  ...formData.monitor,
-                  chain_in: e.target.value,
-                },
-              })
-            )}
-          </Grid>
-          <Grid item xs={6}>
-            {renderMonitorSelect("Chain Out", formData.monitor.chain_out, (e) =>
-              setFormData({
-                ...formData,
-                monitor: {
-                  ...formData.monitor,
-                  chain_out: e.target.value,
-                },
-              })
-            )}
-          </Grid>
-          <Grid item xs={6}>
-            {renderMonitorSelect(
-              "Mempool In",
-              formData.monitor.mempool_in,
-              (e) =>
-                setFormData({
-                  ...formData,
-                  monitor: {
-                    ...formData.monitor,
-                    mempool_in: e.target.value,
-                  },
-                })
-            )}
-          </Grid>
-          <Grid item xs={6}>
-            {renderMonitorSelect(
-              "Mempool Out",
-              formData.monitor.mempool_out,
-              (e) =>
-                setFormData({
-                  ...formData,
-                  monitor: {
-                    ...formData.monitor,
-                    mempool_out: e.target.value,
-                  },
-                })
-            )}
-          </Grid>
-        </Grid>
+        </Box>
       </DialogContent>
       <DialogActions>
         <Button
@@ -279,7 +256,6 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
         <Button
           onClick={handleSave}
           variant="contained"
-          color="primary"
           aria-label="Save address"
           data-testid="address-dialog-save"
         >

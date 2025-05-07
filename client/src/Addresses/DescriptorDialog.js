@@ -43,24 +43,32 @@ const DescriptorDialog = ({
     }
   }, [descriptor]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]:
+        field === "name" || field === "descriptor" ? value : Number(value),
+    }));
     setError("");
   };
 
   const handleSubmit = async () => {
-    try {
-      await onSave(collection, formData);
-      onClose();
-    } catch (err) {
-      setError(err.toString());
+    const result = await onSave(collection, formData);
+    if (result?.error) {
+      setError(result.error.toString());
+      return;
     }
+    onClose();
   };
 
   return (
-    <Dialog open={open} onClose={onClose}>
-      <DialogTitle>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      aria-labelledby="descriptor-dialog-title"
+      data-testid="descriptor-dialog"
+    >
+      <DialogTitle id="descriptor-dialog-title">
         {descriptor ? "Edit Descriptor" : "Add Descriptor"}
       </DialogTitle>
       <DialogContent>
@@ -70,59 +78,79 @@ const DescriptorDialog = ({
             label="Name"
             name="name"
             value={formData.name}
-            onChange={handleChange}
+            onChange={(e) => handleChange("name", e.target.value)}
             helperText="A friendly name for this descriptor"
             fullWidth
-            aria-label="Descriptor name"
+            inputProps={{
+              "data-testid": "descriptor-name-input",
+              "aria-label": "Descriptor name",
+            }}
           />
           <TextField
             label="Descriptor"
             name="descriptor"
             value={formData.descriptor}
-            onChange={handleChange}
+            onChange={(e) => handleChange("descriptor", e.target.value)}
             helperText="The output descriptor (e.g., wpkh([fingerprint/derivation]xpub/0/*))"
             fullWidth
-            aria-label="Output descriptor"
+            inputProps={{
+              "data-testid": "descriptor-input",
+              "aria-label": "Output descriptor",
+            }}
           />
           <TextField
             label="Gap Limit"
             name="gapLimit"
             value={formData.gapLimit}
-            onChange={handleChange}
+            onChange={(e) => handleChange("gapLimit", e.target.value)}
             type="number"
             helperText="Number of unused addresses before stopping derivation"
             fullWidth
-            aria-label="Gap limit"
+            inputProps={{
+              "data-testid": "descriptor-gap-input",
+              "aria-label": "Gap limit",
+            }}
           />
           <TextField
             label="Initial Addresses"
             name="initialAddresses"
             value={formData.initialAddresses}
-            onChange={handleChange}
+            onChange={(e) => handleChange("initialAddresses", e.target.value)}
             type="number"
             helperText="Number of addresses to derive initially"
             fullWidth
-            aria-label="Initial addresses"
+            inputProps={{
+              "data-testid": "descriptor-initial-input",
+              "aria-label": "Initial addresses",
+            }}
           />
           <TextField
             label="Skip"
             name="skip"
             value={formData.skip}
-            onChange={handleChange}
+            onChange={(e) => handleChange("skip", e.target.value)}
             type="number"
             helperText="Number of addresses to skip before starting derivation"
             fullWidth
-            aria-label="Skip addresses"
+            inputProps={{
+              "data-testid": "descriptor-skip-input",
+              "aria-label": "Skip addresses",
+            }}
           />
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose} aria-label="Cancel descriptor dialog">
+        <Button
+          onClick={onClose}
+          data-testid="descriptor-cancel-button"
+          aria-label="Cancel descriptor dialog"
+        >
           Cancel
         </Button>
         <Button
           onClick={handleSubmit}
           variant="contained"
+          data-testid="descriptor-submit-button"
           aria-label={descriptor ? "Save descriptor" : "Add descriptor"}
         >
           {descriptor ? "Save" : "Add"}

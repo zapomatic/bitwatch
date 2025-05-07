@@ -45,22 +45,24 @@ const ExtendedKeyDialog = ({
     }
   }, [extendedKey]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
+  const handleChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
-      [name]: e.target.type === "number" ? Number(value) : value,
+      [field]:
+        field === "name" || field === "key" || field === "derivationPath"
+          ? value
+          : Number(value),
     }));
     setError("");
   };
 
   const handleSubmit = async () => {
-    try {
-      await onSave(collection, formData);
-      onClose();
-    } catch (err) {
-      setError(err.toString());
+    const result = await onSave(collection, formData);
+    if (result?.error) {
+      setError(result.error.toString());
+      return;
     }
+    onClose();
   };
 
   return (
@@ -80,7 +82,7 @@ const ExtendedKeyDialog = ({
             label="Name"
             name="name"
             value={formData.name}
-            onChange={handleChange}
+            onChange={(e) => handleChange("name", e.target.value)}
             helperText="A friendly name for this extended key"
             fullWidth
             inputProps={{
@@ -92,7 +94,7 @@ const ExtendedKeyDialog = ({
             label="Extended Key"
             name="key"
             value={formData.key}
-            onChange={handleChange}
+            onChange={(e) => handleChange("key", e.target.value)}
             helperText="The extended public key (xpub, ypub, zpub)"
             fullWidth
             inputProps={{
@@ -104,7 +106,7 @@ const ExtendedKeyDialog = ({
             label="Derivation Path"
             name="derivationPath"
             value={formData.derivationPath}
-            onChange={handleChange}
+            onChange={(e) => handleChange("derivationPath", e.target.value)}
             helperText="The derivation path (e.g., m/0)"
             fullWidth
             inputProps={{
@@ -116,7 +118,7 @@ const ExtendedKeyDialog = ({
             label="Gap Limit"
             name="gapLimit"
             value={formData.gapLimit}
-            onChange={handleChange}
+            onChange={(e) => handleChange("gapLimit", e.target.value)}
             type="number"
             helperText="Number of unused addresses before stopping derivation"
             fullWidth
@@ -129,7 +131,7 @@ const ExtendedKeyDialog = ({
             label="Initial Addresses"
             name="initialAddresses"
             value={formData.initialAddresses}
-            onChange={handleChange}
+            onChange={(e) => handleChange("initialAddresses", e.target.value)}
             type="number"
             helperText="Number of addresses to derive initially"
             fullWidth
@@ -142,7 +144,7 @@ const ExtendedKeyDialog = ({
             label="Skip"
             name="skip"
             value={formData.skip}
-            onChange={handleChange}
+            onChange={(e) => handleChange("skip", e.target.value)}
             type="number"
             helperText="Number of addresses to skip before starting derivation"
             fullWidth

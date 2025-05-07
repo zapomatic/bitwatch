@@ -275,28 +275,28 @@ export const addDescriptor = async (
   await findAndClick(page, `[data-testid="${collection}-add-descriptor"]`);
 
   // Wait for dialog to be visible
-  await page.waitForSelector('[aria-label="Descriptor name"] input', {
+  await page.waitForSelector('[data-testid="descriptor-name-input"]', {
     state: "visible",
     timeout: 2000,
   });
 
   // Fill in the form fields
-  await page.fill('[aria-label="Descriptor name"] input', name);
-  await page.fill('[aria-label="Output descriptor"] input', descriptor);
-  await page.fill('[aria-label="Skip addresses"] input', skip.toString());
-  await page.fill('[aria-label="Gap limit"] input', gapLimit.toString());
+  await page.fill('[data-testid="descriptor-name-input"]', name);
+  await page.fill('[data-testid="descriptor-input"]', descriptor);
+  await page.fill('[data-testid="descriptor-skip-input"]', skip.toString());
+  await page.fill('[data-testid="descriptor-gap-input"]', gapLimit.toString());
   await page.fill(
-    '[aria-label="Initial addresses"] input',
+    '[data-testid="descriptor-initial-input"]',
     initialAddresses.toString()
   );
 
   // Click the Add button - allow clicking in overlay since it's in a dialog
-  await findAndClick(page, '[aria-label="Add descriptor"]', {
+  await findAndClick(page, '[data-testid="descriptor-submit-button"]', {
     allowOverlay: true,
   });
 
   // Wait for the dialog to disappear
-  await page.waitForSelector('[aria-label="Descriptor name"]', {
+  await page.waitForSelector('[data-testid="descriptor-name-input"]', {
     state: "hidden",
     timeout: 2000,
   });

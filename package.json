@@ -1,6 +1,6 @@
 {
   "name": "bitwatch",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "description": "Bitcoin address monitor, using mempool.space api",
   "main": "server/index.js",
   "private": true,
@@ -11,7 +11,7 @@
     "test:generate": "node server/scripts/generate-test-data.js",
     "test:prepare": "npm run test:generate && npm test",
     "test:e2e": "NODE_NO_WARNINGS=1 node node_modules/@playwright/test/cli.js test && npm run test:cleanup",
-    "test:e2e:debug": "NODE_NO_WARNINGS=1 node node_modules/@playwright/test/cli.js test --debug",
+    "test:e2e:debug": "NODE_NO_WARNINGS=1 node node_modules/@playwright/test/cli.js test --debug && npm run test:cleanup",
     "test:e2e:ui": "NODE_NO_WARNINGS=1 node node_modules/@playwright/test/cli.js test --ui",
     "test:e2e:codegen": "NODE_NO_WARNINGS=1 node node_modules/@playwright/test/cli.js codegen http://localhost:3119",
     "test:cleanup": "mv server/data/db.backup server/data/db.json 2>/dev/null || rm -f server/data/db.json",
