@@ -303,17 +303,17 @@ export const refreshAddressBalance = async (
     }
 
     // Log all data-testid attributes on the page to see what's available
-    console.log("Logging all data-testid elements on page:");
-    const allTestIds = await page.evaluate(() => {
-      const elements = document.querySelectorAll("[data-testid]");
-      return Array.from(elements).map((el) => ({
-        testId: el.getAttribute("data-testid"),
-        tagName: el.tagName,
-        className: el.className,
-        isVisible: el.offsetParent !== null,
-      }));
-    });
-    console.log(JSON.stringify(allTestIds, null, 2));
+    // console.log("Logging all data-testid elements on page:");
+    // const allTestIds = await page.evaluate(() => {
+    //   const elements = document.querySelectorAll("[data-testid]");
+    //   return Array.from(elements).map((el) => ({
+    //     testId: el.getAttribute("data-testid"),
+    //     tagName: el.tagName,
+    //     className: el.className,
+    //     isVisible: el.offsetParent !== null,
+    //   }));
+    // });
+    // console.log(JSON.stringify(allTestIds, null, 2));
 
     // Check if this is a descriptor (starts with pkh, sh, wpkh, etc) or an extended key
     const isDescriptor =
@@ -342,8 +342,8 @@ export const refreshAddressBalance = async (
     if (exists) {
       const isVisible = await addressList.isVisible();
       console.log(`Address list is visible: ${isVisible}`);
-      const html = await addressList.evaluate((el) => el.outerHTML);
-      console.log(`Address list HTML: ${html}`);
+      // const html = await addressList.evaluate((el) => el.outerHTML);
+      // console.log(`Address list HTML: ${html}`);
     }
 
     // Log the parent container state
@@ -361,7 +361,7 @@ export const refreshAddressBalance = async (
       }
       return null;
     }, addressListSelector);
-    console.log("Parent container state:", parentContainer);
+    // console.log("Parent container state:", parentContainer);
 
     await expect(addressList).toBeVisible();
 
