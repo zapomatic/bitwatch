@@ -343,9 +343,9 @@ function AppContent() {
         }}
       >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-          <StatusIndicator label="Server" state={serverState} />
-          <StatusIndicator label="WebSocket" state={websocketState} />
-          <StatusIndicator label="API" state={apiState} />
+          <StatusIndicator label="Bitwatch Socket" state={serverState} />
+          <StatusIndicator label="Mempool Socket" state={websocketState} />
+          <StatusIndicator label="Mempool API" state={apiState} />
           {interval > 0 && (
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Box
