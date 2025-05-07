@@ -18,8 +18,7 @@ export default defineConfig({
       stderr: "pipe",
     },
     {
-      command:
-        "rm -rf server/data/db.json && NODE_ENV=test PORT=3119 npm run dev:server",
+      command: "NODE_ENV=test PORT=3119 npm run dev:server",
       port: 3119,
       timeout: 60000,
       reuseExistingServer: !process.env.CI,

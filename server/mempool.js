@@ -80,33 +80,17 @@ const updateTrackedAddresses = () => {
   // Update tracking
   if (addressesToTrack.length > 0) {
     addressesToTrack.forEach((address) => {
-      logger.info(`Tracking address: ${address}`);
-      const result = mempoolClient.bitcoin.websocket.wsTrackAddress(
-        ws,
-        address
-      );
-      if (result) {
-        trackedAddresses.add(address);
-        logger.success(`Successfully tracking address: ${address}`);
-      } else {
-        logger.error(`Failed to track address ${address}`);
-      }
+      logger.network(`Tracking address: ${address}`);
+      mempoolClient.bitcoin.websocket.wsTrackAddress(ws, address);
+      trackedAddresses.add(address);
     });
   }
 
   if (addressesToUntrack.length > 0) {
     addressesToUntrack.forEach((address) => {
-      logger.info(`Untracking address: ${address}`);
-      const result = mempoolClient.bitcoin.websocket.wsStopTrackingAddress(
-        ws,
-        address
-      );
-      if (result) {
-        trackedAddresses.delete(address);
-        logger.success(`Successfully untracked address: ${address}`);
-      } else {
-        logger.error(`Failed to untrack address ${address}`);
-      }
+      logger.network(`Untracking address: ${address}`);
+      mempoolClient.bitcoin.websocket.wsStopTrackingAddress(ws, address);
+      trackedAddresses.delete(address);
     });
   }
 

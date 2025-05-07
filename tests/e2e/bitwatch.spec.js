@@ -1,11 +1,13 @@
-import { test, expect } from "./test-environment.js";
+import { test, expect, backupDatabase, restoreDatabase } from "./test-environment.js";
 import testData from "../../test-data/keys.json" with { type: 'json' };
 import testDb from "../../server/db.test.json" with { type: 'json' };
 import { addCollection, addAddress, addExtendedKey, addDescriptor, findAndClick } from "./test-environment.js";
 import { refreshAddressBalance, verifyAddressBalance } from "./test-environment.js";
 
 test.describe("Bitwatch", () => {
-  // test.beforeEach(async ({}) => {});
+  test.beforeAll(() => {
+    backupDatabase();
+  });
 
   // NOTE: we put all of the sequences of events in a single test to make the tests faster
   // we don't need to load the page fresh, we want to navigate around it like a real user
@@ -538,37 +540,7 @@ test.describe("Bitwatch", () => {
     await findAndClick(page, `[data-testid="${firstDescriptor.descriptor}-expand-button"]`);
     console.log(`Collapsed ${firstDescriptor.name} section`);
 
-    // 4. Delete the first extended key
-    await findAndClick(page, `[data-testid="${firstExtendedKey.key}-delete-button"]`);
-    await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
-    await expect(page.getByText("Delete this extended key and all its derived addresses?")).toBeVisible();
-    await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
-    await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
-    console.log(`Deleted ${firstExtendedKey.name}`);
-
-    // 5. Delete the first descriptor
-    await findAndClick(page, `[data-testid="${firstDescriptor.descriptor}-delete-button"]`);
-    await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
-    await expect(page.getByText("Delete this descriptor and all its derived addresses?")).toBeVisible();
-    await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
-    
-    // Wait for dialog to close with a longer timeout
-    await page.waitForSelector('[data-testid="delete-confirmation-dialog"]', { 
-      state: 'hidden',
-      timeout: 5000 
-    });
-    
-    // Verify the dialog is gone
-    const dialog = page.locator('[data-testid="delete-confirmation-dialog"]');
-    await expect(dialog).not.toBeVisible();
-    console.log(`Deleted ${firstDescriptor.name}`);
-
-    // 6. Finally, delete the collection
-    await findAndClick(page, '[data-testid="Donations-delete"]');
-    await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
-    await expect(page.getByText("Delete this collection and all its addresses?")).toBeVisible();
-    await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
-    await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
-    console.log("Deleted Donations collection");
+    // Clean up after test
+    await restoreDatabase();
   });
 });

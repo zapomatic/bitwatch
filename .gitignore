@@ -1,5 +1,6 @@
 node_modules
 server/data/db.json
+server/data/db.backup
 client/build
 .DS_Store
 *.log
