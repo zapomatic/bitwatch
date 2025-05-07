@@ -69,8 +69,8 @@ export const addExtendedKey = async ({ data, io }) => {
   key.addresses = addresses.map((address, index) => {
     const addr = {
       ...address,
-      name: `${key.name} ${index + 1}`,
-      index: index + 1,
+      name: `${key.name} ${index}`,
+      index: index,
       expect: {
         chain_in: 0,
         chain_out: 0,
@@ -82,10 +82,7 @@ export const addExtendedKey = async ({ data, io }) => {
       },
     };
     // Debug log the address object
-    logger.debug(
-      `Address ${index + 1} structure:`,
-      JSON.stringify(addr, null, 2)
-    );
+    logger.debug(`Address ${index} structure:`, JSON.stringify(addr, null, 2));
     return addr;
   });
 

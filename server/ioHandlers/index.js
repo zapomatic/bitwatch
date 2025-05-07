@@ -1,10 +1,13 @@
 import { client } from "./client.js";
 import { refreshBalance } from "./refreshBalance.js";
-import { getConfig, saveConfig } from "./config.js";
-import { getIntegrations, saveIntegrations } from "./integrations.js";
+import { saveConfig } from "./saveConfig.js";
+import { getConfig } from "./getConfig.js";
+import { saveIntegrations } from "./saveIntegrations.js";
+import { getIntegrations } from "./getIntegrations.js";
 import { add } from "./add.js";
 import { saveExpected } from "./saveExpected.js";
-import { addDescriptor, editDescriptor } from "./descriptors.js";
+import { addDescriptor } from "./addDescriptor.js";
+import { editDescriptor } from "./editDescriptor.js";
 import { addExtendedKey } from "./addExtendedKey.js";
 import { deleteHandler } from "./delete.js";
 import { updateAddress } from "./updateAddress.js";

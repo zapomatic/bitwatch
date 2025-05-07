@@ -134,16 +134,10 @@ export const deriveExtendedKeyAddresses = async (
       address,
       index: derivationIndex,
     };
-    logger.debug(
-      `Derived address at index ${derivationIndex}:`,
-      JSON.stringify(addressObj, null, 2)
-    );
+    logger.debug(`Derived address at index ${derivationIndex}:`, addressObj);
 
     addresses.push(addressObj);
   }
-
-  // Debug log all derived addresses
-  logger.debug(`All derived addresses:`, JSON.stringify(addresses, null, 2));
 
   return addresses;
 };

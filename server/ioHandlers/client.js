@@ -2,7 +2,7 @@ import pjson from "../../package.json" with { type: "json" };
 import memory from "../memory.js";
 import logger from "../logger.js";
 
-export const client = async ({ data, socketID }) => {
+export const client = async ({ socketID }) => {
   logger.info(`Client connected (ID: ${socketID})`);
 
   // Determine initial API state based on address data

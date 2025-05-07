@@ -307,10 +307,10 @@ test.describe("Bitwatch", () => {
         // Verify each address has alert icons for all monitoring types
         for (let i = 0; i < addresses.length; i++) {
           const addressIndex = i + 1; // Address indices start at 1
-          await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-chain-in-alert"]`)).toBeVisible();
-          await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-chain-out-alert"]`)).toBeVisible();
-          await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-mempool-in-alert"]`)).toBeVisible();
-          await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-mempool-out-alert"]`)).toBeVisible();
+          await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-chain-in-alert-icon"]`)).toBeVisible();
+          await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-chain-out-alert-icon"]`)).toBeVisible();
+          await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-mempool-in-alert-icon"]`)).toBeVisible();
+          await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-mempool-out-alert-icon"]`)).toBeVisible();
         }
       }
 
@@ -483,10 +483,10 @@ test.describe("Bitwatch", () => {
         // Verify each address has alert icons for all monitoring types
         for (let i = 0; i < addresses.length; i++) {
           const addressIndex = i + 1; // Address indices start at 1
-          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-chain-in-alert"]`)).toBeVisible();
-          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-chain-out-alert"]`)).toBeVisible();
-          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-mempool-in-alert"]`)).toBeVisible();
-          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-mempool-out-alert"]`)).toBeVisible();
+          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-chain-in-alert-icon"]`)).toBeVisible();
+          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-chain-out-alert-icon"]`)).toBeVisible();
+          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-mempool-in-alert-icon"]`)).toBeVisible();
+          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-mempool-out-alert-icon"]`)).toBeVisible();
         }
 
         // Trigger a balance change to generate new addresses
@@ -506,10 +506,10 @@ test.describe("Bitwatch", () => {
         // Verify new addresses also have alert icons
         for (let i = 0; i < newAddresses.length; i++) {
           const addressIndex = i + 1; // Address indices start at 1
-          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-chain-in-alert"]`)).toBeVisible();
-          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-chain-out-alert"]`)).toBeVisible();
-          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-mempool-in-alert"]`)).toBeVisible();
-          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-mempool-out-alert"]`)).toBeVisible();
+          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-chain-in-alert-icon"]`)).toBeVisible();
+          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-chain-out-alert-icon"]`)).toBeVisible();
+          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-mempool-in-alert-icon"]`)).toBeVisible();
+          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-mempool-out-alert-icon"]`)).toBeVisible();
         }
       }
 
@@ -609,10 +609,10 @@ test.describe("Bitwatch", () => {
 
     // Verify single address monitor settings
     const singleAddress = testData.addresses.zapomatic;
-    await expect(page.locator(`[data-testid="${singleAddress}-chain-in-alert"]`)).toBeVisible();
-    await expect(page.locator(`[data-testid="${singleAddress}-chain-out-alert"]`)).toBeVisible();
-    await expect(page.locator(`[data-testid="${singleAddress}-mempool-in-alert"]`)).toBeVisible();
-    await expect(page.locator(`[data-testid="${singleAddress}-mempool-out-alert"]`)).toBeVisible();
+    await expect(page.locator(`[data-testid="${singleAddress}-chain-in-alert-icon"]`)).toBeVisible();
+    await expect(page.locator(`[data-testid="${singleAddress}-chain-out-alert-icon"]`)).toBeVisible();
+    await expect(page.locator(`[data-testid="${singleAddress}-mempool-in-alert-icon"]`)).toBeVisible();
+    await expect(page.locator(`[data-testid="${singleAddress}-mempool-out-alert-icon"]`)).toBeVisible();
     console.log("Single address monitor settings verified");
 
     // Verify extended key address monitor settings (using the first extended key from earlier)
@@ -620,10 +620,10 @@ test.describe("Bitwatch", () => {
     const extendedKeyAddresses = await page.locator(`[data-testid="${extendedKeys[0].key}-address-list"] tr.address-row`).all();
     for (let i = 0; i < extendedKeyAddresses.length; i++) {
       const addressIndex = i + 1;
-      await expect(page.locator(`[data-testid="${extendedKeys[0].key}-address-${addressIndex}-chain-in-alert"]`)).toBeVisible();
-      await expect(page.locator(`[data-testid="${extendedKeys[0].key}-address-${addressIndex}-chain-out-alert"]`)).toBeVisible();
-      await expect(page.locator(`[data-testid="${extendedKeys[0].key}-address-${addressIndex}-mempool-in-alert"]`)).toBeVisible();
-      await expect(page.locator(`[data-testid="${extendedKeys[0].key}-address-${addressIndex}-mempool-out-alert"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${extendedKeys[0].key}-address-${addressIndex}-chain-in-alert-icon"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${extendedKeys[0].key}-address-${addressIndex}-chain-out-alert-icon"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${extendedKeys[0].key}-address-${addressIndex}-mempool-in-alert-icon"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${extendedKeys[0].key}-address-${addressIndex}-mempool-out-alert-icon"]`)).toBeVisible();
     }
     await findAndClick(page, `[data-testid="${extendedKeys[0].key}-expand-button"]`);
     console.log("Extended key address monitor settings verified");
@@ -633,10 +633,10 @@ test.describe("Bitwatch", () => {
     const descriptorAddresses = await page.locator(`[data-testid="${descriptors[0].descriptor}-address-list"] tr.address-row`).all();
     for (let i = 0; i < descriptorAddresses.length; i++) {
       const addressIndex = i + 1;
-      await expect(page.locator(`[data-testid="${descriptors[0].descriptor}-address-${addressIndex}-chain-in-alert"]`)).toBeVisible();
-      await expect(page.locator(`[data-testid="${descriptors[0].descriptor}-address-${addressIndex}-chain-out-alert"]`)).toBeVisible();
-      await expect(page.locator(`[data-testid="${descriptors[0].descriptor}-address-${addressIndex}-mempool-in-alert"]`)).toBeVisible();
-      await expect(page.locator(`[data-testid="${descriptors[0].descriptor}-address-${addressIndex}-mempool-out-alert"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${descriptors[0].descriptor}-address-${addressIndex}-chain-in-alert-icon"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${descriptors[0].descriptor}-address-${addressIndex}-chain-out-alert-icon"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${descriptors[0].descriptor}-address-${addressIndex}-mempool-in-alert-icon"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${descriptors[0].descriptor}-address-${addressIndex}-mempool-out-alert-icon"]`)).toBeVisible();
     }
     await findAndClick(page, `[data-testid="${descriptors[0].descriptor}-expand-button"]`);
     console.log("Descriptor address monitor settings verified");
