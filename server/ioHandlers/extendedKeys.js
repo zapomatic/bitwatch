@@ -32,12 +32,30 @@ export const addExtendedKey = async (data) => {
     return { error: "Extended key with this name or key already exists" };
   }
 
+  // Set default values if not provided
+  const key = {
+    ...data,
+    derivationPath: data.derivationPath || "m/0",
+    gapLimit: data.gapLimit || 10,
+    skip: data.skip || 0,
+    initialAddresses: data.initialAddresses || 10,
+    addresses: [],
+    // Use provided monitor settings or get from database
+    monitor: data.monitor ||
+      memory.db.monitor || {
+        chain_in: "auto-accept",
+        chain_out: "alert",
+        mempool_in: "auto-accept",
+        mempool_out: "alert",
+      },
+  };
+
   // Derive initial addresses
   const addresses = await deriveExtendedKeyAddresses(
-    { key: data.key, skip: data.skip || 0 },
+    { key: key.key, skip: key.skip || 0 },
     0,
-    data.initialAddresses || 5,
-    data.derivationPath
+    key.initialAddresses || 10,
+    key.derivationPath
   );
 
   if (!addresses) {
@@ -45,35 +63,23 @@ export const addExtendedKey = async (data) => {
     return { error: "Failed to derive addresses" };
   }
 
+  // Add monitor settings to each address
+  key.addresses = addresses.map((address, index) => ({
+    ...address,
+    name: `${key.name} ${index + 1}`,
+    index: index + 1,
+    expect: {
+      chain_in: 0,
+      chain_out: 0,
+      mempool_in: 0,
+      mempool_out: 0,
+    },
+    // Use the extended key's monitor settings
+    monitor: key.monitor,
+  }));
+
   // Add extended key to collection
-  collection.extendedKeys.push({
-    name: data.name,
-    key: data.key,
-    derivationPath: data.derivationPath,
-    gapLimit: data.gapLimit || 2,
-    initialAddresses: data.initialAddresses || 5,
-    skip: data.skip || 0,
-    addresses: addresses.map((addr) => ({
-      address: addr.address,
-      name: `${data.name} ${addr.index}`,
-      index: addr.index,
-      expect: {
-        chain_in: 0,
-        chain_out: 0,
-        mempool_in: 0,
-        mempool_out: 0,
-      },
-      monitor: {
-        chain_in: "auto-accept",
-        chain_out: "alert",
-        mempool_in: "auto-accept",
-        mempool_out: "alert",
-      },
-      actual: null,
-      error: false,
-      errorMessage: null,
-    })),
-  });
+  collection.extendedKeys.push(key);
 
   const saveResult = memory.saveDb();
   if (!saveResult) {

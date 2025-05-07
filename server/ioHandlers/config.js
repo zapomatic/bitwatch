@@ -9,6 +9,7 @@ export const getConfig = async () => {
     apiDelay: memory.db.apiDelay,
     apiParallelLimit: memory.db.apiParallelLimit,
     debugLogging: memory.db.debugLogging,
+    monitor: memory.db.monitor,
   };
 };
 
@@ -32,6 +33,36 @@ export const saveConfig = async (data) => {
   memory.db.apiDelay = data.apiDelay;
   memory.db.apiParallelLimit = data.apiParallelLimit;
   memory.db.debugLogging = data.debugLogging;
+  memory.db.monitor = data.monitor;
+
+  // Update all addresses if requested
+  if (data.updateAllAddresses && data.monitor) {
+    logger.info("Updating all addresses with new monitor settings");
+
+    // Iterate through all collections
+    Object.values(memory.db.collections || {}).forEach((collection) => {
+      // Update single addresses
+      (collection.addresses || []).forEach((address) => {
+        address.monitor = { ...data.monitor };
+      });
+
+      // Update extended key defaults and their addresses
+      (collection.extendedKeys || []).forEach((key) => {
+        key.monitor = { ...data.monitor };
+        (key.addresses || []).forEach((address) => {
+          address.monitor = { ...data.monitor };
+        });
+      });
+
+      // Update descriptor defaults and their addresses
+      (collection.descriptors || []).forEach((descriptor) => {
+        descriptor.monitor = { ...data.monitor };
+        (descriptor.addresses || []).forEach((address) => {
+          address.monitor = { ...data.monitor };
+        });
+      });
+    });
+  }
 
   const saveResult = memory.saveDb();
   if (!saveResult) {

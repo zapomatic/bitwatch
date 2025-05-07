@@ -352,7 +352,7 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
             mempool_in: 0,
             mempool_out: 0,
           },
-          monitor: {
+          monitor: parentItem.monitor || {
             chain_in: "auto-accept",
             chain_out: "alert",
             mempool_in: "auto-accept",

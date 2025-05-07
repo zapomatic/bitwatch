@@ -28,9 +28,7 @@ const DescriptorInfo = ({
   displayBtc,
   setNotification,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(
-    descriptor.addresses?.length > 0
-  );
+  const [isExpanded, setIsExpanded] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   useEffect(() => {
@@ -201,7 +199,12 @@ const DescriptorInfo = ({
       </TableRow>
       <TableRow>
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
-          <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+          <Collapse
+            in={isExpanded}
+            timeout="auto"
+            unmountOnExit
+            data-testid={`${descriptor.descriptor}-expanded`}
+          >
             <Box sx={{ margin: 1 }}>
               <Table size="small" className="crystal-table address-subtable">
                 <TableHead>

@@ -17,86 +17,64 @@ const BalanceCell = ({
   value,
   dataTestId,
 }) => {
-  if (pending) {
-    return (
-      <Box className="crystal-flex crystal-flex-start crystal-gap-1">
-        <Typography
-          className="crystal-text"
-          sx={{ opacity: 0.5 }}
-          data-testid={dataTestId}
-        >
-          Loading...
-        </Typography>
-      </Box>
-    );
-  }
+  // Get the monitoring setting for this specific type
+  const monitoringSetting = monitor?.[type] || null;
 
-  if (error) {
-    return (
-      <Box className="crystal-flex crystal-flex-start crystal-gap-1">
-        <Typography className="crystal-text" sx={{ opacity: 0.5 }}>
-          —
-        </Typography>
-        <Tooltip title="Failed to fetch balance">
-          <WarningIcon
-            className="crystal-text-warning"
-            sx={{ fontSize: "1rem" }}
-          />
-        </Tooltip>
-      </Box>
+  // Helper to render monitoring icon
+  const renderMonitoringIcon = () => {
+    if (!monitoringSetting) {
+      // Collection row - just show verification status
+      return value === expect ? (
+        <CheckIcon className="crystal-text-success" sx={{ fontSize: "1rem" }} />
+      ) : (
+        <WarningIcon
+          className="crystal-text-warning"
+          sx={{ fontSize: "1rem" }}
+        />
+      );
+    }
+
+    // Individual address row - show monitoring status
+    return monitoringSetting === "auto-accept" ? (
+      <CheckCircleIcon
+        className="crystal-text-success"
+        sx={{ fontSize: "1rem" }}
+        aria-label={`Auto-accept monitoring for ${type}`}
+        data-testid={`${dataTestId}-auto-accept-icon`}
+      />
+    ) : (
+      <NotificationsActiveIcon
+        className="crystal-text-warning"
+        sx={{ fontSize: "1rem" }}
+        aria-label={`Alert monitoring for ${type}`}
+        data-testid={`${dataTestId}-alert-icon`}
+      />
     );
-  }
+  };
 
   // Convert values to numbers and handle undefined/null
   const actualValue = Number(value) || 0;
   const expectedValue = Number(expect) || 0;
   const diff = actualValue - expectedValue;
-  const isVerified = diff === 0;
-
-  // Get the monitoring setting for this specific type
-  const monitoringSetting = monitor?.[type] || null;
 
   return (
     <Box className="crystal-flex crystal-flex-start crystal-gap-1">
       {label && <Typography className="crystal-text">{label}</Typography>}
-      {!monitoringSetting ? (
-        // Collection row - just show verification status
-        isVerified ? (
-          <CheckIcon
-            className="crystal-text-success"
-            sx={{ fontSize: "1rem" }}
-          />
-        ) : (
-          <WarningIcon
-            className="crystal-text-warning"
-            sx={{ fontSize: "1rem" }}
-          />
-        )
-      ) : // Individual address row - show monitoring status
-      monitoringSetting === "auto-accept" ? (
-        <CheckCircleIcon
-          className="crystal-text-success"
-          sx={{ fontSize: "1rem" }}
-          aria-label={`Auto-accept monitoring for ${type}`}
-          data-testid={`${dataTestId}-auto-accept-icon`}
-        />
-      ) : (
-        <NotificationsActiveIcon
-          className="crystal-text-warning"
-          sx={{ fontSize: "1rem" }}
-          aria-label={`Alert monitoring for ${type}`}
-          data-testid={`${dataTestId}-alert-icon`}
-        />
-      )}
+      {renderMonitoringIcon()}
       <Box className="crystal-flex crystal-flex-start crystal-gap-1">
         <Typography
           className="crystal-text"
           aria-label="Balance value"
           data-testid={dataTestId}
+          sx={{ opacity: pending ? 0.5 : 1 }}
         >
-          {formatSatoshis(actualValue, displayBtc)}
+          {pending
+            ? "Loading..."
+            : error
+            ? "—"
+            : formatSatoshis(actualValue, displayBtc)}
         </Typography>
-        {diff !== 0 && (
+        {!pending && !error && diff !== 0 && (
           <Typography
             className={`crystal-text ${
               diff > 0 ? "crystal-text-success" : "crystal-text-danger"
@@ -108,6 +86,14 @@ const BalanceCell = ({
             ({diff > 0 ? "+" : ""}
             {formatSatoshis(diff, displayBtc)})
           </Typography>
+        )}
+        {error && (
+          <Tooltip title="Failed to fetch balance">
+            <WarningIcon
+              className="crystal-text-warning"
+              sx={{ fontSize: "1rem" }}
+            />
+          </Tooltip>
         )}
       </Box>
     </Box>

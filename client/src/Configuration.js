@@ -5,9 +5,18 @@ import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import Title from "./Title";
 import "./theme.css";
-import { FormControlLabel, Switch } from "@mui/material";
+import {
+  FormControlLabel,
+  Switch,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+} from "@mui/material";
 import CrystalNotification from "./components/CrystalNotification";
 import { Box } from "@mui/material";
+import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 
 import { DEFAULT_CONFIG, PRIVATE_CONFIG } from "./config";
 
@@ -55,10 +64,21 @@ const Configs = {
     help: "Show detailed debug logs in the server console",
     default: DEFAULT_CONFIG.debugLogging,
   },
+  monitor: {
+    label: "Default Monitor Settings",
+    help: "Default monitoring settings for new addresses, extended keys, and descriptors",
+    default: {
+      chain_in: "auto-accept",
+      chain_out: "alert",
+      mempool_in: "auto-accept",
+      mempool_out: "alert",
+    },
+  },
 };
 
 function Config() {
   const [config, setConfig] = useState(DEFAULT_CONFIG);
+  const [updateAllAddresses, setUpdateAllAddresses] = useState(false);
   const [notification, setNotification] = useState({
     open: false,
     message: "",
@@ -86,6 +106,8 @@ function Config() {
         apiParallelLimit: parseInt(config.apiParallelLimit),
         interval: parseInt(config.interval),
         debugLogging: config.debugLogging,
+        monitor: config.monitor || Configs.monitor.default,
+        updateAllAddresses,
       },
       (response) => {
         if (response.error) {
@@ -97,12 +119,50 @@ function Config() {
         }
         setNotification({
           open: true,
-          message: "Configuration saved successfully",
+          message: updateAllAddresses
+            ? "Configuration saved successfully and all addresses updated"
+            : "Configuration saved successfully",
           severity: "success",
         });
+        setUpdateAllAddresses(false); // Reset after save
       }
     );
   };
+
+  const renderMonitorSelect = (label, value, onChange) => (
+    <FormControl fullWidth>
+      <InputLabel>{label}</InputLabel>
+      <Select
+        value={value}
+        onChange={onChange}
+        label={label}
+        sx={{
+          "& .MuiOutlinedInput-notchedOutline": {
+            borderColor: "var(--theme-secondary)",
+          },
+          "&:hover .MuiOutlinedInput-notchedOutline": {
+            borderColor: "var(--theme-primary)",
+          },
+        }}
+      >
+        <MenuItem value="alert">
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <NotificationsActiveIcon
+              color="warning"
+              sx={{ fontSize: "1rem" }}
+            />
+            <Typography>Alert</Typography>
+          </Box>
+        </MenuItem>
+        <MenuItem value="auto-accept">
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <CheckCircleIcon color="success" sx={{ fontSize: "1rem" }} />
+            <Typography>Auto Accept</Typography>
+          </Box>
+        </MenuItem>
+      </Select>
+    </FormControl>
+  );
 
   const renderConfigField = (key) => {
     if (key === "debugLogging") {
@@ -143,6 +203,111 @@ function Config() {
               {typeof Configs[key].help === "function"
                 ? Configs[key].help(config[key] ?? Configs[key].default)
                 : Configs[key].help}
+            </Typography>
+          )}
+        </div>
+      );
+    } else if (key === "monitor") {
+      return (
+        <div className="data-item">
+          <Typography component="label" className="crystal-label">
+            {Configs[key].label}
+          </Typography>
+          <Grid
+            container
+            spacing={2}
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                md: "repeat(2, 1fr)",
+              },
+              gap: 2,
+            }}
+          >
+            <Grid item>
+              {renderMonitorSelect(
+                "Chain In",
+                (config.monitor || Configs.monitor.default).chain_in,
+                (e) =>
+                  setConfig({
+                    ...config,
+                    monitor: {
+                      ...(config.monitor || Configs.monitor.default),
+                      chain_in: e.target.value,
+                    },
+                  })
+              )}
+            </Grid>
+            <Grid item>
+              {renderMonitorSelect(
+                "Chain Out",
+                (config.monitor || Configs.monitor.default).chain_out,
+                (e) =>
+                  setConfig({
+                    ...config,
+                    monitor: {
+                      ...(config.monitor || Configs.monitor.default),
+                      chain_out: e.target.value,
+                    },
+                  })
+              )}
+            </Grid>
+            <Grid item>
+              {renderMonitorSelect(
+                "Mempool In",
+                (config.monitor || Configs.monitor.default).mempool_in,
+                (e) =>
+                  setConfig({
+                    ...config,
+                    monitor: {
+                      ...(config.monitor || Configs.monitor.default),
+                      mempool_in: e.target.value,
+                    },
+                  })
+              )}
+            </Grid>
+            <Grid item>
+              {renderMonitorSelect(
+                "Mempool Out",
+                (config.monitor || Configs.monitor.default).mempool_out,
+                (e) =>
+                  setConfig({
+                    ...config,
+                    monitor: {
+                      ...(config.monitor || Configs.monitor.default),
+                      mempool_out: e.target.value,
+                    },
+                  })
+              )}
+            </Grid>
+          </Grid>
+          <Box sx={{ mt: 2 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={updateAllAddresses}
+                  onChange={(e) => setUpdateAllAddresses(e.target.checked)}
+                  inputProps={{
+                    "aria-label": "Update all saved addresses",
+                    "data-testid": "config-update-all-addresses",
+                  }}
+                />
+              }
+              label="Update all saved addresses with these monitor settings"
+            />
+          </Box>
+          {Configs[key].help && (
+            <Typography
+              variant="caption"
+              sx={{
+                color: "var(--theme-accent)",
+                marginTop: "0.25rem",
+                display: "block",
+                fontSize: "0.75rem",
+              }}
+            >
+              {Configs[key].help}
             </Typography>
           )}
         </div>

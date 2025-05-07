@@ -8,5 +8,11 @@
   "telegram": {
     "chatId": "",
     "token": ""
+  },
+  "monitor": {
+    "chain_in": "auto-accept",
+    "chain_out": "alert",
+    "mempool_in": "auto-accept",
+    "mempool_out": "alert"
   }
 }

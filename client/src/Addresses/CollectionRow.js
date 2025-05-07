@@ -40,12 +40,7 @@ const CollectionRow = ({
   setNotification,
   autoShowAddForm,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(
-    autoShowAddForm ||
-      (collection.addresses && collection.addresses.length > 0) ||
-      (collection.extendedKeys && collection.extendedKeys.length > 0) ||
-      (collection.descriptors && collection.descriptors.length > 0)
-  );
+  const [isExpanded, setIsExpanded] = useState(autoShowAddForm);
   const [newName, setNewName] = useState(collection.name);
   const [isEditing, setIsEditing] = useState(false);
   const [extendedKeyDialogOpen, setExtendedKeyDialogOpen] = useState(false);

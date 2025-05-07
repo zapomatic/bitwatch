@@ -8,7 +8,15 @@ import {
   TextField,
   Box,
   Alert,
+  Typography,
+  Grid,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
 } from "@mui/material";
+import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import {
   DEFAULT_GAP_LIMIT,
   DEFAULT_INITIAL_ADDRESSES,
@@ -29,6 +37,12 @@ const ExtendedKeyDialog = ({
     gapLimit: DEFAULT_GAP_LIMIT,
     initialAddresses: DEFAULT_INITIAL_ADDRESSES,
     skip: DEFAULT_SKIP_ADDRESSES,
+    monitor: {
+      chain_in: "auto-accept",
+      chain_out: "alert",
+      mempool_in: "auto-accept",
+      mempool_out: "alert",
+    },
   });
   const [error, setError] = useState("");
 
@@ -41,6 +55,12 @@ const ExtendedKeyDialog = ({
         gapLimit: Number(extendedKey.gapLimit),
         initialAddresses: Number(extendedKey.initialAddresses),
         skip: Number(extendedKey.skip),
+        monitor: extendedKey.monitor || {
+          chain_in: "auto-accept",
+          chain_out: "alert",
+          mempool_in: "auto-accept",
+          mempool_out: "alert",
+        },
       });
     }
   }, [extendedKey]);
@@ -55,6 +75,51 @@ const ExtendedKeyDialog = ({
     }));
     setError("");
   };
+
+  const handleMonitorChange = (field, value) => {
+    setFormData((prev) => ({
+      ...prev,
+      monitor: {
+        ...prev.monitor,
+        [field]: value,
+      },
+    }));
+  };
+
+  const renderMonitorSelect = (label, value, onChange) => (
+    <FormControl fullWidth>
+      <InputLabel>{label}</InputLabel>
+      <Select
+        value={value}
+        onChange={onChange}
+        label={label}
+        sx={{
+          "& .MuiOutlinedInput-notchedOutline": {
+            borderColor: "var(--theme-secondary)",
+          },
+          "&:hover .MuiOutlinedInput-notchedOutline": {
+            borderColor: "var(--theme-primary)",
+          },
+        }}
+      >
+        <MenuItem value="alert">
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <NotificationsActiveIcon
+              color="warning"
+              sx={{ fontSize: "1rem" }}
+            />
+            <Typography>Alert</Typography>
+          </Box>
+        </MenuItem>
+        <MenuItem value="auto-accept">
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <CheckCircleIcon color="success" sx={{ fontSize: "1rem" }} />
+            <Typography>Auto Accept</Typography>
+          </Box>
+        </MenuItem>
+      </Select>
+    </FormControl>
+  );
 
   const handleSubmit = async () => {
     const result = await onSave(collection, formData);
@@ -153,6 +218,48 @@ const ExtendedKeyDialog = ({
               "aria-label": "Skip addresses",
             }}
           />
+          <Typography variant="subtitle1">
+            Default Monitoring Settings
+          </Typography>
+          <Grid
+            container
+            spacing={2}
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                md: "repeat(2, 1fr)",
+              },
+              gap: 2,
+            }}
+          >
+            <Grid item>
+              {renderMonitorSelect("Chain In", formData.monitor.chain_in, (e) =>
+                handleMonitorChange("chain_in", e.target.value)
+              )}
+            </Grid>
+            <Grid item>
+              {renderMonitorSelect(
+                "Chain Out",
+                formData.monitor.chain_out,
+                (e) => handleMonitorChange("chain_out", e.target.value)
+              )}
+            </Grid>
+            <Grid item>
+              {renderMonitorSelect(
+                "Mempool In",
+                formData.monitor.mempool_in,
+                (e) => handleMonitorChange("mempool_in", e.target.value)
+              )}
+            </Grid>
+            <Grid item>
+              {renderMonitorSelect(
+                "Mempool Out",
+                formData.monitor.mempool_out,
+                (e) => handleMonitorChange("mempool_out", e.target.value)
+              )}
+            </Grid>
+          </Grid>
         </Box>
       </DialogContent>
       <DialogActions>

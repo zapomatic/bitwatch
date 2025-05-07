@@ -571,6 +571,7 @@ export default function Addresses() {
         initialAddresses: parseInt(data.initialAddresses) || 10,
         derivationPath: data.derivationPath,
         skip: parseInt(data.skip) || 0,
+        monitor: data.monitor,
       },
       (response) => {
         if (response.error) {
@@ -600,6 +601,7 @@ export default function Addresses() {
         gapLimit: parseInt(data.gapLimit) || 2,
         initialAddresses: parseInt(data.initialAddresses) || 10,
         skip: parseInt(data.skip) || 0,
+        monitor: data.monitor,
       },
       (response) => {
         if (response.error) {

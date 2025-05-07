@@ -35,46 +35,53 @@ export const addDescriptor = async (data) => {
     return { error: "Descriptor with this name already exists" };
   }
 
-  // Derive addresses
-  const result = await deriveAddresses(
-    data.descriptor,
-    0, // start from index 0
-    data.initialAddresses || 10, // number of addresses to derive
-    data.skip || 0 // skip value
-  );
-  if (!result.success) {
-    logger.error(result.error || "Failed to derive addresses");
-    return { error: result.error || "Failed to derive addresses" };
-  }
-
-  // Add descriptor to collection
-  collection.descriptors.push({
+  // Set default values if not provided
+  const desc = {
     name: data.name,
     descriptor: data.descriptor,
-    gapLimit: data.gapLimit || 2,
+    derivationPath: data.derivationPath || "m/0",
+    gapLimit: data.gapLimit || 10,
     skip: data.skip || 0,
     initialAddresses: data.initialAddresses || 10,
-    addresses: result.data.map((addr) => ({
-      address: addr.address,
-      name: `${data.name} ${addr.index}`,
-      index: addr.index,
-      expect: {
-        chain_in: 0,
-        chain_out: 0,
-        mempool_in: 0,
-        mempool_out: 0,
-      },
-      monitor: {
+    addresses: [],
+    // Use provided monitor settings or get from database
+    monitor: data.monitor ||
+      memory.db.monitor || {
         chain_in: "auto-accept",
         chain_out: "alert",
         mempool_in: "auto-accept",
         mempool_out: "alert",
       },
-      actual: null,
-      error: false,
-      errorMessage: null,
-    })),
-  });
+  };
+
+  // Derive initial addresses
+  const addresses = deriveAddresses(
+    desc.descriptor,
+    desc.derivationPath,
+    desc.skip,
+    desc.initialAddresses
+  );
+
+  // Add monitor settings to each address
+  desc.addresses = addresses.map((address, index) => ({
+    ...address,
+    name: `${desc.name} ${index + 1}`,
+    index: index + 1,
+    expect: {
+      chain_in: 0,
+      chain_out: 0,
+      mempool_in: 0,
+      mempool_out: 0,
+    },
+    // Use the descriptor's monitor settings
+    monitor: desc.monitor,
+  }));
+
+  // Add the descriptor to the collection
+  if (!collection.descriptors) {
+    collection.descriptors = [];
+  }
+  collection.descriptors.push(desc);
 
   memory.saveDb();
   data.io.emit("updateState", { collections: memory.db.collections });
@@ -111,14 +118,26 @@ export const editDescriptor = async (data) => {
     return { error: allAddressesResult.error || "Failed to derive addresses" };
   }
 
+  // Get existing monitor settings or use system defaults
+  const existingDescriptor = collection.descriptors[data.descriptorIndex];
+  const monitor = data.monitor ||
+    existingDescriptor.monitor ||
+    memory.db.monitor || {
+      chain_in: "auto-accept",
+      chain_out: "alert",
+      mempool_in: "auto-accept",
+      mempool_out: "alert",
+    };
+
   // Update the descriptor
   collection.descriptors[data.descriptorIndex] = {
-    ...collection.descriptors[data.descriptorIndex],
+    ...existingDescriptor,
     descriptor: data.descriptor,
     gapLimit: data.gapLimit,
     name: data.name,
     skip: data.skip || 0,
     initialAddresses: data.initialAddresses || 5,
+    monitor,
     addresses: allAddressesResult.data.map((addr) => ({
       address: addr.address,
       name: `${data.name} ${addr.index}`,
@@ -129,12 +148,7 @@ export const editDescriptor = async (data) => {
         mempool_in: 0,
         mempool_out: 0,
       },
-      monitor: {
-        chain_in: "auto-accept",
-        chain_out: "alert",
-        mempool_in: "auto-accept",
-        mempool_out: "alert",
-      },
+      monitor,
       actual: null,
       error: false,
       errorMessage: null,

@@ -29,9 +29,7 @@ const ExtendedKeyInfo = ({
   setNotification,
   onEditAddress,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(
-    extendedKey.addresses?.length > 0
-  );
+  const [isExpanded, setIsExpanded] = useState(true);
 
   useEffect(() => {
     if (extendedKey.addresses?.length > 0) {
@@ -205,7 +203,12 @@ const ExtendedKeyInfo = ({
       </TableRow>
       <TableRow>
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
-          <Collapse in={isExpanded} timeout="auto" unmountOnExit>
+          <Collapse
+            in={isExpanded}
+            timeout="auto"
+            unmountOnExit
+            data-testid={`${extendedKey.key}-expanded`}
+          >
             <Box sx={{ margin: 1 }}>
               <Table
                 size="small"

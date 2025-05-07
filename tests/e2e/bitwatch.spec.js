@@ -237,7 +237,13 @@ test.describe("Bitwatch", () => {
         derivationPath: "m/0",
         skip: 1,
         gapLimit: 3,
-        initialAddresses: 3
+        initialAddresses: 3,
+        monitor: {
+          chain_in: "alert",
+          chain_out: "alert",
+          mempool_in: "alert",
+          mempool_out: "alert"
+        }
       },
       {
         name: "Test YPub",
@@ -279,6 +285,27 @@ test.describe("Bitwatch", () => {
       await expect(keyRow.locator('td').nth(6)).toContainText('3');
       const addressRows = page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`);
       await expect(addressRows).toHaveCount(3);
+
+      // For the first extended key, verify all addresses have alert settings
+      if (key.name === "Test XPub") {
+        // when we add an extended key, it should be expanded by default
+        await expect(page.locator(`[data-testid="${key.key}-address-list"]`)).toBeVisible();
+        
+        // Get all address rows
+        const addresses = await page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`).all();
+        
+        // Verify we have the expected number of addresses
+        expect(addresses.length).toBeGreaterThan(0);
+        
+        // Verify each address has alert icons for all monitoring types
+        for (let i = 0; i < addresses.length; i++) {
+          const addressIndex = i + 1; // Address indices start at 1
+          await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-chain-in-alert"]`)).toBeVisible();
+          await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-chain-out-alert"]`)).toBeVisible();
+          await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-mempool-in-alert"]`)).toBeVisible();
+          await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-mempool-out-alert"]`)).toBeVisible();
+        }
+      }
 
       // Test single address refresh using helper (should show 0 balances)
       await refreshAddressBalance(page, key.key, {
@@ -364,7 +391,13 @@ test.describe("Bitwatch", () => {
         derivationPath: "m/0",
         skip: 1,
         gapLimit: 3,
-        initialAddresses: 3
+        initialAddresses: 3,
+        monitor: {
+          chain_in: "alert",
+          chain_out: "alert",
+          mempool_in: "alert",
+          mempool_out: "alert"
+        }
       },
       {
         name: "Single YPub",
@@ -428,6 +461,50 @@ test.describe("Bitwatch", () => {
       await expect(descriptorRow.locator('td').nth(3)).toContainText(descriptor.gapLimit.toString());
       await expect(descriptorRow.locator('td').nth(4)).toContainText(descriptor.skip.toString());
       await expect(descriptorRow.locator('td').nth(5)).toContainText(descriptor.initialAddresses.toString());
+
+      // For the first descriptor, verify all addresses have alert settings
+      if (descriptor.name === "Single XPub") {
+        // when we add a descriptor, it should be expanded by default
+        await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-list"]`)).toBeVisible();
+        
+        // Get all address rows
+        const addresses = await page.locator(`[data-testid="${descriptor.descriptor}-address-list"] tr.address-row`).all();
+        
+        // Verify we have the expected number of addresses
+        expect(addresses.length).toBeGreaterThan(0);
+        
+        // Verify each address has alert icons for all monitoring types
+        for (let i = 0; i < addresses.length; i++) {
+          const addressIndex = i + 1; // Address indices start at 1
+          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-chain-in-alert"]`)).toBeVisible();
+          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-chain-out-alert"]`)).toBeVisible();
+          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-mempool-in-alert"]`)).toBeVisible();
+          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-mempool-out-alert"]`)).toBeVisible();
+        }
+
+        // Trigger a balance change to generate new addresses
+        await refreshAddressBalance(page, descriptor.descriptor, {
+          chain_in: "0.00010000 ₿"
+        }, 1, descriptor.descriptor);
+
+        // Wait for the new addresses to be visible
+        await page.waitForTimeout(1000);
+
+        // Get the new list of addresses after derivation
+        const newAddresses = await page.locator(`[data-testid="${descriptor.descriptor}-address-list"] tr.address-row`).all();
+        
+        // Verify we have more addresses than before
+        expect(newAddresses.length).toBeGreaterThan(addresses.length);
+        
+        // Verify new addresses also have alert icons
+        for (let i = 0; i < newAddresses.length; i++) {
+          const addressIndex = i + 1; // Address indices start at 1
+          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-chain-in-alert"]`)).toBeVisible();
+          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-chain-out-alert"]`)).toBeVisible();
+          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-mempool-in-alert"]`)).toBeVisible();
+          await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-mempool-out-alert"]`)).toBeVisible();
+        }
+      }
 
       // Test refreshing a single descriptor address using helper
       await refreshAddressBalance(page, descriptor.descriptor, {}, 1, descriptor.descriptor);
