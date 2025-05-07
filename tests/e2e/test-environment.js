@@ -295,37 +295,46 @@ export const refreshAddressBalance = async (
     const expandButton = page.getByTestId(`${parentKey}-expand-button`);
     const expandedState = await expandButton.getAttribute("aria-expanded");
     console.log(`expandedState of ${parentKey}-expand-button`, expandedState);
+
     // Only expand if explicitly collapsed (aria-expanded="false")
     // If it's null or "true", we want to leave it as is
     if (expandedState === "false") {
       await findAndClick(page, `[data-testid="${parentKey}-expand-button"]`);
-      // Wait for the address list to be visible with a longer timeout
-      // Check if this is a descriptor (starts with pkh, sh, wpkh, etc) or an extended key
-      const isDescriptor =
-        parentKey.startsWith("pkh(") ||
-        parentKey.startsWith("sh(") ||
-        parentKey.startsWith("wpkh(");
-      const addressListSelector = isDescriptor
-        ? `[data-testid="${parentKey}-descriptor-address-list"]`
-        : `[data-testid="${parentKey}-address-list"]`;
-
-      await page.waitForSelector(addressListSelector, {
-        state: "visible",
-      });
-      // Additional wait to ensure the list is fully rendered
-      await page.waitForTimeout(1000);
     }
 
-    // Wait for the address list to be visible first
+    // Log all data-testid attributes on the page to see what's available
+    console.log("Logging all data-testid elements on page:");
+    const allTestIds = await page.evaluate(() => {
+      const elements = document.querySelectorAll("[data-testid]");
+      return Array.from(elements).map((el) => ({
+        testId: el.getAttribute("data-testid"),
+        tagName: el.tagName,
+        className: el.className,
+        isVisible: el.offsetParent !== null,
+      }));
+    });
+    console.log(JSON.stringify(allTestIds, null, 2));
+
+    // Check if this is a descriptor (starts with pkh, sh, wpkh, etc) or an extended key
     const isDescriptor =
       parentKey.startsWith("pkh(") ||
       parentKey.startsWith("sh(") ||
       parentKey.startsWith("wpkh(");
-    const addressList = page.locator(
-      isDescriptor
-        ? `[data-testid="${parentKey}-descriptor-address-list"]`
-        : `[data-testid="${parentKey}-address-list"]`
-    );
+    console.log("Is descriptor:", isDescriptor);
+
+    const addressListSelector = isDescriptor
+      ? `[data-testid="${parentKey}-address-list"]`
+      : `[data-testid="${parentKey}-address-list"]`;
+    console.log("Looking for address list with selector:", addressListSelector);
+
+    // Wait for the address list to be visible with a longer timeout
+    await page.waitForSelector(addressListSelector, {
+      state: "visible",
+      timeout: 10000,
+    });
+
+    // Wait for the address list to be visible first
+    const addressList = page.locator(addressListSelector);
 
     // Log whether the element exists and its state
     const exists = (await addressList.count()) > 0;
@@ -336,6 +345,23 @@ export const refreshAddressBalance = async (
       const html = await addressList.evaluate((el) => el.outerHTML);
       console.log(`Address list HTML: ${html}`);
     }
+
+    // Log the parent container state
+    const parentContainer = await page.evaluate((selector) => {
+      const el = document.querySelector(selector);
+      if (el) {
+        const parent = el.closest(".MuiCollapse-root");
+        return parent
+          ? {
+              className: parent.className,
+              style: parent.getAttribute("style"),
+              isVisible: window.getComputedStyle(parent).display !== "none",
+            }
+          : null;
+      }
+      return null;
+    }, addressListSelector);
+    console.log("Parent container state:", parentContainer);
 
     await expect(addressList).toBeVisible();
 

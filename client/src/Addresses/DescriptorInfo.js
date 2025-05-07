@@ -213,7 +213,9 @@ const DescriptorInfo = ({
                     <TableCell>Actions</TableCell>
                   </TableRow>
                 </TableHead>
-                <TableBody>
+                <TableBody
+                  data-testid={`${descriptor.descriptor}-address-list`}
+                >
                   {descriptor.addresses.map((address) => (
                     <AddressRow
                       key={address.address}
