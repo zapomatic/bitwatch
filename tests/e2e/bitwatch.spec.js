@@ -13,7 +13,7 @@ test.describe("Bitwatch", () => {
     await page.goto("/");
     console.log("Waiting for network idle...");
     await page.waitForLoadState("networkidle");
-    await page.waitForSelector("text=itwatch");
+    await page.waitForSelector("text=bitwatch");
     console.log("Page loaded");
 
     // Small delay to ensure page is fully loaded
@@ -126,7 +126,13 @@ test.describe("Bitwatch", () => {
     // Add single address
     await addAddress(page, "Donations", {
       name: "zapomatic",
-      address: testData.addresses.zapomatic
+      address: testData.addresses.zapomatic,
+      monitor: {
+        chain_in: "auto-accept",
+        chain_out: "alert",
+        mempool_in: "auto-accept",
+        mempool_out: "alert"
+      }
     });
     console.log("Added single address");
 
@@ -187,11 +193,12 @@ test.describe("Bitwatch", () => {
       mempool_in: "0.00000000 ₿",
       mempool_out: "0.00000000 ₿"
     }, 0);
-    await expect(page.getByTestId(`${testData.addresses.zapomatic}-chain-out-diff`)).toBeVisible();
-    await expect(page.getByTestId(`${testData.addresses.zapomatic}-chain-out-diff`)).toHaveText("(+0.00001000 ₿)");
+    const testId = testData.addresses.zapomatic;
+    await expect(page.getByTestId(`${testId}-chain-out-diff`)).toBeVisible();
+    await expect(page.getByTestId(`${testId}-chain-out-diff`)).toHaveText("(+0.00001000 ₿)");
     // Verify alert icon and accept button for chain-out
-    await expect(page.getByTestId(`${testData.addresses.zapomatic}-chain-out-alert-icon`)).toBeVisible();
-    await expect(page.getByTestId(`${testData.addresses.zapomatic}-accept-button`)).toBeVisible();
+    await expect(page.getByTestId(`${testId}-chain-out-alert-icon`)).toBeVisible();
+    await expect(page.getByTestId(`${testId}-accept-button`)).toBeVisible();
     console.log("Chain output state verified");
 
     // Accept the chain-out change
@@ -571,7 +578,84 @@ test.describe("Bitwatch", () => {
       console.log(`Collapsed ${descriptor.name} section`);
     }
 
-    // Now that we've verified all balances, we can delete everything in a structured way
+    // Now that we've verified all balances, let's verify monitor settings update
+    console.log("Testing monitor settings update...");
+
+    // Navigate to configuration page
+    await findAndClick(page, '[data-testid="settings-button"]');
+    console.log("Settings opened");
+
+    // Set all monitor settings to alert
+    await page.selectOption('[data-testid="config-monitor-chain-in"]', 'alert');
+    await page.selectOption('[data-testid="config-monitor-chain-out"]', 'alert');
+    await page.selectOption('[data-testid="config-monitor-mempool-in"]', 'alert');
+    await page.selectOption('[data-testid="config-monitor-mempool-out"]', 'alert');
+    
+    // Enable update all addresses
+    await findAndClick(page, '[data-testid="config-update-all-addresses"]');
+    
+    // Save configuration
+    await findAndClick(page, '[data-testid="save-configuration"]');
+    
+    // Verify success notification
+    await expect(page.getByTestId("config-notification")).toContainText(
+      "Configuration saved successfully and all addresses updated"
+    );
+    console.log("Monitor settings updated");
+
+    // Navigate back to addresses page
+    await findAndClick(page, '[data-testid="watch-list-button"]');
+    console.log("Navigated to addresses page");
+
+    // Verify single address monitor settings
+    const singleAddress = testData.addresses.zapomatic;
+    await expect(page.locator(`[data-testid="${singleAddress}-chain-in-alert"]`)).toBeVisible();
+    await expect(page.locator(`[data-testid="${singleAddress}-chain-out-alert"]`)).toBeVisible();
+    await expect(page.locator(`[data-testid="${singleAddress}-mempool-in-alert"]`)).toBeVisible();
+    await expect(page.locator(`[data-testid="${singleAddress}-mempool-out-alert"]`)).toBeVisible();
+    console.log("Single address monitor settings verified");
+
+    // Verify extended key address monitor settings (using the first extended key from earlier)
+    await findAndClick(page, `[data-testid="${extendedKeys[0].key}-expand-button"]`);
+    const extendedKeyAddresses = await page.locator(`[data-testid="${extendedKeys[0].key}-address-list"] tr.address-row`).all();
+    for (let i = 0; i < extendedKeyAddresses.length; i++) {
+      const addressIndex = i + 1;
+      await expect(page.locator(`[data-testid="${extendedKeys[0].key}-address-${addressIndex}-chain-in-alert"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${extendedKeys[0].key}-address-${addressIndex}-chain-out-alert"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${extendedKeys[0].key}-address-${addressIndex}-mempool-in-alert"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${extendedKeys[0].key}-address-${addressIndex}-mempool-out-alert"]`)).toBeVisible();
+    }
+    await findAndClick(page, `[data-testid="${extendedKeys[0].key}-expand-button"]`);
+    console.log("Extended key address monitor settings verified");
+
+    // Verify descriptor address monitor settings (using the first descriptor from earlier)
+    await findAndClick(page, `[data-testid="${descriptors[0].descriptor}-expand-button"]`);
+    const descriptorAddresses = await page.locator(`[data-testid="${descriptors[0].descriptor}-address-list"] tr.address-row`).all();
+    for (let i = 0; i < descriptorAddresses.length; i++) {
+      const addressIndex = i + 1;
+      await expect(page.locator(`[data-testid="${descriptors[0].descriptor}-address-${addressIndex}-chain-in-alert"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${descriptors[0].descriptor}-address-${addressIndex}-chain-out-alert"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${descriptors[0].descriptor}-address-${addressIndex}-mempool-in-alert"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${descriptors[0].descriptor}-address-${addressIndex}-mempool-out-alert"]`)).toBeVisible();
+    }
+    await findAndClick(page, `[data-testid="${descriptors[0].descriptor}-expand-button"]`);
+    console.log("Descriptor address monitor settings verified");
+
+    // Verify new address dialog defaults
+    await findAndClick(page, `[data-testid="Donations-add-address"]`);
+    await expect(page.locator('[data-testid="address-dialog"]')).toBeVisible();
+    
+    // Check monitor settings in dialog
+    await expect(page.locator('select[aria-label="Chain In"]')).toHaveValue('alert');
+    await expect(page.locator('select[aria-label="Chain Out"]')).toHaveValue('alert');
+    await expect(page.locator('select[aria-label="Mempool In"]')).toHaveValue('alert');
+    await expect(page.locator('select[aria-label="Mempool Out"]')).toHaveValue('alert');
+    
+    // Close dialog
+    await findAndClick(page, '[data-testid="address-dialog-cancel"]', { allowOverlay: true });
+    console.log("New address dialog defaults verified");
+
+    // Now that we've verified all monitor settings, we can delete everything in a structured way
     console.log("Starting deletion sequence...");
 
     // 1. Delete a single address from the collection

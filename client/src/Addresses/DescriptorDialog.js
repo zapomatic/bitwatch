@@ -17,11 +17,7 @@ import {
 } from "@mui/material";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import {
-  DEFAULT_GAP_LIMIT,
-  DEFAULT_INITIAL_ADDRESSES,
-  DEFAULT_SKIP_ADDRESSES,
-} from "../config";
+import { DEFAULT_DESCRIPTOR_FORM } from "../config";
 
 const DescriptorDialog = ({
   open,
@@ -30,19 +26,7 @@ const DescriptorDialog = ({
   collection,
   descriptor,
 }) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    descriptor: "",
-    gapLimit: DEFAULT_GAP_LIMIT,
-    initialAddresses: DEFAULT_INITIAL_ADDRESSES,
-    skip: DEFAULT_SKIP_ADDRESSES,
-    monitor: {
-      chain_in: "auto-accept",
-      chain_out: "alert",
-      mempool_in: "auto-accept",
-      mempool_out: "alert",
-    },
-  });
+  const [formData, setFormData] = useState(DEFAULT_DESCRIPTOR_FORM);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -53,13 +37,10 @@ const DescriptorDialog = ({
         gapLimit: descriptor.gapLimit,
         initialAddresses: descriptor.initialAddresses,
         skip: descriptor.skip,
-        monitor: descriptor.monitor || {
-          chain_in: "auto-accept",
-          chain_out: "alert",
-          mempool_in: "auto-accept",
-          mempool_out: "alert",
-        },
+        monitor: descriptor.monitor || DEFAULT_DESCRIPTOR_FORM.monitor,
       });
+    } else {
+      setFormData(DEFAULT_DESCRIPTOR_FORM);
     }
   }, [descriptor]);
 

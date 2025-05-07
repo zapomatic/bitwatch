@@ -41,13 +41,7 @@ export const addExtendedKey = async (data) => {
     initialAddresses: data.initialAddresses || 10,
     addresses: [],
     // Use provided monitor settings or get from database
-    monitor: data.monitor ||
-      memory.db.monitor || {
-        chain_in: "auto-accept",
-        chain_out: "alert",
-        mempool_in: "auto-accept",
-        mempool_out: "alert",
-      },
+    monitor: data.monitor || memory.db.monitor,
   };
 
   // Derive initial addresses

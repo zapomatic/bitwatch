@@ -24,7 +24,10 @@ const socketIO = {
       logger.websocket(`Socket connected from ${ip} (ID: ${socketID})`);
 
       // Send initial state on connection
-      socket.emit("updateState", { collections: memory.db.collections });
+      socket.emit("updateState", {
+        collections: memory.db.collections,
+        monitor: memory.db.monitor,
+      });
 
       // Register handlers
       Object.entries(handlers).forEach(([event, handler]) => {

@@ -202,7 +202,11 @@ export const addCollection = async (page, name) => {
   await page.waitForSelector(`text=${name}`);
 };
 
-export const addAddress = async (page, collection, { name, address }) => {
+export const addAddress = async (
+  page,
+  collection,
+  { name, address, monitor }
+) => {
   await findAndClick(page, `[data-testid="${collection}-add-address"]`);
 
   // Wait for the dialog to be visible
@@ -215,6 +219,29 @@ export const addAddress = async (page, collection, { name, address }) => {
 
   // Fill in the Bitcoin address
   await page.fill('[data-testid="address-input"]', address);
+
+  // Set monitoring options if provided
+  if (monitor) {
+    await page.waitForSelector('[data-testid="address-dialog"]', {
+      state: "visible",
+    });
+
+    // Set chain in monitoring
+    await page.getByTestId("address-monitor-chain-in").click();
+    await page.getByRole("option", { name: monitor.chain_in }).click();
+
+    // Set chain out monitoring
+    await page.getByTestId("address-monitor-chain-out").click();
+    await page.getByRole("option", { name: monitor.chain_out }).click();
+
+    // Set mempool in monitoring
+    await page.getByTestId("address-monitor-mempool-in").click();
+    await page.getByRole("option", { name: monitor.mempool_in }).click();
+
+    // Set mempool out monitoring
+    await page.getByTestId("address-monitor-mempool-out").click();
+    await page.getByRole("option", { name: monitor.mempool_out }).click();
+  }
 
   // Click the save button - allow clicking in overlay since it's in a dialog
   await findAndClick(page, '[data-testid="address-dialog-save"]', {

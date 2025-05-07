@@ -67,12 +67,6 @@ const Configs = {
   monitor: {
     label: "Default Monitor Settings",
     help: "Default monitoring settings for new addresses, extended keys, and descriptors",
-    default: {
-      chain_in: "auto-accept",
-      chain_out: "alert",
-      mempool_in: "auto-accept",
-      mempool_out: "alert",
-    },
   },
 };
 
@@ -228,12 +222,12 @@ function Config() {
             <Grid item>
               {renderMonitorSelect(
                 "Chain In",
-                (config.monitor || Configs.monitor.default).chain_in,
+                config.monitor?.chain_in || "auto-accept",
                 (e) =>
                   setConfig({
                     ...config,
                     monitor: {
-                      ...(config.monitor || Configs.monitor.default),
+                      ...(config.monitor || {}),
                       chain_in: e.target.value,
                     },
                   })
@@ -242,12 +236,12 @@ function Config() {
             <Grid item>
               {renderMonitorSelect(
                 "Chain Out",
-                (config.monitor || Configs.monitor.default).chain_out,
+                config.monitor?.chain_out || "alert",
                 (e) =>
                   setConfig({
                     ...config,
                     monitor: {
-                      ...(config.monitor || Configs.monitor.default),
+                      ...(config.monitor || {}),
                       chain_out: e.target.value,
                     },
                   })
@@ -256,12 +250,12 @@ function Config() {
             <Grid item>
               {renderMonitorSelect(
                 "Mempool In",
-                (config.monitor || Configs.monitor.default).mempool_in,
+                config.monitor?.mempool_in || "auto-accept",
                 (e) =>
                   setConfig({
                     ...config,
                     monitor: {
-                      ...(config.monitor || Configs.monitor.default),
+                      ...(config.monitor || {}),
                       mempool_in: e.target.value,
                     },
                   })
@@ -270,12 +264,12 @@ function Config() {
             <Grid item>
               {renderMonitorSelect(
                 "Mempool Out",
-                (config.monitor || Configs.monitor.default).mempool_out,
+                config.monitor?.mempool_out || "alert",
                 (e) =>
                   setConfig({
                     ...config,
                     monitor: {
-                      ...(config.monitor || Configs.monitor.default),
+                      ...(config.monitor || {}),
                       mempool_out: e.target.value,
                     },
                   })

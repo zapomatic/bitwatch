@@ -16,14 +16,13 @@ import {
 } from "@mui/material";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import { defaultAddressForm } from "./defaults";
-import { COLLAPSE_ANIMATION_DURATION } from "../config";
+import { DEFAULT_ADDRESS_FORM, COLLAPSE_ANIMATION_DURATION } from "../config";
 
 const AddressDialog = ({ open, onClose, address, onSave }) => {
-  const [formData, setFormData] = useState(defaultAddressForm);
+  const [formData, setFormData] = useState(DEFAULT_ADDRESS_FORM);
 
   useEffect(() => {
-    setFormData({ ...defaultAddressForm, ...(address || {}) });
+    setFormData({ ...DEFAULT_ADDRESS_FORM, ...(address || {}) });
   }, [address, open]);
 
   const handleSave = () => {
@@ -68,6 +67,7 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
         value={value}
         onChange={onChange}
         label={label}
+        data-testid={`address-monitor-${label.toLowerCase().replace(" ", "-")}`}
         sx={{
           "& .MuiOutlinedInput-notchedOutline": {
             borderColor: "var(--theme-secondary)",

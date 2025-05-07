@@ -7,6 +7,7 @@ export const requestState = async (data) => {
   // Emit the current state to the requesting client
   data.io.to(data.socketID).emit("updateState", {
     collections: memory.db.collections,
+    monitor: memory.db.monitor,
   });
 
   return { success: true };

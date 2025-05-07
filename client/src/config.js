@@ -18,13 +18,6 @@ export const PRIVATE_CONFIG = {
   debugLogging: false,
 };
 
-export const DEFAULT_MONITOR_SETTINGS = {
-  chain_in: "auto-accept",
-  chain_out: "alert",
-  mempool_in: "auto-accept",
-  mempool_out: "alert",
-};
-
 export const DEFAULT_EXPECTED_BALANCES = {
   chain_in: 0,
   chain_out: 0,
@@ -40,3 +33,47 @@ export const API_PARALLEL_LIMIT = 5; // Maximum number of parallel API calls
 
 export const NOTIFICATION_DURATION = 3000; // Duration to show notifications in ms
 export const COLLAPSE_ANIMATION_DURATION = 300; // Duration of collapse/expand animations in ms
+
+// System monitor settings
+export const SYSTEM_MONITOR_SETTINGS = {
+  chain_in: "auto-accept",
+  chain_out: "alert",
+  mempool_in: "auto-accept",
+  mempool_out: "alert",
+};
+
+// Default form configurations
+export const DEFAULT_ADDRESS_FORM = {
+  name: "",
+  address: "",
+  expect: DEFAULT_EXPECTED_BALANCES,
+  monitor: SYSTEM_MONITOR_SETTINGS,
+};
+
+export const DEFAULT_EXTENDED_KEY_FORM = {
+  name: "",
+  key: "",
+  gapLimit: DEFAULT_GAP_LIMIT,
+  initialAddresses: DEFAULT_INITIAL_ADDRESSES,
+  derivationPath: "m/0",
+  skip: DEFAULT_SKIP_ADDRESSES,
+  monitor: SYSTEM_MONITOR_SETTINGS,
+};
+
+export const DEFAULT_DESCRIPTOR_FORM = {
+  name: "",
+  descriptor: "",
+  gapLimit: DEFAULT_GAP_LIMIT,
+  initialAddresses: DEFAULT_INITIAL_ADDRESSES,
+  skip: DEFAULT_SKIP_ADDRESSES,
+  monitor: SYSTEM_MONITOR_SETTINGS,
+};
+
+// Function to update system monitor settings
+let currentMonitorSettings = { ...SYSTEM_MONITOR_SETTINGS };
+export const updateSystemMonitorSettings = (settings) => {
+  if (settings) {
+    currentMonitorSettings = settings;
+  }
+  return currentMonitorSettings;
+};

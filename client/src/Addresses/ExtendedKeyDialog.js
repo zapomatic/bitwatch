@@ -17,11 +17,7 @@ import {
 } from "@mui/material";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import {
-  DEFAULT_GAP_LIMIT,
-  DEFAULT_INITIAL_ADDRESSES,
-  DEFAULT_SKIP_ADDRESSES,
-} from "../config";
+import { DEFAULT_EXTENDED_KEY_FORM } from "../config";
 
 const ExtendedKeyDialog = ({
   open,
@@ -30,20 +26,7 @@ const ExtendedKeyDialog = ({
   collection,
   extendedKey,
 }) => {
-  const [formData, setFormData] = useState({
-    name: "",
-    key: "",
-    derivationPath: "m/0",
-    gapLimit: DEFAULT_GAP_LIMIT,
-    initialAddresses: DEFAULT_INITIAL_ADDRESSES,
-    skip: DEFAULT_SKIP_ADDRESSES,
-    monitor: {
-      chain_in: "auto-accept",
-      chain_out: "alert",
-      mempool_in: "auto-accept",
-      mempool_out: "alert",
-    },
-  });
+  const [formData, setFormData] = useState(DEFAULT_EXTENDED_KEY_FORM);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -55,13 +38,10 @@ const ExtendedKeyDialog = ({
         gapLimit: Number(extendedKey.gapLimit),
         initialAddresses: Number(extendedKey.initialAddresses),
         skip: Number(extendedKey.skip),
-        monitor: extendedKey.monitor || {
-          chain_in: "auto-accept",
-          chain_out: "alert",
-          mempool_in: "auto-accept",
-          mempool_out: "alert",
-        },
+        monitor: extendedKey.monitor || DEFAULT_EXTENDED_KEY_FORM.monitor,
       });
+    } else {
+      setFormData(DEFAULT_EXTENDED_KEY_FORM);
     }
   }, [extendedKey]);
 

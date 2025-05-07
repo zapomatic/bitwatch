@@ -33,6 +33,7 @@ export const client = async (data) => {
     collections: memory.db.collections,
     websocketState: memory.state.websocketState,
     apiState: memory.state.apiState,
-    interval: memory.db.interval
+    interval: memory.db.interval,
+    monitor: memory.db.monitor
   };
 }; 

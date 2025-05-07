@@ -24,6 +24,7 @@ import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import WatchListIcon from "@mui/icons-material/List";
 import IntegrationIcon from "@mui/icons-material/Extension";
 import Tooltip from "@mui/material/Tooltip";
+import { updateSystemMonitorSettings } from "./config";
 
 const AppBar = styled(MuiAppBar)(({ theme }) => ({
   zIndex: theme.zIndex.drawer + 1,
@@ -109,12 +110,13 @@ function AppContent() {
     socketIO.emit(
       "client",
       {},
-      ({ version, websocketState, apiState, interval }) => {
+      ({ version, websocketState, apiState, interval, monitor }) => {
         console.log("client loaded", {
           version,
           websocketState,
           apiState,
           interval,
+          monitor,
         });
         setVersion(version);
         setWebsocketState(websocketState);
@@ -123,6 +125,9 @@ function AppContent() {
         if (interval) {
           intervalRef.current = interval;
           setInterval(interval);
+        }
+        if (monitor) {
+          updateSystemMonitorSettings(monitor);
         }
       }
     );
@@ -156,6 +161,10 @@ function AppContent() {
         console.log("Updating interval to:", state.interval);
         intervalRef.current = state.interval;
         setInterval(state.interval);
+      }
+      if (state.monitor) {
+        console.log("Updating monitor settings to:", state.monitor);
+        updateSystemMonitorSettings(state.monitor);
       }
     });
 

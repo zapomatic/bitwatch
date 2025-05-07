@@ -33,7 +33,15 @@ if (!fs.existsSync(dbFile)) {
 
 const loadDb = () => {
   const data = fs.readFileSync(dbFile, "utf8");
-  return JSON.parse(data);
+  const db = JSON.parse(data);
+
+  // If monitor settings are missing, get them from sample db
+  if (!db.monitor) {
+    const sampleDb = JSON.parse(fs.readFileSync(sampleDbFile, "utf8"));
+    db.monitor = sampleDb.monitor;
+  }
+
+  return db;
 };
 
 const saveDb = () => {
@@ -49,12 +57,7 @@ const saveDb = () => {
             address: addr.address,
             name: addr.name,
             expect: addr.expect,
-            monitor: addr.monitor || {
-              chain_in: "auto-accept",
-              chain_out: "alert",
-              mempool_in: "auto-accept",
-              mempool_out: "alert",
-            },
+            monitor: addr.monitor || memory.db.monitor,
           })),
           extendedKeys: collection.extendedKeys?.map((extKey) => ({
             key: extKey.key,
@@ -63,17 +66,13 @@ const saveDb = () => {
             gapLimit: extKey.gapLimit,
             skip: extKey.skip,
             initialAddresses: extKey.initialAddresses,
+            monitor: extKey.monitor || memory.db.monitor,
             addresses: extKey.addresses.map((addr) => ({
               address: addr.address,
               name: addr.name,
               index: addr.index,
               expect: addr.expect,
-              monitor: addr.monitor || {
-                chain_in: "auto-accept",
-                chain_out: "alert",
-                mempool_in: "auto-accept",
-                mempool_out: "alert",
-              },
+              monitor: addr.monitor || extKey.monitor || memory.db.monitor,
             })),
           })),
           descriptors: collection.descriptors?.map((desc) => ({
@@ -86,17 +85,13 @@ const saveDb = () => {
             scriptType: desc.scriptType,
             requiredSignatures: desc.requiredSignatures,
             totalSignatures: desc.totalSignatures,
+            monitor: desc.monitor || memory.db.monitor,
             addresses: desc.addresses.map((addr) => ({
               address: addr.address,
               name: addr.name,
               index: addr.index,
               expect: addr.expect,
-              monitor: addr.monitor || {
-                chain_in: "auto-accept",
-                chain_out: "alert",
-                mempool_in: "auto-accept",
-                mempool_out: "alert",
-              },
+              monitor: addr.monitor || desc.monitor || memory.db.monitor,
             })),
           })),
         },
