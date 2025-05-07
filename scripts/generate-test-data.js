@@ -4,7 +4,6 @@ import * as ecc from "tiny-secp256k1";
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
-import bs58check from "bs58check";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const bip32 = BIP32Factory(ecc);
@@ -34,20 +33,15 @@ const NETWORKS = {
   },
 };
 
-// Convert xpub to ypub/zpub
-const convertXPubToType = (xpub, targetType) => {
-  // First decode as xpub
-  const decoded = bs58check.decode(xpub);
+// Convert xpub to ypub/zpub using bip32
+// const convertXPubToType = (xpub, targetType) => {
+//   // First decode as xpub
+//   const node = bip32.fromBase58(xpub, NETWORKS.xpub);
+//   if (!node) return null;
 
-  // Create a new buffer from the decoded data
-  const buffer = Buffer.from(decoded);
-
-  // Replace version bytes
-  buffer.writeUInt32BE(NETWORKS[targetType].bip32.public, 0);
-
-  // Encode back to base58
-  return bs58check.encode(buffer);
-};
+//   // Convert to target type by using the target network
+//   return node.toBase58(NETWORKS[targetType]);
+// };
 
 // Generate test keys
 const generateTestKeys = () => {
@@ -99,34 +93,54 @@ const generateTestKeys = () => {
   };
 
   // Derive test keys for extended keys
-  const xpub1 = roots.xpub.derivePath("m/44'/0'/0'").neutered().toBase58();
-  const xpub2 = roots.xpub.derivePath("m/44'/0'/1'").neutered().toBase58();
-  const ypub1 = convertXPubToType(
-    roots.ypub.derivePath("m/49'/0'/0'").neutered().toBase58(),
-    "ypub"
-  );
-  const zpub1 = convertXPubToType(
-    roots.zpub.derivePath("m/84'/0'/0'").neutered().toBase58(),
-    "zpub"
-  );
+  const xpub1 = roots.xpub
+    .derivePath("m/44'/0'/0'")
+    .neutered()
+    .toBase58(NETWORKS.xpub);
+  console.log("Generated xpub1:", xpub1);
+
+  const xpub2 = roots.xpub
+    .derivePath("m/44'/0'/1'")
+    .neutered()
+    .toBase58(NETWORKS.xpub);
+  console.log("Generated xpub2:", xpub2);
+
+  const ypub1 = roots.ypub
+    .derivePath("m/49'/0'/0'")
+    .neutered()
+    .toBase58(NETWORKS.ypub);
+  console.log("Generated ypub1:", ypub1);
+
+  const zpub1 = roots.zpub
+    .derivePath("m/84'/0'/0'")
+    .neutered()
+    .toBase58(NETWORKS.zpub);
+  console.log("Generated zpub1:", zpub1);
 
   // Derive test keys for descriptors
   const desc_xpub = roots.desc_xpub
     .derivePath("m/44'/0'/0'")
     .neutered()
-    .toBase58();
+    .toBase58(NETWORKS.xpub);
+  console.log("Generated desc_xpub:", desc_xpub);
+
   const desc_xpub2 = roots.desc_xpub2
     .derivePath("m/44'/0'/0'")
     .neutered()
-    .toBase58();
-  const desc_ypub = convertXPubToType(
-    roots.desc_ypub.derivePath("m/49'/0'/0'").neutered().toBase58(),
-    "ypub"
-  );
-  const desc_zpub = convertXPubToType(
-    roots.desc_zpub.derivePath("m/84'/0'/0'").neutered().toBase58(),
-    "zpub"
-  );
+    .toBase58(NETWORKS.xpub);
+  console.log("Generated desc_xpub2:", desc_xpub2);
+
+  const desc_ypub = roots.desc_ypub
+    .derivePath("m/49'/0'/0'")
+    .neutered()
+    .toBase58(NETWORKS.ypub);
+  console.log("Generated desc_ypub:", desc_ypub);
+
+  const desc_zpub = roots.desc_zpub
+    .derivePath("m/84'/0'/0'")
+    .neutered()
+    .toBase58(NETWORKS.zpub);
+  console.log("Generated desc_zpub:", desc_zpub);
 
   return {
     // Extended keys
@@ -151,9 +165,30 @@ const generateTestAddresses = (keys) => {
     // Skip descriptor keys as they're handled separately
     if (keyName.startsWith("desc_")) return;
 
-    const keyType = keyName.substring(0, keyName.length - 1); // Remove the number to get type
+    // Determine key type from the key prefix instead of the key name
+    let keyType;
+    const keyLower = key.toLowerCase();
+    if (keyLower.startsWith("zpub")) {
+      keyType = "zpub";
+    } else if (keyLower.startsWith("ypub")) {
+      keyType = "ypub";
+    } else if (keyLower.startsWith("xpub")) {
+      keyType = "xpub";
+    } else {
+      console.error(`Unknown key type for key: ${keyName}`);
+      return;
+    }
+
+    console.log(`Processing key ${keyName} of type ${keyType}`);
     const network = NETWORKS[keyType];
+    console.log(`Using network:`, network);
+
     const node = bip32.fromBase58(key, network);
+    if (!node) {
+      console.error(`Failed to decode key: ${keyName}`);
+      return;
+    }
+
     addresses[keyName] = {
       key,
       addresses: [],
@@ -188,6 +223,11 @@ const generateTestAddresses = (keys) => {
           network: bitcoin.networks.bitcoin,
         });
         address = p2wpkh;
+      }
+
+      if (!address) {
+        console.error(`Failed to generate address at index ${i}`);
+        return;
       }
 
       addresses[keyName].addresses.push({

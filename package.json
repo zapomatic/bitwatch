@@ -42,7 +42,6 @@
     "@playwright/test": "^1.52.0",
     "@typescript-eslint/eslint-plugin": "^8.32.0",
     "@typescript-eslint/parser": "^8.32.0",
-    "bs58check": "^4.0.0",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^5.2.0",
     "ws": "^8.18.2"

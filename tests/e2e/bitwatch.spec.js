@@ -551,7 +551,16 @@ test.describe("Bitwatch", () => {
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
     await expect(page.getByText("Delete this descriptor and all its derived addresses?")).toBeVisible();
     await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
-    await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
+    
+    // Wait for dialog to close with a longer timeout
+    await page.waitForSelector('[data-testid="delete-confirmation-dialog"]', { 
+      state: 'hidden',
+      timeout: 5000 
+    });
+    
+    // Verify the dialog is gone
+    const dialog = page.locator('[data-testid="delete-confirmation-dialog"]');
+    await expect(dialog).not.toBeVisible();
     console.log(`Deleted ${firstDescriptor.name}`);
 
     // 6. Finally, delete the collection
