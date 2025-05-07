@@ -195,10 +195,10 @@ const parseKey = (key) => {
   };
 };
 
-export const deriveAddresses = async (
+export const deriveAddresses = (
   descriptor,
-  startIndex,
-  count,
+  startIndex = 0,
+  count = 10,
   skip = 0
 ) => {
   logger.debug(`Deriving addresses for descriptor: ${descriptor}`);
@@ -206,11 +206,16 @@ export const deriveAddresses = async (
     `Parameters: startIndex=${startIndex}, count=${count}, skip=${skip}`
   );
 
+  // Ensure numeric inputs
+  startIndex = parseInt(startIndex) || 0;
+  count = parseInt(count) || 10;
+  skip = parseInt(skip) || 0;
+
   const addresses = [];
   const parsed = parseMultiSigDescriptor(descriptor);
   if (!parsed.success) {
     logger.error(`Failed to parse descriptor: ${parsed.error}`);
-    return { success: false, error: parsed.error };
+    return [];
   }
 
   logger.debug(`Parsed descriptor data: ${JSON.stringify(parsed.data)}`);
@@ -234,7 +239,7 @@ export const deriveAddresses = async (
 
       // If there's a path, derive each component
       if (key.path) {
-        const pathParts = key.path.split("/");
+        const pathParts = key.path.split("/").filter((p) => p !== "");
         logger.debug(`Path parts: ${JSON.stringify(pathParts)}`);
 
         for (const part of pathParts) {
@@ -247,7 +252,7 @@ export const deriveAddresses = async (
             const index = parseInt(part);
             if (isNaN(index)) {
               logger.error(`Invalid path component: ${part}`);
-              return { success: false, error: "Invalid path component" };
+              continue;
             }
             currentKey = currentKey.derive(index);
           }
@@ -259,39 +264,38 @@ export const deriveAddresses = async (
 
     // Create the address based on the descriptor type
     let address;
-    if (parsed.data.type === "pkh") {
-      address = bitcoin.payments.p2pkh({ pubkey: publicKeys[0] }).address;
-    } else if (parsed.data.type === "sh_wpkh") {
-      address = bitcoin.payments.p2sh({
-        redeem: bitcoin.payments.p2wpkh({ pubkey: publicKeys[0] }),
-      }).address;
-    } else if (parsed.data.type === "wpkh") {
-      address = bitcoin.payments.p2wpkh({ pubkey: publicKeys[0] }).address;
-    } else if (
-      parsed.data.type === "wsh_multi" ||
-      parsed.data.type === "wsh_sortedmulti"
-    ) {
-      const sortedKeys =
+    try {
+      if (parsed.data.type === "pkh") {
+        address = bitcoin.payments.p2pkh({ pubkey: publicKeys[0] }).address;
+      } else if (parsed.data.type === "sh_wpkh") {
+        address = bitcoin.payments.p2sh({
+          redeem: bitcoin.payments.p2wpkh({ pubkey: publicKeys[0] }),
+        }).address;
+      } else if (parsed.data.type === "wpkh") {
+        address = bitcoin.payments.p2wpkh({ pubkey: publicKeys[0] }).address;
+      } else if (
+        parsed.data.type === "wsh_multi" ||
         parsed.data.type === "wsh_sortedmulti"
-          ? publicKeys.sort((a, b) => a.compare(b))
-          : publicKeys;
-      address = bitcoin.payments.p2wsh({
-        redeem: bitcoin.payments.p2ms({
-          m: parsed.data.threshold,
-          pubkeys: sortedKeys,
-        }),
-      }).address;
-    } else {
-      logger.error(`Unsupported descriptor type: ${parsed.data.type}`);
-      return { success: false, error: "Unsupported descriptor type" };
+      ) {
+        const sortedKeys =
+          parsed.data.type === "wsh_sortedmulti"
+            ? publicKeys.sort((a, b) => a.compare(b))
+            : publicKeys;
+        address = bitcoin.payments.p2wsh({
+          redeem: bitcoin.payments.p2ms({
+            m: parsed.data.threshold,
+            pubkeys: sortedKeys,
+          }),
+        }).address;
+      }
+    } catch (err) {
+      logger.error(`Error creating address: ${err.message}`);
+      continue;
     }
 
     if (!address) {
       logger.error(`Failed to generate address for index ${derivationIndex}`);
-      return {
-        success: false,
-        error: `Failed to generate address for index ${derivationIndex}`,
-      };
+      continue;
     }
 
     logger.debug(`Generated address: ${address} for index ${derivationIndex}`);
@@ -301,7 +305,7 @@ export const deriveAddresses = async (
     });
   }
 
-  return { success: true, data: addresses };
+  return addresses;
 };
 
 export const validateDescriptor = (descriptor) => {

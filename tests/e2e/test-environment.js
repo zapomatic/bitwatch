@@ -270,7 +270,7 @@ export const addAddress = async (
 export const addExtendedKey = async (
   page,
   collection,
-  { name, key, derivationPath, skip, gapLimit, initialAddresses }
+  { name, key, derivationPath, skip, gapLimit, initialAddresses, monitor }
 ) => {
   await findAndClick(page, `[data-testid="${collection}-add-extended-key"]`);
 
@@ -293,6 +293,37 @@ export const addExtendedKey = async (
     '[data-testid="extended-key-initial-input"]',
     initialAddresses.toString()
   );
+
+  // Set monitoring options if provided
+  if (monitor) {
+    // Chain In monitoring
+    const chainInSelect = page.getByTestId("address-monitor-chain-in");
+    await chainInSelect.click();
+    await page
+      .getByTestId(`address-monitor-chain-in-${monitor.chain_in}`)
+      .click();
+
+    // Chain Out monitoring
+    const chainOutSelect = page.getByTestId("address-monitor-chain-out");
+    await chainOutSelect.click();
+    await page
+      .getByTestId(`address-monitor-chain-out-${monitor.chain_out}`)
+      .click();
+
+    // Mempool In monitoring
+    const mempoolInSelect = page.getByTestId("address-monitor-mempool-in");
+    await mempoolInSelect.click();
+    await page
+      .getByTestId(`address-monitor-mempool-in-${monitor.mempool_in}`)
+      .click();
+
+    // Mempool Out monitoring
+    const mempoolOutSelect = page.getByTestId("address-monitor-mempool-out");
+    await mempoolOutSelect.click();
+    await page
+      .getByTestId(`address-monitor-mempool-out-${monitor.mempool_out}`)
+      .click();
+  }
 
   // Click the Add button - allow clicking in overlay since it's in a dialog
   await findAndClick(page, '[data-testid="extended-key-submit-button"]', {

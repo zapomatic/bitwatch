@@ -52,8 +52,8 @@ export const addDescriptor = async ({ data, io }) => {
   // Add monitor settings to each address
   desc.addresses = addresses.map((address, index) => ({
     ...address,
-    name: `${desc.name} ${index}`,
-    index: index,
+    name: `${desc.name} ${index + 1}`,
+    index: index + 1,
     expect: {
       chain_in: 0,
       chain_out: 0,

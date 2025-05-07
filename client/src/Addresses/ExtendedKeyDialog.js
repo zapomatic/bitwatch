@@ -73,6 +73,7 @@ const ExtendedKeyDialog = ({
         value={value}
         onChange={onChange}
         label={label}
+        data-testid={`address-monitor-${label.toLowerCase().replace(" ", "-")}`}
         sx={{
           "& .MuiOutlinedInput-notchedOutline": {
             borderColor: "var(--theme-secondary)",
@@ -82,7 +83,12 @@ const ExtendedKeyDialog = ({
           },
         }}
       >
-        <MenuItem value="alert">
+        <MenuItem
+          value="alert"
+          data-testid={`address-monitor-${label
+            .toLowerCase()
+            .replace(" ", "-")}-alert`}
+        >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <NotificationsActiveIcon
               color="warning"
@@ -91,7 +97,12 @@ const ExtendedKeyDialog = ({
             <Typography>Alert</Typography>
           </Box>
         </MenuItem>
-        <MenuItem value="auto-accept">
+        <MenuItem
+          value="auto-accept"
+          data-testid={`address-monitor-${label
+            .toLowerCase()
+            .replace(" ", "-")}-auto-accept`}
+        >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <CheckCircleIcon color="success" sx={{ fontSize: "1rem" }} />
             <Typography>Auto Accept</Typography>

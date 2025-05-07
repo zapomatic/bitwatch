@@ -6,7 +6,7 @@ import * as url from "node:url";
 import logger from "./logger.js";
 import socketIO from "./io.js";
 import telegram from "./telegram.js";
-import { deriveExtendedKeyAddresses } from "./addressDeriver.js";
+import { deriveExtendedKeyAddresses } from "./deriveExtendedKeyAddresses.js";
 import { deriveAddresses } from "./descriptors.js";
 
 // Helper to check if an address has any activity
@@ -48,7 +48,7 @@ const findLastUsedAndEmpty = (addresses) => {
 };
 
 // Check if we need to generate more addresses to maintain gap limit
-const checkAndUpdateGapLimit = async (item) => {
+const checkAndUpdateGapLimit = (item) => {
   if (!item?.addresses) return false;
 
   const { lastUsedIndex, emptyCount } = findLastUsedAndEmpty(item.addresses);
@@ -317,7 +317,7 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
 
   // If balance changed and this is part of an extended key or descriptor
   if (balanceChanged && parentItem) {
-    const addressesNeeded = await checkAndUpdateGapLimit(parentItem);
+    const addressesNeeded = checkAndUpdateGapLimit(parentItem);
     if (addressesNeeded) {
       // Calculate the next index to derive from
       const maxIndex = Math.max(...parentItem.addresses.map(addr => addr.index));
@@ -327,13 +327,13 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
 
       // Derive more addresses
       const newAddresses = isExtendedKeyAddress
-        ? await deriveExtendedKeyAddresses(
+        ? deriveExtendedKeyAddresses(
             parentItem.key,
             nextIndex,
             addressesNeeded,
             parentItem.derivationPath
           )
-        : await deriveAddresses(
+        : deriveAddresses(
             parentItem.descriptor,
             nextIndex,
             addressesNeeded,

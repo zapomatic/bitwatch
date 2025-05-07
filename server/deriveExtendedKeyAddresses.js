@@ -5,7 +5,7 @@ import logger from "./logger.js";
 
 const bip32 = BIP32Factory(ecc);
 
-export const deriveExtendedKeyAddresses = async (
+export const deriveExtendedKeyAddresses = (
   extendedKey,
   startIndex,
   count,
