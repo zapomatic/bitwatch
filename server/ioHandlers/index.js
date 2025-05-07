@@ -8,6 +8,7 @@ import { addDescriptor, editDescriptor } from "./descriptors.js";
 import { addExtendedKey } from "./extendedKeys.js";
 import { deleteHandler } from "./delete.js";
 import { updateAddress } from "./updateAddress.js";
+import { requestState } from "./requestState.js";
 
 // Export an object with event names as keys mapping to their handlers
 export default {
@@ -41,4 +42,7 @@ export default {
 
   // Address updates
   updateAddress,
+
+  // State management
+  requestState,
 };

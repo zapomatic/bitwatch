@@ -104,17 +104,14 @@ export default function Addresses() {
   };
 
   useEffect(() => {
-    // Initial state fetch
-    socketIO.emit("getState", {}, (response) => {
-      console.log({ response });
-      setCollections(response.collections || {});
-    });
-
-    // Listen for ongoing state updates
+    // Listen for state updates
     const handleStateUpdate = (updatedState) => {
       console.log("State update received:", updatedState);
-      if (updatedState.collections) {
-        setCollections(updatedState.collections);
+      if (updatedState?.collections) {
+        setCollections((prevCollections) => ({
+          ...prevCollections,
+          ...updatedState.collections,
+        }));
       }
 
       // If we're in a refresh operation, check for errors
@@ -158,9 +155,19 @@ export default function Addresses() {
 
     socketIO.on("updateState", handleStateUpdate);
 
-    // Cleanup listener on unmount
+    // Add visibility change listener to request state update when page becomes visible
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        console.log("Page became visible, requesting state update...");
+        socketIO.emit("requestState");
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // Cleanup listeners on unmount
     return () => {
       socketIO.off("updateState", handleStateUpdate);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
   }, [refreshing]);
 
