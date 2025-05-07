@@ -212,7 +212,15 @@ Previous: chain_in=${oldBalance.chain_in}, chain_out=${oldBalance.chain_out}, me
     memory.saveDb();
   }
 
-  return Object.keys(changes).length > 0 ? changes : null;
+  // Only return changes that need alerts
+  const alertChanges = {};
+  for (const [type, value] of Object.entries(changes)) {
+    if (needsAlert(type)) {
+      alertChanges[type] = value;
+    }
+  }
+
+  return Object.keys(alertChanges).length > 0 ? alertChanges : null;
 };
 
 // Centralized function to handle balance updates and gap limit checks
