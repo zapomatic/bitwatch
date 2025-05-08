@@ -239,7 +239,7 @@ test.describe("Bitwatch", () => {
     // Add extended keys (xpub, ypub, zpub)
     const extendedKeys = [
       {
-        name: "Test XPub",
+        name: "Test XPub",  // Base name, index will be added by server
         key: testData.extended.xpub1.key,
         derivationPath: "m/0",
         skip: 2,
@@ -253,7 +253,7 @@ test.describe("Bitwatch", () => {
         }
       },
       {
-        name: "Test YPub",
+        name: "Test YPub",  // Base name, index will be added by server
         key: testData.extended.ypub1.key,
         derivationPath: "m/0",
         skip: 0,
@@ -261,7 +261,7 @@ test.describe("Bitwatch", () => {
         initialAddresses: 3
       },
       {
-        name: "Test ZPub",
+        name: "Test ZPub",  // Base name, index will be added by server
         key: testData.extended.zpub1.key,
         derivationPath: "m/0",
         skip: 0,
@@ -293,98 +293,94 @@ test.describe("Bitwatch", () => {
       const addressRows = page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`);
       await expect(addressRows).toHaveCount(key.initialAddresses);
 
+      // when we add an extended key, it should be expanded by default
+      await expect(page.locator(`[data-testid="${key.key}-address-list"]`)).toBeVisible();
+      // Get all address rows
+      const addresses = await page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`).all();
+      // Verify we have the expected number of addresses
+      expect(addresses.length).toBe(key.initialAddresses);
+
+      // Verify each address has alert icons for all monitoring types
+      for (let i = 0; i < addresses.length; i++) {
+        const addressIndex = i + key.skip; // Keep it 0-based with skip
+        await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-chain-in-alert-icon"]`)).toBeVisible();
+        await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-chain-out-alert-icon"]`)).toBeVisible();
+        await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-mempool-in-alert-icon"]`)).toBeVisible();
+        await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-mempool-out-alert-icon"]`)).toBeVisible();
+
+        // Verify the address matches the expected address from test data
+        const keyId = key.name.toLowerCase()
+          .replace(/\s+/g, '')
+          .replace('test', '')
+          .toLowerCase() + '1';
+        console.log('Looking up extended key:', keyId, 'Available keys:', Object.keys(testData.extended));
+        console.log(`Checking address at index ${i} (with skip ${key.skip}), actual index ${i + key.skip}`);
+        const expectedAddress = testData.extended[keyId].addresses[i + key.skip].address;
+        const addressCell = page.locator(`[data-testid="${key.key}-address-${addressIndex}-row"] td:nth-child(2)`);
+        await expect(addressCell).toContainText(expectedAddress.slice(0, 15));
+
+        // Verify the name shows the correct index
+        const nameCell = page.locator(`[data-testid="${key.key}-address-${addressIndex}-name"]`);
+        await expect(nameCell).toContainText(`${key.name} ${addressIndex}`);
+      }
       // For the first extended key, verify all addresses have alert settings
       if (key.name === "Test XPub") {
-        // when we add an extended key, it should be expanded by default
-        await expect(page.locator(`[data-testid="${key.key}-address-list"]`)).toBeVisible();
-        
-        // Get all address rows
-        const addresses = await page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`).all();
-        
-        // Verify we have the expected number of addresses
-        expect(addresses.length).toBe(key.initialAddresses);
-        
-        // Verify each address has alert icons for all monitoring types
-        for (let i = 0; i < addresses.length; i++) {
-          const addressIndex = i + key.skip + 1; // Address indices start at 1 and we add the skip value
-          await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-chain-in-alert-icon"]`)).toBeVisible();
-          await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-chain-out-alert-icon"]`)).toBeVisible();
-          await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-mempool-in-alert-icon"]`)).toBeVisible();
-          await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-mempool-out-alert-icon"]`)).toBeVisible();
-
-          // Verify the address matches the expected address from test data
-          const keyId = key.name.toLowerCase()
-            .replace(/\s+/g, '')
-            .replace('test', '')
-            .toLowerCase() + '1';
-          console.log('Looking up extended key:', keyId, 'Available keys:', Object.keys(testData.extended));
-          const expectedAddress = testData.extended[keyId].addresses[i + key.skip].address;
-          const addressCell = page.locator(`[data-testid="${key.key}-address-${addressIndex}-row"] td:nth-child(2)`);
-          await expect(addressCell).toContainText(expectedAddress.slice(0, 15));
-        }
-      }
-
-      // Test single address refresh using helper (should show 0 balances)
-      await refreshAddressBalance(page, key.key, {
-        chain_in: "0.00000000 ₿",
-        chain_out: "0.00000000 ₿",
-        mempool_in: "0.00000000 ₿",
-        mempool_out: "0.00000000 ₿"
-      }, 1, key.key);
-      console.log(`Verified initial zero balance for ${key.name} address 1`);
-
-      // Test mempool input state
-      await refreshAddressBalance(page, key.key, {
-        chain_in: "0.00000000 ₿",
-        chain_out: "0.00000000 ₿",
-        mempool_in: "0.00010000 ₿",
-        mempool_out: "0.00000000 ₿"
-      }, 1, key.key);
-      console.log(`Verified mempool input for ${key.name} address 1`);
-
-      // Then test full row refresh
-      await findAndClick(page, `[data-testid="${key.key}-refresh-all-button"]`);
-      console.log("Clicked refresh button for extended key");
-
-      // Wait for the server to process the refresh and potentially generate new addresses
-      await page.waitForTimeout(1000);
-
-      // Verify we have the expected number of addresses (just initial addresses)
-      await expect(page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`)).toHaveCount(key.initialAddresses);
-
-      await verifyAddressBalance(page, key.key, {
-          chain_in: "0.00000000 ₿",
-          chain_out: "0.00010000 ₿",
-          mempool_in: "0.00000000 ₿",
-          mempool_out: "0.00000000 ₿"
-        }, 1, key.key);
-      // Verify balances for all addresses
-      for (let i = 2; i <= key.initialAddresses; i++) {
-        await verifyAddressBalance(page, key.key, {
+        // Test single address refresh using helper (should show 0 balances)
+        await refreshAddressBalance(page, key.key, {
           chain_in: "0.00000000 ₿",
           chain_out: "0.00000000 ₿",
           mempool_in: "0.00000000 ₿",
           mempool_out: "0.00000000 ₿"
-        }, i, key.key);
-      }
+        }, 2, key.key);  // Index 2 is our first address
+        console.log(`Verified initial zero balance for ${key.name} address 2`);
 
-      // If this is the first extended key, test editing an address
-      if (key.name === "Test XPub") {
-        // Edit the first derived address
-        await findAndClick(page, `[data-testid="${key.key}-address-1-edit-button"]`);
+        // Test mempool input state
+        await refreshAddressBalance(page, key.key, {
+          chain_in: "0.00000000 ₿",
+          chain_out: "0.00000000 ₿",
+          mempool_in: "0.00010000 ₿",
+          mempool_out: "0.00000000 ₿"
+        }, 2, key.key);  // Index 2 is our first address
+        console.log(`Verified mempool input for ${key.name} address 2`);
+
+        // Then test full row refresh
+        await findAndClick(page, `[data-testid="${key.key}-refresh-all-button"]`);
+        console.log("Clicked refresh button for extended key");
+
+        // Verify we have the expected number of addresses (just initial addresses)
+        await expect(page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`)).toHaveCount(key.initialAddresses);
+
+        await verifyAddressBalance(page, key.key, {
+            chain_in: "0.00010000 ₿",
+            chain_out: "0.00000000 ₿",
+            mempool_in: "0.00000000 ₿",
+            mempool_out: "0.00000000 ₿"
+        }, 2, key.key);  // Index 2 is our first address
+
+        // Verify balances for all addresses
+        for (let i = 3; i < key.initialAddresses + key.skip; i++) {  // Start at 3 since our first address is at 2
+          await verifyAddressBalance(page, key.key, {
+            chain_in: "0.00000000 ₿",
+            chain_out: "0.00000000 ₿",
+            mempool_in: "0.00000000 ₿",
+            mempool_out: "0.00000000 ₿"
+          }, i, key.key);
+        }
+        // Edit the first derived address (which is at index 2)
+        await findAndClick(page, `[data-testid="${key.key}-address-2-edit-button"]`);
         
         // Wait for the dialog to be visible
         await expect(page.locator('[data-testid="address-dialog"]')).toBeVisible();
-        await expect(page.getByTestId("address-name-input")).toHaveValue(`${key.name} 1`);
+        await expect(page.getByTestId("address-name-input")).toHaveValue(`${key.name} 2`);
         
         // Change the name
-        await page.getByTestId("address-name-input").fill(`${key.name} 1 Edited`);
+        await page.getByTestId("address-name-input").fill(`${key.name} 2 Edited`);
         await findAndClick(page, '[data-testid="address-dialog-save"]', { allowOverlay: true });
         
         // Verify the dialog closed and name was updated
         await page.waitForSelector('[data-testid="address-dialog"]', { state: "hidden", timeout: 2000 });
         await expect(page.getByText("Address updated successfully")).toBeVisible();
-        await expect(page.getByTestId(`${key.key}-address-1-name`)).toContainText(`${key.name} 1 Edited`);
+        await expect(page.getByTestId(`${key.key}-address-2-name`)).toContainText(`${key.name} 2 Edited`);
         console.log(`Edited address name in ${key.name}`);
       }
 
@@ -396,7 +392,7 @@ test.describe("Bitwatch", () => {
     // Add descriptors (pkh, sh(wpkh), wpkh, wsh(multi), wsh(sortedmulti), wsh(multi-mixed))
     const descriptors = [
       {
-        name: "Single XPub",
+        name: "Single XPub",  // Base name, index will be added by server
         descriptor: testData.descriptors.xpubSingle.key,
         derivationPath: "m/0",
         skip: 1,
@@ -490,7 +486,7 @@ test.describe("Bitwatch", () => {
         
         // Verify each address has alert icons for all monitoring types and correct addresses
         for (let i = 0; i < addresses.length; i++) {
-          const addressIndex = i + descriptor.skip + 1; // Address indices start at 1 and we add the skip value
+          const addressIndex = i + descriptor.skip; // Keep it 0-based with skip
           await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-chain-in-alert-icon"]`)).toBeVisible();
           await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-chain-out-alert-icon"]`)).toBeVisible();
           await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-mempool-in-alert-icon"]`)).toBeVisible();
@@ -502,9 +498,14 @@ test.describe("Bitwatch", () => {
             .replace('single', '')
             .toLowerCase() + 'Single';
           console.log('Looking up descriptor:', descriptorId, 'Available descriptors:', Object.keys(testData.descriptors));
+          console.log(`Checking address at index ${i} (with skip ${descriptor.skip}), actual index ${i + descriptor.skip}`);
           const expectedAddress = testData.descriptors[`${descriptorId}Single`].addresses[i + descriptor.skip].address;
           const addressCell = page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-row"] td:nth-child(2)`);
           await expect(addressCell).toContainText(expectedAddress.slice(0, 15));
+
+          // Verify the name shows the correct index
+          const nameCell = page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-name"]`);
+          await expect(nameCell).toContainText(`${descriptor.name} ${addressIndex}`);
         }
 
         // Trigger a balance change to generate new addresses

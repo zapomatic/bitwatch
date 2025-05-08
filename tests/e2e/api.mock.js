@@ -362,6 +362,14 @@ const setAddressBalance = (address, balance) => {
   }
 };
 
+const reset = () => {
+  addressStates.clear();
+  addressCheckCounts.clear();
+  addressBalances.clear();
+  trackedAddresses.clear();
+  clients.clear();
+};
+
 // Start the server immediately
 start(3006);
 
@@ -370,10 +378,3 @@ process.on("SIGINT", () => {
   stop();
   process.exit(0);
 });
-
-export default {
-  start,
-  stop,
-  simulateTransaction,
-  setAddressBalance,
-};

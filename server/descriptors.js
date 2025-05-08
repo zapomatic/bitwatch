@@ -302,6 +302,7 @@ export const deriveAddresses = (
     addresses.push({
       index: derivationIndex,
       address,
+      name: `${descriptor.name || "Address"} ${derivationIndex}`,
     });
   }
 

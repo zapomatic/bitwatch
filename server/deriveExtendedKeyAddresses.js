@@ -130,7 +130,7 @@ export const deriveExtendedKeyAddresses = (
 
     // Debug log the derived address
     const addressObj = {
-      name: `Address ${derivationIndex}`,
+      name: `${extendedKey.name || "Address"} ${derivationIndex}`,
       address,
       index: derivationIndex,
     };
