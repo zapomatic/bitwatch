@@ -11,37 +11,27 @@ const bip32 = BIP32Factory(ecc);
 // Version bytes for different key types
 const NETWORKS = {
   xpub: {
-    ...bitcoin.networks.bitcoin,
+    ...bitcoin.networks.bitcoin, // Standard bitcoin network
     bip32: {
       public: 0x0488b21e, // xpub
       private: 0x0488ade4, // xprv
     },
   },
   ypub: {
-    ...bitcoin.networks.bitcoin,
+    ...bitcoin.networks.bitcoin, // Base on bitcoin network, but override bip32 versions
     bip32: {
       public: 0x049d7cb2, // ypub
       private: 0x049d7878, // yprv
     },
   },
   zpub: {
-    ...bitcoin.networks.bitcoin,
+    ...bitcoin.networks.bitcoin, // Base on bitcoin network, but override bip32 versions
     bip32: {
       public: 0x04b24746, // zpub
       private: 0x04b2430c, // zprv
     },
   },
 };
-
-// Convert xpub to ypub/zpub using bip32
-// const convertXPubToType = (xpub, targetType) => {
-//   // First decode as xpub
-//   const node = bip32.fromBase58(xpub, NETWORKS.xpub);
-//   if (!node) return null;
-
-//   // Convert to target type by using the target network
-//   return node.toBase58(NETWORKS[targetType]);
-// };
 
 // Generate test keys
 const generateTestKeys = () => {
@@ -79,68 +69,65 @@ const generateTestKeys = () => {
     ),
   };
 
-  // Create root nodes for each key type and purpose
+  // Create root nodes for each key type and purpose, specifying the network
   const roots = {
     // Extended keys
-    xpub: bip32.fromSeed(seeds.xpub),
-    ypub: bip32.fromSeed(seeds.ypub),
-    zpub: bip32.fromSeed(seeds.zpub),
+    xpub: bip32.fromSeed(seeds.xpub, NETWORKS.xpub), // Specify xpub network
+    ypub: bip32.fromSeed(seeds.ypub, NETWORKS.ypub), // Specify ypub network
+    zpub: bip32.fromSeed(seeds.zpub, NETWORKS.zpub), // Specify zpub network
     // Descriptors
-    desc_xpub: bip32.fromSeed(seeds.desc_xpub),
-    desc_xpub2: bip32.fromSeed(seeds.desc_xpub2),
-    desc_ypub: bip32.fromSeed(seeds.desc_ypub),
-    desc_zpub: bip32.fromSeed(seeds.desc_zpub),
+    desc_xpub: bip32.fromSeed(seeds.desc_xpub, NETWORKS.xpub),
+    desc_xpub2: bip32.fromSeed(seeds.desc_xpub2, NETWORKS.xpub),
+    desc_ypub: bip32.fromSeed(seeds.desc_ypub, NETWORKS.ypub),
+    desc_zpub: bip32.fromSeed(seeds.desc_zpub, NETWORKS.zpub),
   };
 
   // Derive test keys for extended keys
-  const xpub1 = roots.xpub
-    .derivePath("m/44'/0'/0'")
-    .neutered()
-    .toBase58(NETWORKS.xpub);
+  // Call .toBase58() without arguments to use the node's inherent network
+  const xpub1 = roots.xpub.derivePath("m/44'/0'/0'").neutered().toBase58();
   console.log("Generated xpub1:", xpub1);
 
-  const xpub2 = roots.xpub
-    .derivePath("m/44'/0'/1'")
-    .neutered()
-    .toBase58(NETWORKS.xpub);
+  const xpub2 = roots.xpub.derivePath("m/44'/0'/1'").neutered().toBase58();
   console.log("Generated xpub2:", xpub2);
 
+  // Generate ypub with correct format
   const ypub1 = roots.ypub
-    .derivePath("m/49'/0'/0'")
+    .derivePath("m/49'/0'/0'") // Standard path for P2SH-P2WPKH
     .neutered()
-    .toBase58(NETWORKS.ypub);
-  console.log("Generated ypub1:", ypub1);
+    .toBase58(); // Will use NETWORKS.ypub due to root node's initialization
+  console.log("Generated ypub1:", ypub1); // Should now start with 'ypub'
 
+  // Generate zpub with correct format
   const zpub1 = roots.zpub
-    .derivePath("m/84'/0'/0'")
+    .derivePath("m/84'/0'/0'") // Standard path for P2WPKH
     .neutered()
-    .toBase58(NETWORKS.zpub);
-  console.log("Generated zpub1:", zpub1);
+    .toBase58(); // Will use NETWORKS.zpub due to root node's initialization
+  console.log("Generated zpub1:", zpub1); // Should now start with 'zpub'
 
   // Derive test keys for descriptors
   const desc_xpub = roots.desc_xpub
     .derivePath("m/44'/0'/0'")
     .neutered()
-    .toBase58(NETWORKS.xpub);
+    .toBase58();
   console.log("Generated desc_xpub:", desc_xpub);
 
   const desc_xpub2 = roots.desc_xpub2
     .derivePath("m/44'/0'/0'")
     .neutered()
-    .toBase58(NETWORKS.xpub);
+    .toBase58();
   console.log("Generated desc_xpub2:", desc_xpub2);
 
   const desc_ypub = roots.desc_ypub
     .derivePath("m/49'/0'/0'")
     .neutered()
-    .toBase58(NETWORKS.ypub);
-  console.log("Generated desc_ypub:", desc_ypub);
+    .toBase58();
+  console.log("Generated desc_ypub:", desc_ypub); // Should now be ypub
 
   const desc_zpub = roots.desc_zpub
     .derivePath("m/84'/0'/0'")
     .neutered()
-    .toBase58(NETWORKS.zpub);
-  console.log("Generated desc_zpub:", desc_zpub);
+    .toBase58();
+  console.log("Generated desc_zpub:", desc_zpub); // Should now be zpub
 
   return {
     // Extended keys
@@ -158,27 +145,34 @@ const generateTestKeys = () => {
 
 // Generate test addresses from keys
 const generateAddressesForKey = (key, keyType, network, skip = 0) => {
-  const node = bip32.fromBase58(key, network);
+  // First decode using the correct network for the key type
+  // This should now work as the key string will have the correct version bytes
+  const node = bip32.fromBase58(key, NETWORKS[keyType]);
   if (!node) {
-    console.error(`Failed to decode key: ${key}`);
-    return [];
+    console.error(`Failed to decode key: ${key} with keyType ${keyType}`);
+    return { addresses: [], key };
   }
 
   const addresses = [];
   // Generate first 6 addresses for each key, taking skip into account
   for (let i = 0; i < 6; i++) {
     const actualIndex = i + skip;
-    console.log(
-      `Generating address at index ${actualIndex} (base index ${i} + skip ${skip})`
-    );
-    const child = node.derive(0).derive(actualIndex);
+    // console.log( // Optional: uncomment for detailed logging
+    //   `Generating address at index ${actualIndex} (base index ${i} + skip ${skip}) for key ${key}`
+    // );
+
+    // For xpub/ypub/zpub used in this context, they are typically used as account-level keys.
+    // Addresses are derived from child keys at path /0/actualIndex (external chain) or /1/actualIndex (internal chain)
+    // The current derivation node.derive(0).derive(actualIndex) assumes the passed 'key' is already at account level
+    // and we are deriving chain (0 for external) and then address index.
+    const child = node.derive(0).derive(actualIndex); // Standard is 0 for receive, 1 for change
     let address;
 
     if (keyType === "xpub") {
       // P2PKH (legacy)
       const { address: p2pkh } = bitcoin.payments.p2pkh({
         pubkey: child.publicKey,
-        network: bitcoin.networks.bitcoin,
+        network: bitcoin.networks.bitcoin, // Use bitcoin.networks.bitcoin for address generation
       });
       address = p2pkh;
     } else if (keyType === "ypub") {
@@ -200,215 +194,104 @@ const generateAddressesForKey = (key, keyType, network, skip = 0) => {
       address = p2wpkh;
     }
 
-    if (!address) {
-      console.error(`Failed to generate address at index ${actualIndex}`);
-      continue;
-    }
-
-    addresses.push({
-      index: actualIndex,
-      address,
-    });
-  }
-
-  return addresses;
-};
-
-const generateTestAddresses = (keys) => {
-  const result = {
-    plain: {
-      zapomatic: "bc1q67csgqm9muhynyd864tj2p48g8gachyg2nwara",
-    },
-    extended: {},
-    descriptors: {},
-  };
-
-  // Process extended keys
-  Object.entries(keys).forEach(([keyName, key]) => {
-    // Skip descriptor keys
-    if (keyName.startsWith("desc_")) return;
-
-    // Determine key type from the key prefix
-    let keyType;
-    const keyLower = key.toLowerCase();
-    if (keyLower.startsWith("zpub")) {
-      keyType = "zpub";
-    } else if (keyLower.startsWith("ypub")) {
-      keyType = "ypub";
-    } else if (keyLower.startsWith("xpub")) {
-      keyType = "xpub";
-    } else {
-      console.error(`Unknown key type for key: ${keyName}`);
-      return;
-    }
-
-    // Set skip values to match our test configuration
-    const skip = 0; // xpub1 has skip=2 in our test
-    console.log(
-      `Processing extended key ${keyName} of type ${keyType} with skip=${skip}`
-    );
-    const network = NETWORKS[keyType];
-
-    result.extended[keyName] = {
-      key,
-      type: keyType,
-      addresses: generateAddressesForKey(key, keyType, network, skip),
-    };
-  });
-
-  // Process descriptors
-  const descriptors = generateTestDescriptors(keys);
-  Object.entries(descriptors).forEach(([name, descriptor]) => {
-    console.log(`Processing descriptor ${name}`);
-
-    // Parse the descriptor to get the key and path
-    const keyMatch = descriptor.match(/[xyz]pub[A-Za-z0-9]+\/[^)]+/);
-    if (!keyMatch) {
-      console.error(`Could not parse key from descriptor: ${descriptor}`);
-      return;
-    }
-
-    const [key, path] = keyMatch[0].split("/");
-    const keyType = key.toLowerCase().startsWith("zpub")
-      ? "zpub"
-      : key.toLowerCase().startsWith("ypub")
-      ? "ypub"
-      : "xpub";
-
-    // Set skip values to match our test configuration
-    const skip = name === "xpubSingle" ? 1 : 0; // xpubSingle has skip=1 in our test
-    console.log(`Using skip=${skip} for descriptor ${name}`);
-
-    // Generate addresses using the proper derivation path
-    const addresses = [];
-    const node = bip32.fromBase58(key, NETWORKS[keyType]);
-    if (!node) {
-      console.error(`Failed to decode key: ${key}`);
-      return;
-    }
-
-    // Derive the base node using the path from the descriptor
-    let baseNode = node;
-    const pathParts = path.split("/");
-    for (const part of pathParts) {
-      if (part === "*") continue; // Skip the wildcard, we'll handle it in the loop
-      const index = parseInt(part);
-      if (isNaN(index)) {
-        console.error(`Invalid path component: ${part}`);
-        return;
-      }
-      baseNode = baseNode.derive(index);
-    }
-
-    // Generate addresses using the proper derivation
-    for (let i = 0; i < 6; i++) {
-      const actualIndex = i + skip;
-      const child = baseNode.derive(actualIndex);
-      let address;
-
-      if (descriptor.startsWith("pkh(")) {
-        // P2PKH (legacy)
-        address = bitcoin.payments.p2pkh({
-          pubkey: child.publicKey,
-          network: bitcoin.networks.bitcoin,
-        }).address;
-      } else if (descriptor.startsWith("sh(wpkh(")) {
-        // P2SH-P2WPKH (nested SegWit)
-        address = bitcoin.payments.p2sh({
-          redeem: bitcoin.payments.p2wpkh({
-            pubkey: child.publicKey,
-            network: bitcoin.networks.bitcoin,
-          }),
-          network: bitcoin.networks.bitcoin,
-        }).address;
-      } else if (descriptor.startsWith("wpkh(")) {
-        // P2WPKH (native SegWit)
-        address = bitcoin.payments.p2wpkh({
-          pubkey: child.publicKey,
-          network: bitcoin.networks.bitcoin,
-        }).address;
-      } else if (
-        descriptor.startsWith("wsh(multi(") ||
-        descriptor.startsWith("wsh(sortedmulti(")
-      ) {
-        // For multi-sig, we need to derive all keys and create the script
-        const keys = descriptor.match(/[xyz]pub[A-Za-z0-9]+\/[^,)]+/g);
-        if (!keys) {
-          console.error(
-            `Could not parse keys from multi-sig descriptor: ${descriptor}`
-          );
-          return;
-        }
-
-        const threshold = parseInt(descriptor.match(/multi\((\d+),/)[1]);
-        const pubkeys = [];
-
-        for (const keyStr of keys) {
-          const [key, path] = keyStr.split("/");
-          const keyNode = bip32.fromBase58(key, NETWORKS[keyType]);
-          if (!keyNode) {
-            console.error(`Failed to decode key: ${key}`);
-            return;
-          }
-
-          let keyBaseNode = keyNode;
-          const keyPathParts = path.split("/");
-          for (const part of keyPathParts) {
-            if (part === "*") continue;
-            const index = parseInt(part);
-            if (isNaN(index)) {
-              console.error(`Invalid path component: ${part}`);
-              return;
-            }
-            keyBaseNode = keyBaseNode.derive(index);
-          }
-          pubkeys.push(keyBaseNode.derive(actualIndex).publicKey);
-        }
-
-        // Sort pubkeys if it's a sortedmulti
-        const sortedPubkeys = descriptor.startsWith("wsh(sortedmulti(")
-          ? pubkeys.sort((a, b) => a.compare(b))
-          : pubkeys;
-
-        address = bitcoin.payments.p2wsh({
-          redeem: bitcoin.payments.p2ms({
-            m: threshold,
-            pubkeys: sortedPubkeys,
-          }),
-          network: bitcoin.networks.bitcoin,
-        }).address;
-      }
-
-      if (!address) {
-        console.error(`Failed to generate address at index ${actualIndex}`);
-        continue;
-      }
-
+    if (address) {
       addresses.push({
         index: actualIndex,
         address,
       });
     }
+  }
+
+  return { addresses, key };
+};
+
+const generateTestAddresses = (keys) => {
+  const result = {
+    extendedKeys: {},
+    descriptors: {},
+  };
+
+  // Process extended keys
+  for (const [name, key] of Object.entries(keys)) {
+    if (name.startsWith("desc_")) continue; // Skip descriptor keys for now
+
+    // Determine key type from the key name
+    let keyType;
+    if (name.startsWith("ypub")) {
+      keyType = "ypub";
+    } else if (name.startsWith("zpub")) {
+      keyType = "zpub";
+    } else {
+      keyType = "xpub"; // Default or if name is xpub1, xpub2
+    }
+
+    // Set skip values to match our test configuration
+    const skip = name === "xpub1" ? 2 : 0; // xpub1 has skip=2 in our test
+
+    const { addresses } = generateAddressesForKey(
+      key,
+      keyType,
+      NETWORKS[keyType],
+      skip
+    );
+
+    result.extendedKeys[name] = {
+      key,
+      type: keyType,
+      addresses,
+    };
+  }
+
+  // Process descriptors
+  const descriptors = generateTestDescriptors(keys);
+  for (const [name, descriptor] of Object.entries(descriptors)) {
+    // Extract the xpub/ypub/zpub key from the descriptor
+    const keyMatch = descriptor.match(/([xyz]pub[A-Za-z0-9]+)/);
+    if (!keyMatch) {
+      console.error(`Could not extract key from descriptor: ${descriptor}`);
+      continue;
+    }
+
+    const keyString = keyMatch[1];
+    const keyType = keyString.startsWith("ypub")
+      ? "ypub"
+      : keyString.startsWith("zpub")
+      ? "zpub"
+      : "xpub";
+
+    // Set skip values to match our test configuration
+    const skip = name === "xpubSingle" ? 1 : 0;
+
+    const { addresses } = generateAddressesForKey(
+      keyString,
+      keyType,
+      NETWORKS[keyType],
+      skip
+    );
 
     result.descriptors[name] = {
       key: descriptor,
       type: keyType,
       addresses,
     };
-  });
+  }
 
   return result;
 };
 
 // Generate test descriptors
 const generateTestDescriptors = (keys) => {
+  // keys.desc_xpub, keys.desc_ypub, keys.desc_zpub are now correctly formatted extended public keys
   return {
     // Multi-sig descriptors
-    multiSig: `wsh(multi(2,${keys.desc_xpub}/0/*,${keys.desc_xpub}/0/*))`,
-    sortedMultiSig: `wsh(sortedmulti(2,${keys.desc_xpub2}/0/*,${keys.desc_xpub2}/0/*))`,
-    mixedKeyTypes: `wsh(multi(2,${keys.desc_ypub}/0/*,${keys.desc_zpub}/0/*))`,
+    // Assuming derivation path for multi-sig participants is <xpub>/<chain>/*
+    // where <chain> is 0 for external, 1 for internal, and * is the address index.
+    multiSig: `wsh(multi(2,${keys.desc_xpub}/0/*,${keys.desc_xpub}/1/*))`, // Example: 2 keys, one from chain 0, one from chain 1
+    sortedMultiSig: `wsh(sortedmulti(2,${keys.desc_xpub2}/0/*,${keys.desc_xpub}/0/*))`, // Using two different xpubs for sorted multi-sig
+    mixedKeyTypes: `wsh(multi(2,${keys.desc_ypub}/0/*,${keys.desc_zpub}/0/*))`, // Mixed ypub and zpub in a multi-sig
 
     // Single key descriptors
+    // Path /0/* means external chain, any address index.
     xpubSingle: `pkh(${keys.desc_xpub}/0/*)`, // P2PKH
     ypubSingle: `sh(wpkh(${keys.desc_ypub}/0/*))`, // P2SH-P2WPKH
     zpubSingle: `wpkh(${keys.desc_zpub}/0/*)`, // P2WPKH
@@ -416,14 +299,37 @@ const generateTestDescriptors = (keys) => {
 };
 
 const main = async () => {
+  console.log("Starting test data generation...");
   const testKeys = generateTestKeys();
+  console.log("\nGenerated Test Keys:", JSON.stringify(testKeys, null, 2));
+
+  console.log("\nGenerating Test Addresses...");
   const testAddresses = generateTestAddresses(testKeys);
 
   // Save to file
   const outputPath = path.join(__dirname, "../test-data/keys.json");
-  await fs.mkdir(path.dirname(outputPath), { recursive: true });
-  await fs.writeFile(outputPath, JSON.stringify(testAddresses, null, 2));
-  console.log("Test data generated and saved to:", outputPath);
+  try {
+    await fs.mkdir(path.dirname(outputPath), { recursive: true });
+    await fs.writeFile(outputPath, JSON.stringify(testAddresses, null, 2));
+    console.log("\nTest data generated and saved to:", outputPath);
+    console.log(
+      "Generated data structure:",
+      JSON.stringify(
+        testAddresses,
+        (key, value) => {
+          // Basic summary to avoid overly long output in console for verification
+          if (key === "addresses" && Array.isArray(value))
+            return `[${value.length} addresses]`;
+          return value;
+        },
+        2
+      )
+    );
+  } catch (error) {
+    console.error("Error during file operations or main execution:", error);
+  }
 };
 
-main().catch(console.error);
+main().catch((error) => {
+  console.error("Unhandled error in main:", error);
+});
