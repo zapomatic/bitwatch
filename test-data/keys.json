@@ -5,6 +5,14 @@
       "type": "xpub",
       "addresses": [
         {
+          "index": 0,
+          "address": "12Etsmqp76ToVNfBZbfwMmhixqc19J7X8g"
+        },
+        {
+          "index": 1,
+          "address": "1KWhuYfNXuUg5Vt8PXE3567B55MzEAs5F3"
+        },
+        {
           "index": 2,
           "address": "15NxQALjwhUovcB8AbuGCsFFXTELrv6ZAt"
         },
@@ -19,14 +27,6 @@
         {
           "index": 5,
           "address": "1DTc5PioNB1cBJNg7A3EhGobcfuDYc19sT"
-        },
-        {
-          "index": 6,
-          "address": "19XXthnx7z38xBNHBRbr2mAoBgrmx4jyUG"
-        },
-        {
-          "index": 7,
-          "address": "1BcAujJv1Jenpt66FQA7UhhGrh9YyXZ2zy"
         }
       ]
     },
@@ -302,5 +302,8 @@
         }
       ]
     }
+  },
+  "plain": {
+    "zapomatic": "bc1q67csgqm9muhynyd864tj2p48g8gachyg2nwara"
   }
 }

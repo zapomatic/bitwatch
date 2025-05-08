@@ -226,7 +226,8 @@ const generateTestAddresses = (keys) => {
     }
 
     // Set skip values to match our test configuration
-    const skip = name === "xpub1" ? 2 : 0; // xpub1 has skip=2 in our test
+    // const skip = name === "xpub1" ? 2 : 0; // xpub1 has skip=2 in our test
+    const skip = 0;
 
     const { addresses } = generateAddressesForKey(
       key,
@@ -305,6 +306,9 @@ const main = async () => {
 
   console.log("\nGenerating Test Addresses...");
   const testAddresses = generateTestAddresses(testKeys);
+  testAddresses.plain = {
+    zapomatic: "bc1q67csgqm9muhynyd864tj2p48g8gachyg2nwara",
+  };
 
   // Save to file
   const outputPath = path.join(__dirname, "../test-data/keys.json");
