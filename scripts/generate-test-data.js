@@ -261,7 +261,7 @@ const generateTestAddresses = (keys) => {
       : "xpub";
 
     // Set skip values to match our test configuration
-    const skip = name === "xpubSingle" ? 1 : 0;
+    const skip = 0;
 
     const { addresses } = generateAddressesForKey(
       keyString,

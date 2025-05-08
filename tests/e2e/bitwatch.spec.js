@@ -240,7 +240,7 @@ test.describe("Bitwatch", () => {
     const extendedKeys = [
       {
         name: "Test XPub",  // Base name, index will be added by server
-        key: testData.extended.xpub1.key,
+        key: testData.extendedKeys.xpub1.key,
         derivationPath: "m/0",
         skip: 2,
         gapLimit: 3,
@@ -254,7 +254,7 @@ test.describe("Bitwatch", () => {
       },
       {
         name: "Test YPub",  // Base name, index will be added by server
-        key: testData.extended.ypub1.key,
+        key: testData.extendedKeys.ypub1.key,
         derivationPath: "m/0",
         skip: 0,
         gapLimit: 2,
@@ -262,7 +262,7 @@ test.describe("Bitwatch", () => {
       },
       {
         name: "Test ZPub",  // Base name, index will be added by server
-        key: testData.extended.zpub1.key,
+        key: testData.extendedKeys.zpub1.key,
         derivationPath: "m/0",
         skip: 0,
         gapLimit: 1,
@@ -313,9 +313,9 @@ test.describe("Bitwatch", () => {
           .replace(/\s+/g, '')
           .replace('test', '')
           .toLowerCase() + '1';
-        console.log('Looking up extended key:', keyId, 'Available keys:', Object.keys(testData.extended));
+        console.log('Looking up extended key:', keyId, 'Available keys:', Object.keys(testData.extendedKeys));
         console.log(`Checking address at index ${i} (with skip ${key.skip}), actual index ${i + key.skip}`);
-        const expectedAddress = testData.extended[keyId].addresses[i + key.skip].address;
+        const expectedAddress = testData.extendedKeys[keyId].addresses[i + key.skip].address;
         const addressCell = page.locator(`[data-testid="${key.key}-address-${addressIndex}-row"] td:nth-child(2)`);
         await expect(addressCell).toContainText(expectedAddress.slice(0, 15));
 

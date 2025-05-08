@@ -217,6 +217,10 @@
       "type": "xpub",
       "addresses": [
         {
+          "index": 0,
+          "address": "1PCbpeiN7b7gF3tRU7rthNuy3Dykgnvq8a"
+        },
+        {
           "index": 1,
           "address": "1Ao1P8FKMsGuv3sxB4w9sJSvvfscifK3Py"
         },
@@ -235,10 +239,6 @@
         {
           "index": 5,
           "address": "1Biw6gCssUztkggPPnb7uPrhXrGBcfPTfQ"
-        },
-        {
-          "index": 6,
-          "address": "132ubN4nkEUHfhsVAFQGVeefseCzb8Ctvi"
         }
       ]
     },
