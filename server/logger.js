@@ -30,16 +30,6 @@ const logger = {
     }
   },
 
-  monitor: (message, monitor) => {
-    console.log(
-      `[${new Date().toISOString()}] ${message} with monitor settings: ${
-        monitorIcons[monitor.chain_in]
-      }/${monitorIcons[monitor.chain_out]}+${
-        monitorIcons[monitor.mempool_in]
-      }/${monitorIcons[monitor.mempool_out]}`
-    );
-  },
-
   // Network and API related
   network: (message) => {
     console.log(`[${new Date().toISOString()}] 🌐 ${message}`);
@@ -84,3 +74,9 @@ const logger = {
 };
 
 export default logger;
+
+export const getMonitorLog = (monitor) => {
+  return `monitor:${monitorIcons[monitor.chain_in]}/${
+    monitorIcons[monitor.chain_out]
+  }+${monitorIcons[monitor.mempool_in]}/${monitorIcons[monitor.mempool_out]}`;
+};

@@ -397,7 +397,7 @@ test.describe("Bitwatch", () => {
         descriptor: testData.descriptors.xpubSingle,
         derivationPath: "m/0",
         skip: 1,
-        gapLimit: 3,
+        gapLimit: 2,
         initialAddresses: 3,
         monitor: {
           chain_in: "alert",
@@ -410,41 +410,41 @@ test.describe("Bitwatch", () => {
         name: "Single YPub",
         descriptor: testData.descriptors.ypubSingle,
         derivationPath: "m/0",
-        skip: 1,
-        gapLimit: 3,
-        initialAddresses: 3
+        skip: 0,
+        gapLimit: 2,
+        initialAddresses: 1
       },
       {
         name: "Single ZPub",
         descriptor: testData.descriptors.zpubSingle,
         derivationPath: "m/0",
-        skip: 1,
-        gapLimit: 3,
-        initialAddresses: 3
+        skip: 0,
+        gapLimit: 2,
+        initialAddresses: 1
       },
       {
         name: "Multi-Sig",
         descriptor: testData.descriptors.multiSig,
         derivationPath: "m/0",
-        skip: 1,
-        gapLimit: 3,
-        initialAddresses: 3
+        skip: 0,
+        gapLimit: 2,
+        initialAddresses: 1
       },
       {
         name: "Sorted Multi-Sig",
         descriptor: testData.descriptors.sortedMultiSig,
         derivationPath: "m/0",
-        skip: 1,
-        gapLimit: 3,
-        initialAddresses: 3
+        skip: 0,
+        gapLimit: 2,
+        initialAddresses: 1
       },
       {
         name: "Mixed Key Types",
         descriptor: testData.descriptors.mixedKeyTypes,
         derivationPath: "m/0",
-        skip: 1,
-        gapLimit: 3,
-        initialAddresses: 3
+        skip: 0,
+        gapLimit: 2,
+        initialAddresses: 1
       }
     ];
 

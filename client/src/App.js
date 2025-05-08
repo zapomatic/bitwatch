@@ -313,7 +313,7 @@ function AppContent() {
       >
         <Container maxWidth="lg" sx={{ mt: 4, mb: 4, px: { xs: 2, sm: 3 } }}>
           <Grid container spacing={3} justifyContent="center">
-            <Grid item xs={12} sx={{ maxWidth: "1200px", width: "100%" }}>
+            <Grid xs={12} sx={{ maxWidth: "1200px", width: "100%" }}>
               <Paper
                 sx={{
                   p: 0,

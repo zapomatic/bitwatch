@@ -1,5 +1,5 @@
 import memory from "../memory.js";
-import logger from "../logger.js";
+import logger, { getMonitorLog } from "../logger.js";
 import { deriveAddresses, validateDescriptor } from "../descriptors.js";
 
 export const addDescriptor = async ({ data, io }) => {
@@ -9,7 +9,8 @@ export const addDescriptor = async ({ data, io }) => {
   }
 
   logger.info(
-    `Adding descriptor ${data.name} to collection ${data.collection}`
+    `Adding descriptor ${data.collection}/${data.name}, gap: ${data.gapLimit}, skip: ${data.skip}, initial: ${data.initialAddresses}`,
+    getMonitorLog(data.monitor)
   );
 
   // Validate descriptor
@@ -28,8 +29,13 @@ export const addDescriptor = async ({ data, io }) => {
     };
   }
 
-  // Check if descriptor already exists
+  // Ensure descriptors array exists
   const collection = memory.db.collections[data.collection];
+  if (!collection.descriptors) {
+    collection.descriptors = [];
+  }
+
+  // Check if descriptor already exists
   if (collection.descriptors.some((d) => d.name === data.name)) {
     logger.error("Descriptor with this name already exists");
     return { error: "Descriptor with this name already exists" };
@@ -44,9 +50,9 @@ export const addDescriptor = async ({ data, io }) => {
   // Derive initial addresses
   const addresses = deriveAddresses(
     desc.descriptor,
-    desc.derivationPath,
-    desc.skip,
-    desc.initialAddresses
+    0, // startIndex
+    desc.initialAddresses || 10, // count
+    desc.skip || 0 // skip
   );
 
   // Add monitor settings to each address
@@ -66,9 +72,6 @@ export const addDescriptor = async ({ data, io }) => {
   }));
 
   // Add the descriptor to the collection
-  if (!collection.descriptors) {
-    collection.descriptors = [];
-  }
   collection.descriptors.push(desc);
 
   memory.saveDb();

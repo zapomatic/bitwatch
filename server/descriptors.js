@@ -58,7 +58,7 @@ const cleanPath = (path) => {
 };
 
 // Parse a multi-sig descriptor like "wsh(multi(k,key1,key2,...))" or single key descriptor like "pkh(key)", "sh(wpkh(key))", or "wpkh(key)"
-export const parseMultiSigDescriptor = (descriptor) => {
+const parseMultiSigDescriptor = (descriptor) => {
   if (!descriptor) {
     return { success: false, error: "Descriptor is undefined" };
   }

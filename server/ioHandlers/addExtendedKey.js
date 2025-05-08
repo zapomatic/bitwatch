@@ -1,5 +1,5 @@
 import memory from "../memory.js";
-import logger from "../logger.js";
+import logger, { getMonitorLog } from "../logger.js";
 import { deriveExtendedKeyAddresses } from "../deriveExtendedKeyAddresses.js";
 
 export const addExtendedKey = async ({ data, io }) => {
@@ -16,9 +16,9 @@ export const addExtendedKey = async ({ data, io }) => {
     return { error: "Missing required fields" };
   }
 
-  logger.monitor(
-    `Adding extended key ${data.name} to collection ${data.collection}`,
-    data.monitor
+  logger.info(
+    `Adding extended key ${data.collection}/${data.name}, path: ${data.derivationPath}, gap: ${data.gapLimit}, skip: ${data.skip}, initial: ${data.initialAddresses}`,
+    getMonitorLog(data.monitor)
   );
 
   // Create collection if it doesn't exist
