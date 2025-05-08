@@ -72,12 +72,19 @@ export const addDescriptor = async ({ data, io }) => {
     monitor: {
       ...desc.monitor,
     },
+    actual: null,
+    error: false,
+    errorMessage: null,
   }));
 
   // Add the descriptor to the collection
   collection.descriptors.push(desc);
 
+  // Save the database
   memory.saveDb();
+
+  // Emit the updated state
   io.emit("updateState", { collections: memory.db.collections });
+
   return { success: true };
 };

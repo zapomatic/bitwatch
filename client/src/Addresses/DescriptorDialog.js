@@ -92,11 +92,11 @@ const DescriptorDialog = ({
                 name="descriptor"
                 value={formData.descriptor}
                 onChange={(e) => handleChange("descriptor", e.target.value)}
-                helperText="The output descriptor (e.g., wpkh([fingerprint/derivation]xpub/0/*))"
+                helperText="The descriptor string (e.g., pkh(xpub.../0/*))"
                 fullWidth
                 inputProps={{
                   "data-testid": "descriptor-input",
-                  "aria-label": "Output descriptor",
+                  "aria-label": "Descriptor",
                 }}
               />
             </Grid>

@@ -313,9 +313,9 @@ const generateTestAddresses = (keys) => {
   const descriptors = generateTestDescriptors(keys);
   for (const [name, descriptor] of Object.entries(descriptors)) {
     // Extract the xpub/ypub/zpub key from the descriptor
-    const keyMatch = descriptor.match(/([xyz]pub[A-Za-z0-9]+)/);
+    const keyMatch = descriptor.key.match(/([xyz]pub[A-Za-z0-9]+)/);
     if (!keyMatch) {
-      console.error(`Could not extract key from descriptor: ${descriptor}`);
+      console.error(`Could not extract key from descriptor: ${descriptor.key}`);
       continue;
     }
 
@@ -336,23 +336,10 @@ const generateTestAddresses = (keys) => {
       skip
     );
 
-    // Get the appropriate derivation path based on the descriptor type
-    let derivationPath;
-    if (name.includes("Single")) {
-      derivationPath = keys.derivationPaths[keyType].receive;
-    } else if (name.includes("Multi")) {
-      // For multi-sig, we use a combination of receive and change paths
-      derivationPath = `${keys.derivationPaths[keyType].receive},${keys.derivationPaths[keyType].change}`;
-    } else if (name === "mixedKeyTypes") {
-      // For mixed key types, we need both ypub and zpub paths
-      derivationPath = `${keys.derivationPaths.ypub.receive},${keys.derivationPaths.zpub.receive}`;
-    }
-
     result.descriptors[name] = {
-      key: descriptor,
+      key: descriptor.key,
       type: keyType,
       addresses,
-      derivationPath,
     };
   }
 
@@ -363,18 +350,26 @@ const generateTestAddresses = (keys) => {
 const generateTestDescriptors = (keys) => {
   // keys.desc_xpub, keys.desc_ypub, keys.desc_zpub are now correctly formatted extended public keys
   return {
-    // Multi-sig descriptors
-    // Assuming derivation path for multi-sig participants is <xpub>/<chain>/*
-    // where <chain> is 0 for external, 1 for internal, and * is the address index.
-    multiSig: `wsh(multi(2,${keys.desc_xpub}/0/*,${keys.desc_xpub}/1/*))`, // Example: 2 keys, one from chain 0, one from chain 1
-    sortedMultiSig: `wsh(sortedmulti(2,${keys.desc_xpub2}/0/*,${keys.desc_xpub}/0/*))`, // Using two different xpubs for sorted multi-sig
-    mixedKeyTypes: `wsh(multi(2,${keys.desc_ypub}/0/*,${keys.desc_zpub}/0/*))`, // Mixed ypub and zpub in a multi-sig
-
     // Single key descriptors
-    // Path /0/* means external chain, any address index.
-    xpubSingle: `pkh(${keys.desc_xpub}/0/*)`, // P2PKH
-    ypubSingle: `sh(wpkh(${keys.desc_ypub}/0/*))`, // P2SH-P2WPKH
-    zpubSingle: `wpkh(${keys.desc_zpub}/0/*)`, // P2WPKH
+    xpubSingle: {
+      key: `pkh(${keys.desc_xpub}/0/*)`,
+    },
+    ypubSingle: {
+      key: `sh(wpkh(${keys.desc_ypub}/0/*))`,
+    },
+    zpubSingle: {
+      key: `wpkh(${keys.desc_zpub}/0/*)`,
+    },
+    // Multi-sig descriptors
+    multiSig: {
+      key: `wsh(multi(2,${keys.desc_xpub}/0/*,${keys.desc_xpub}/1/*))`,
+    },
+    sortedMultiSig: {
+      key: `wsh(sortedmulti(2,${keys.desc_xpub2}/0/*,${keys.desc_xpub}/0/*))`,
+    },
+    mixedKeyTypes: {
+      key: `wsh(multi(2,${keys.desc_ypub}/0/*,${keys.desc_zpub}/0/*))`,
+    },
   };
 };
 

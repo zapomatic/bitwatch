@@ -363,7 +363,15 @@ export const addExtendedKey = async (
 export const addDescriptor = async (
   page,
   collection,
-  { name, descriptor, skip, gapLimit, initialAddresses, monitor }
+  {
+    name,
+    descriptor,
+    skip,
+    gapLimit,
+    initialAddresses,
+    monitor,
+    derivationPath,
+  }
 ) => {
   await findAndClick(page, `[data-testid="${collection}-add-descriptor"]`);
 

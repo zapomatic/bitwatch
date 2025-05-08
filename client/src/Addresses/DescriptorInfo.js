@@ -155,20 +155,16 @@ const DescriptorInfo = ({
           </Box>
         </TableCell>
         <TableCell>
-          <Typography variant="body2">
-            {descriptor.derivationPath || "m/0"}
-          </Typography>
+          <Typography variant="body2">{descriptor.derivationPath}</Typography>
         </TableCell>
         <TableCell>
           <Typography variant="body2">{descriptor.gapLimit}</Typography>
         </TableCell>
         <TableCell>
-          <Typography variant="body2">{descriptor.skip || 0}</Typography>
+          <Typography variant="body2">{descriptor.skip}</Typography>
         </TableCell>
         <TableCell>
-          <Typography variant="body2">
-            {descriptor.initialAddresses || 10}
-          </Typography>
+          <Typography variant="body2">{descriptor.initialAddresses}</Typography>
         </TableCell>
         <TableCell>
           <Typography variant="body2">{descriptor.addresses.length}</Typography>
