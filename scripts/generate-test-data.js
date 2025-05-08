@@ -243,7 +243,7 @@ const generateTestAddresses = (keys) => {
     }
 
     // Set skip values to match our test configuration
-    const skip = keyName === "xpub1" ? 2 : 0; // xpub1 has skip=2 in our test
+    const skip = 0; // xpub1 has skip=2 in our test
     console.log(
       `Processing extended key ${keyName} of type ${keyType} with skip=${skip}`
     );
@@ -260,12 +260,18 @@ const generateTestAddresses = (keys) => {
   const descriptors = generateTestDescriptors(keys);
   Object.entries(descriptors).forEach(([name, descriptor]) => {
     console.log(`Processing descriptor ${name}`);
-    // For descriptors, we'll use the first key in the descriptor to generate addresses
-    // This is a simplification - in reality descriptor addresses would be generated differently
-    const firstKey = descriptor.match(/[xyz]pub[A-Za-z0-9]+/)[0];
-    const keyType = firstKey.toLowerCase().startsWith("zpub")
+
+    // Parse the descriptor to get the key and path
+    const keyMatch = descriptor.match(/[xyz]pub[A-Za-z0-9]+\/[^)]+/);
+    if (!keyMatch) {
+      console.error(`Could not parse key from descriptor: ${descriptor}`);
+      return;
+    }
+
+    const [key, path] = keyMatch[0].split("/");
+    const keyType = key.toLowerCase().startsWith("zpub")
       ? "zpub"
-      : firstKey.toLowerCase().startsWith("ypub")
+      : key.toLowerCase().startsWith("ypub")
       ? "ypub"
       : "xpub";
 
@@ -273,15 +279,121 @@ const generateTestAddresses = (keys) => {
     const skip = name === "xpubSingle" ? 1 : 0; // xpubSingle has skip=1 in our test
     console.log(`Using skip=${skip} for descriptor ${name}`);
 
+    // Generate addresses using the proper derivation path
+    const addresses = [];
+    const node = bip32.fromBase58(key, NETWORKS[keyType]);
+    if (!node) {
+      console.error(`Failed to decode key: ${key}`);
+      return;
+    }
+
+    // Derive the base node using the path from the descriptor
+    let baseNode = node;
+    const pathParts = path.split("/");
+    for (const part of pathParts) {
+      if (part === "*") continue; // Skip the wildcard, we'll handle it in the loop
+      const index = parseInt(part);
+      if (isNaN(index)) {
+        console.error(`Invalid path component: ${part}`);
+        return;
+      }
+      baseNode = baseNode.derive(index);
+    }
+
+    // Generate addresses using the proper derivation
+    for (let i = 0; i < 6; i++) {
+      const actualIndex = i + skip;
+      const child = baseNode.derive(actualIndex);
+      let address;
+
+      if (descriptor.startsWith("pkh(")) {
+        // P2PKH (legacy)
+        address = bitcoin.payments.p2pkh({
+          pubkey: child.publicKey,
+          network: bitcoin.networks.bitcoin,
+        }).address;
+      } else if (descriptor.startsWith("sh(wpkh(")) {
+        // P2SH-P2WPKH (nested SegWit)
+        address = bitcoin.payments.p2sh({
+          redeem: bitcoin.payments.p2wpkh({
+            pubkey: child.publicKey,
+            network: bitcoin.networks.bitcoin,
+          }),
+          network: bitcoin.networks.bitcoin,
+        }).address;
+      } else if (descriptor.startsWith("wpkh(")) {
+        // P2WPKH (native SegWit)
+        address = bitcoin.payments.p2wpkh({
+          pubkey: child.publicKey,
+          network: bitcoin.networks.bitcoin,
+        }).address;
+      } else if (
+        descriptor.startsWith("wsh(multi(") ||
+        descriptor.startsWith("wsh(sortedmulti(")
+      ) {
+        // For multi-sig, we need to derive all keys and create the script
+        const keys = descriptor.match(/[xyz]pub[A-Za-z0-9]+\/[^,)]+/g);
+        if (!keys) {
+          console.error(
+            `Could not parse keys from multi-sig descriptor: ${descriptor}`
+          );
+          return;
+        }
+
+        const threshold = parseInt(descriptor.match(/multi\((\d+),/)[1]);
+        const pubkeys = [];
+
+        for (const keyStr of keys) {
+          const [key, path] = keyStr.split("/");
+          const keyNode = bip32.fromBase58(key, NETWORKS[keyType]);
+          if (!keyNode) {
+            console.error(`Failed to decode key: ${key}`);
+            return;
+          }
+
+          let keyBaseNode = keyNode;
+          const keyPathParts = path.split("/");
+          for (const part of keyPathParts) {
+            if (part === "*") continue;
+            const index = parseInt(part);
+            if (isNaN(index)) {
+              console.error(`Invalid path component: ${part}`);
+              return;
+            }
+            keyBaseNode = keyBaseNode.derive(index);
+          }
+          pubkeys.push(keyBaseNode.derive(actualIndex).publicKey);
+        }
+
+        // Sort pubkeys if it's a sortedmulti
+        const sortedPubkeys = descriptor.startsWith("wsh(sortedmulti(")
+          ? pubkeys.sort((a, b) => a.compare(b))
+          : pubkeys;
+
+        address = bitcoin.payments.p2wsh({
+          redeem: bitcoin.payments.p2ms({
+            m: threshold,
+            pubkeys: sortedPubkeys,
+          }),
+          network: bitcoin.networks.bitcoin,
+        }).address;
+      }
+
+      if (!address) {
+        console.error(`Failed to generate address at index ${actualIndex}`);
+        continue;
+      }
+
+      addresses.push({
+        index: actualIndex,
+        address,
+      });
+    }
+
     result.descriptors[name] = {
       key: descriptor,
       type: keyType,
-      addresses: generateAddressesForKey(
-        firstKey,
-        keyType,
-        NETWORKS[keyType],
-        skip
-      ),
+      addresses,
     };
   });
 
