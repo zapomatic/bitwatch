@@ -1,4 +1,5 @@
 import { test as base, expect } from "@playwright/test";
+import { set } from "express/lib/application";
 import fs from "fs";
 import path from "path";
 
@@ -267,33 +268,7 @@ export const addAddress = async (
   });
 };
 
-export const addExtendedKey = async (
-  page,
-  collection,
-  { name, key, derivationPath, skip, gapLimit, initialAddresses, monitor }
-) => {
-  await findAndClick(page, `[data-testid="${collection}-add-extended-key"]`);
-
-  // Wait for dialog to be visible
-  await page.waitForSelector('[data-testid="extended-key-dialog"]', {
-    state: "visible",
-    timeout: 2000,
-  });
-
-  // Fill in the form fields
-  await page.fill('[data-testid="extended-key-name-input"]', name);
-  await page.fill('[data-testid="extended-key-key-input"]', key);
-  await page.fill('[data-testid="extended-key-path-input"]', derivationPath);
-  await page.fill('[data-testid="extended-key-skip-input"]', skip.toString());
-  await page.fill(
-    '[data-testid="extended-key-gap-input"]',
-    gapLimit.toString()
-  );
-  await page.fill(
-    '[data-testid="extended-key-initial-input"]',
-    initialAddresses.toString()
-  );
-
+const setMonitoring = async (page, monitor) => {
   // Set monitoring options if provided
   if (monitor) {
     // Chain In monitoring
@@ -324,6 +299,39 @@ export const addExtendedKey = async (
       .getByTestId(`address-monitor-mempool-out-${monitor.mempool_out}`)
       .click();
   }
+};
+
+export const addExtendedKey = async (
+  page,
+  collection,
+  { name, key, derivationPath, skip, gapLimit, initialAddresses, monitor }
+) => {
+  await findAndClick(page, `[data-testid="${collection}-add-extended-key"]`);
+
+  // Wait for dialog to be visible
+  await page.waitForSelector('[data-testid="extended-key-dialog"]', {
+    state: "visible",
+    timeout: 2000,
+  });
+
+  // Fill in the form fields
+  await page.fill('[data-testid="extended-key-name-input"]', name);
+  await page.fill('[data-testid="extended-key-key-input"]', key);
+  await page.fill('[data-testid="extended-key-path-input"]', derivationPath);
+  await page.fill('[data-testid="extended-key-skip-input"]', skip.toString());
+  await page.fill(
+    '[data-testid="extended-key-gap-input"]',
+    gapLimit.toString()
+  );
+  await page.fill(
+    '[data-testid="extended-key-initial-input"]',
+    initialAddresses.toString()
+  );
+
+  // Set monitoring options if provided
+  if (monitor) {
+    await setMonitoring(page, monitor);
+  }
 
   // Click the Add button - allow clicking in overlay since it's in a dialog
   await findAndClick(page, '[data-testid="extended-key-submit-button"]', {
@@ -340,7 +348,7 @@ export const addExtendedKey = async (
 export const addDescriptor = async (
   page,
   collection,
-  { name, descriptor, skip, gapLimit, initialAddresses }
+  { name, descriptor, skip, gapLimit, initialAddresses, monitor }
 ) => {
   await findAndClick(page, `[data-testid="${collection}-add-descriptor"]`);
 
@@ -359,6 +367,11 @@ export const addDescriptor = async (
     '[data-testid="descriptor-initial-input"]',
     initialAddresses.toString()
   );
+
+  // Set monitoring options if provided
+  if (monitor) {
+    await setMonitoring(page, monitor);
+  }
 
   // Click the Add button - allow clicking in overlay since it's in a dialog
   await findAndClick(page, '[data-testid="descriptor-submit-button"]', {

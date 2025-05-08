@@ -17,8 +17,11 @@ export const addExtendedKey = async ({ data, io }) => {
   }
 
   logger.info(
-    `Adding extended key ${data.collection}/${data.name}, path: ${data.derivationPath}, gap: ${data.gapLimit}, skip: ${data.skip}, initial: ${data.initialAddresses}`,
-    getMonitorLog(data.monitor)
+    `Adding extended key ${data.collection}/${data.name}, path: ${
+      data.derivationPath
+    }, gap: ${data.gapLimit}, skip: ${data.skip}, initial: ${
+      data.initialAddresses
+    }, ${getMonitorLog(data.monitor)}`
   );
 
   // Create collection if it doesn't exist

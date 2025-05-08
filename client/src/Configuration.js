@@ -5,18 +5,10 @@ import Typography from "@mui/material/Typography";
 import Grid from "@mui/material/Grid";
 import Title from "./Title";
 import "./theme.css";
-import {
-  FormControlLabel,
-  Switch,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-} from "@mui/material";
+import { FormControlLabel, Switch } from "@mui/material";
 import CrystalNotification from "./components/CrystalNotification";
 import { Box } from "@mui/material";
-import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import MonitorSettings from "./components/MonitorSettings";
 
 import { DEFAULT_CONFIG, PRIVATE_CONFIG } from "./config";
 
@@ -123,41 +115,6 @@ function Config() {
     );
   };
 
-  const renderMonitorSelect = (label, value, onChange) => (
-    <FormControl fullWidth>
-      <InputLabel>{label}</InputLabel>
-      <Select
-        value={value}
-        onChange={onChange}
-        label={label}
-        sx={{
-          "& .MuiOutlinedInput-notchedOutline": {
-            borderColor: "var(--theme-secondary)",
-          },
-          "&:hover .MuiOutlinedInput-notchedOutline": {
-            borderColor: "var(--theme-primary)",
-          },
-        }}
-      >
-        <MenuItem value="alert">
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <NotificationsActiveIcon
-              color="warning"
-              sx={{ fontSize: "1rem" }}
-            />
-            <Typography>Alert</Typography>
-          </Box>
-        </MenuItem>
-        <MenuItem value="auto-accept">
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <CheckCircleIcon color="success" sx={{ fontSize: "1rem" }} />
-            <Typography>Auto Accept</Typography>
-          </Box>
-        </MenuItem>
-      </Select>
-    </FormControl>
-  );
-
   const renderConfigField = (key) => {
     if (key === "debugLogging") {
       return (
@@ -207,75 +164,21 @@ function Config() {
           <Typography component="label" className="crystal-label">
             {Configs[key].label}
           </Typography>
-          <Grid
-            container
-            spacing={2}
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                md: "repeat(2, 1fr)",
-              },
-              gap: 2,
+          <MonitorSettings
+            value={{
+              chain_in: config.monitor?.chain_in || "auto-accept",
+              chain_out: config.monitor?.chain_out || "alert",
+              mempool_in: config.monitor?.mempool_in || "auto-accept",
+              mempool_out: config.monitor?.mempool_out || "alert",
             }}
-          >
-            <Grid item>
-              {renderMonitorSelect(
-                "Chain In",
-                config.monitor?.chain_in || "auto-accept",
-                (e) =>
-                  setConfig({
-                    ...config,
-                    monitor: {
-                      ...(config.monitor || {}),
-                      chain_in: e.target.value,
-                    },
-                  })
-              )}
-            </Grid>
-            <Grid item>
-              {renderMonitorSelect(
-                "Chain Out",
-                config.monitor?.chain_out || "alert",
-                (e) =>
-                  setConfig({
-                    ...config,
-                    monitor: {
-                      ...(config.monitor || {}),
-                      chain_out: e.target.value,
-                    },
-                  })
-              )}
-            </Grid>
-            <Grid item>
-              {renderMonitorSelect(
-                "Mempool In",
-                config.monitor?.mempool_in || "auto-accept",
-                (e) =>
-                  setConfig({
-                    ...config,
-                    monitor: {
-                      ...(config.monitor || {}),
-                      mempool_in: e.target.value,
-                    },
-                  })
-              )}
-            </Grid>
-            <Grid item>
-              {renderMonitorSelect(
-                "Mempool Out",
-                config.monitor?.mempool_out || "alert",
-                (e) =>
-                  setConfig({
-                    ...config,
-                    monitor: {
-                      ...(config.monitor || {}),
-                      mempool_out: e.target.value,
-                    },
-                  })
-              )}
-            </Grid>
-          </Grid>
+            onChange={(newMonitor) =>
+              setConfig({
+                ...config,
+                monitor: newMonitor,
+              })
+            }
+            title="Default Monitor Settings"
+          />
           <Box sx={{ mt: 2 }}>
             <FormControlLabel
               control={

@@ -9,8 +9,11 @@ export const addDescriptor = async ({ data, io }) => {
   }
 
   logger.info(
-    `Adding descriptor ${data.collection}/${data.name}, gap: ${data.gapLimit}, skip: ${data.skip}, initial: ${data.initialAddresses}`,
-    getMonitorLog(data.monitor)
+    `Adding descriptor ${data.collection}/${data.name}, gap: ${
+      data.gapLimit
+    }, skip: ${data.skip}, initial: ${data.initialAddresses}, ${getMonitorLog(
+      data.monitor
+    )}`
   );
 
   // Validate descriptor
