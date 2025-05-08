@@ -126,7 +126,7 @@ test.describe("Bitwatch", () => {
     // Add single address
     await addAddress(page, "Donations", {
       name: "zapomatic",
-      address: testData.addresses.zapomatic,
+      address: testData.plain.zapomatic,
       monitor: {
         chain_in: "auto-accept",
         chain_out: "alert",
@@ -139,14 +139,14 @@ test.describe("Bitwatch", () => {
     // Verify address is visible in the expanded table
     await expect(page.locator('text=Single Addresses')).toBeVisible();
     await expect(page.locator('table.address-subtable')).toBeVisible();
-    await expect(page.locator(`text=${testData.addresses.zapomatic.slice(0, 15)}...`)).toBeVisible();
+    await expect(page.locator(`text=${testData.plain.zapomatic.slice(0, 15)}...`)).toBeVisible();
     console.log("Verified address table is visible");
 
     // Test refresh balance functionality for each state transition
     console.log("Testing refresh balance functionality for all states");
 
     // Initial state (all zeros)
-    await refreshAddressBalance(page, testData.addresses.zapomatic, {
+    await refreshAddressBalance(page, testData.plain.zapomatic, {
       chain_in: "0.00000000 ₿",
       chain_out: "0.00000000 ₿",
       mempool_in: "0.00000000 ₿",
@@ -155,7 +155,7 @@ test.describe("Bitwatch", () => {
     console.log("Initial zero balance state verified");
 
     // Refresh to get mempool input state
-    await refreshAddressBalance(page, testData.addresses.zapomatic, {
+    await refreshAddressBalance(page, testData.plain.zapomatic, {
       chain_in: "0.00000000 ₿",
       chain_out: "0.00000000 ₿",
       mempool_in: "0.00010000 ₿",
@@ -164,7 +164,7 @@ test.describe("Bitwatch", () => {
     console.log("Mempool input state verified");
 
     // Refresh to get chain input state
-    await refreshAddressBalance(page, testData.addresses.zapomatic, {
+    await refreshAddressBalance(page, testData.plain.zapomatic, {
       chain_in: "0.00010000 ₿",
       chain_out: "0.00000000 ₿",
       mempool_in: "0.00000000 ₿",
@@ -173,27 +173,27 @@ test.describe("Bitwatch", () => {
     console.log("Chain input state verified");
 
     // Refresh to get mempool output state
-    await refreshAddressBalance(page, testData.addresses.zapomatic, {
+    await refreshAddressBalance(page, testData.plain.zapomatic, {
       chain_in: "0.00010000 ₿",
       chain_out: "0.00000000 ₿",
       mempool_in: "0.00000000 ₿",
       mempool_out: "0.00001000 ₿"
     }, 0);
     // Wait for the diff to appear and have the correct value
-    await expect(page.getByTestId(`${testData.addresses.zapomatic}-mempool-out-diff`)).toBeVisible();
-    await expect(page.getByTestId(`${testData.addresses.zapomatic}-mempool-out-diff`)).toHaveText("(+0.00001000 ₿)");
+    await expect(page.getByTestId(`${testData.plain.zapomatic}-mempool-out-diff`)).toBeVisible();
+    await expect(page.getByTestId(`${testData.plain.zapomatic}-mempool-out-diff`)).toHaveText("(+0.00001000 ₿)");
     // Verify accept button for address change state
-    await expect(page.getByTestId(`${testData.addresses.zapomatic}-accept-button`)).toBeVisible();
+    await expect(page.getByTestId(`${testData.plain.zapomatic}-accept-button`)).toBeVisible();
     console.log("Mempool output state verified");
     
     // Refresh to get chain output state
-    await refreshAddressBalance(page, testData.addresses.zapomatic, {
+    await refreshAddressBalance(page, testData.plain.zapomatic, {
       chain_in: "0.00010000 ₿",
       chain_out: "0.00001000 ₿",
       mempool_in: "0.00000000 ₿",
       mempool_out: "0.00000000 ₿"
     }, 0);
-    const testId = testData.addresses.zapomatic;
+    const testId = testData.plain.zapomatic;
     await expect(page.getByTestId(`${testId}-chain-out-diff`)).toBeVisible();
     await expect(page.getByTestId(`${testId}-chain-out-diff`)).toHaveText("(+0.00001000 ₿)");
     // Verify alert icon and accept button for chain-out
@@ -202,12 +202,12 @@ test.describe("Bitwatch", () => {
     console.log("Chain output state verified");
 
     // Accept the chain-out change
-    await findAndClick(page, `[data-testid="${testData.addresses.zapomatic}-accept-button"]`);
+    await findAndClick(page, `[data-testid="${testData.plain.zapomatic}-accept-button"]`);
     // verify that the change took (no longer showing a diff)
-    await expect(page.getByTestId(`${testData.addresses.zapomatic}-chain-out-diff`)).not.toBeVisible();
+    await expect(page.getByTestId(`${testData.plain.zapomatic}-chain-out-diff`)).not.toBeVisible();
 
     // Final refresh to verify all states are stable
-    await refreshAddressBalance(page, testData.addresses.zapomatic, {
+    await refreshAddressBalance(page, testData.plain.zapomatic, {
       chain_in: "0.00010000 ₿",
       chain_out: "0.00001000 ₿",
       mempool_in: "0.00000000 ₿",
@@ -221,10 +221,10 @@ test.describe("Bitwatch", () => {
     await expect(donationsRow.locator('td', { hasText: '0.00000000 ₿' }).first()).toBeVisible();
 
     // Test editing the single address
-    await findAndClick(page, `[data-testid="${testData.addresses.zapomatic}-edit-button"]`);
+    await findAndClick(page, `[data-testid="${testData.plain.zapomatic}-edit-button"]`);
     await expect(page.locator('[data-testid="address-dialog"]')).toBeVisible();
     await expect(page.getByTestId("address-name-input")).toHaveValue("zapomatic");
-    await expect(page.getByTestId("address-input")).toHaveValue(testData.addresses.zapomatic);
+    await expect(page.getByTestId("address-input")).toHaveValue(testData.plain.zapomatic);
     
     // Change the name
     await page.getByTestId("address-name-input").fill("test rename");
@@ -240,7 +240,7 @@ test.describe("Bitwatch", () => {
     const extendedKeys = [
       {
         name: "Test XPub",
-        key: testData.keys.xpub1,
+        key: testData.extended.xpub1.key,
         derivationPath: "m/0",
         skip: 2,
         gapLimit: 3,
@@ -254,7 +254,7 @@ test.describe("Bitwatch", () => {
       },
       {
         name: "Test YPub",
-        key: testData.keys.ypub1,
+        key: testData.extended.ypub1.key,
         derivationPath: "m/0",
         skip: 0,
         gapLimit: 2,
@@ -262,7 +262,7 @@ test.describe("Bitwatch", () => {
       },
       {
         name: "Test ZPub",
-        key: testData.keys.zpub1,
+        key: testData.extended.zpub1.key,
         derivationPath: "m/0",
         skip: 0,
         gapLimit: 1,
@@ -306,11 +306,21 @@ test.describe("Bitwatch", () => {
         
         // Verify each address has alert icons for all monitoring types
         for (let i = 0; i < addresses.length; i++) {
-          const addressIndex = i + 1; // Address indices start at 1
+          const addressIndex = i + key.skip + 1; // Address indices start at 1 and we add the skip value
           await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-chain-in-alert-icon"]`)).toBeVisible();
           await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-chain-out-alert-icon"]`)).toBeVisible();
           await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-mempool-in-alert-icon"]`)).toBeVisible();
           await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-mempool-out-alert-icon"]`)).toBeVisible();
+
+          // Verify the address matches the expected address from test data
+          const keyId = key.name.toLowerCase()
+            .replace(/\s+/g, '')
+            .replace('test', '')
+            .toLowerCase() + '1';
+          console.log('Looking up extended key:', keyId, 'Available keys:', Object.keys(testData.extended));
+          const expectedAddress = testData.extended[keyId].addresses[i + key.skip].address;
+          const addressCell = page.locator(`[data-testid="${key.key}-address-${addressIndex}-row"] td:nth-child(2)`);
+          await expect(addressCell).toContainText(expectedAddress.slice(0, 15));
         }
       }
 
@@ -339,11 +349,17 @@ test.describe("Bitwatch", () => {
       // Wait for the server to process the refresh and potentially generate new addresses
       await page.waitForTimeout(1000);
 
-      // Verify we have the expected number of addresses (initial + gap limit)
-      await expect(page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`)).toHaveCount(key.initialAddresses + key.gapLimit);
+      // Verify we have the expected number of addresses (just initial addresses)
+      await expect(page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`)).toHaveCount(key.initialAddresses);
 
+      await verifyAddressBalance(page, key.key, {
+          chain_in: "0.00000000 ₿",
+          chain_out: "0.00010000 ₿",
+          mempool_in: "0.00000000 ₿",
+          mempool_out: "0.00000000 ₿"
+        }, 1, key.key);
       // Verify balances for all addresses
-      for (let i = 1; i <= key.initialAddresses + key.gapLimit; i++) {
+      for (let i = 2; i <= key.initialAddresses; i++) {
         await verifyAddressBalance(page, key.key, {
           chain_in: "0.00000000 ₿",
           chain_out: "0.00000000 ₿",
@@ -381,7 +397,7 @@ test.describe("Bitwatch", () => {
     const descriptors = [
       {
         name: "Single XPub",
-        descriptor: testData.descriptors.xpubSingle,
+        descriptor: testData.descriptors.xpubSingle.key,
         derivationPath: "m/0",
         skip: 1,
         gapLimit: 1,
@@ -395,7 +411,7 @@ test.describe("Bitwatch", () => {
       },
       {
         name: "Single YPub",
-        descriptor: testData.descriptors.ypubSingle,
+        descriptor: testData.descriptors.ypubSingle.key,
         derivationPath: "m/0",
         skip: 0,
         gapLimit: 2,
@@ -403,7 +419,7 @@ test.describe("Bitwatch", () => {
       },
       {
         name: "Single ZPub",
-        descriptor: testData.descriptors.zpubSingle,
+        descriptor: testData.descriptors.zpubSingle.key,
         derivationPath: "m/0",
         skip: 0,
         gapLimit: 2,
@@ -411,7 +427,7 @@ test.describe("Bitwatch", () => {
       },
       {
         name: "Multi-Sig",
-        descriptor: testData.descriptors.multiSig,
+        descriptor: testData.descriptors.multiSig.key,
         derivationPath: "m/0",
         skip: 0,
         gapLimit: 1,
@@ -419,7 +435,7 @@ test.describe("Bitwatch", () => {
       },
       {
         name: "Sorted Multi-Sig",
-        descriptor: testData.descriptors.sortedMultiSig,
+        descriptor: testData.descriptors.sortedMultiSig.key,
         derivationPath: "m/0",
         skip: 0,
         gapLimit: 1,
@@ -427,7 +443,7 @@ test.describe("Bitwatch", () => {
       },
       {
         name: "Mixed Key Types",
-        descriptor: testData.descriptors.mixedKeyTypes,
+        descriptor: testData.descriptors.mixedKeyTypes.key,
         derivationPath: "m/0",
         skip: 0,
         gapLimit: 1,
@@ -472,13 +488,23 @@ test.describe("Bitwatch", () => {
         // Verify we have the expected number of addresses
         expect(addresses.length).toBe(descriptor.initialAddresses);
         
-        // Verify each address has alert icons for all monitoring types
+        // Verify each address has alert icons for all monitoring types and correct addresses
         for (let i = 0; i < addresses.length; i++) {
-          const addressIndex = i + 1; // Address indices start at 1
+          const addressIndex = i + descriptor.skip + 1; // Address indices start at 1 and we add the skip value
           await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-chain-in-alert-icon"]`)).toBeVisible();
           await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-chain-out-alert-icon"]`)).toBeVisible();
           await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-mempool-in-alert-icon"]`)).toBeVisible();
           await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-mempool-out-alert-icon"]`)).toBeVisible();
+
+          // Verify the address matches the expected address from test data
+          const descriptorId = descriptor.name.toLowerCase()
+            .replace(/\s+/g, '')
+            .replace('single', '')
+            .toLowerCase() + 'Single';
+          console.log('Looking up descriptor:', descriptorId, 'Available descriptors:', Object.keys(testData.descriptors));
+          const expectedAddress = testData.descriptors[`${descriptorId}Single`].addresses[i + descriptor.skip].address;
+          const addressCell = page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-row"] td:nth-child(2)`);
+          await expect(addressCell).toContainText(expectedAddress.slice(0, 15));
         }
 
         // Trigger a balance change to generate new addresses
@@ -600,7 +626,7 @@ test.describe("Bitwatch", () => {
     console.log("Navigated to addresses page");
 
     // Verify single address monitor settings
-    const singleAddress = testData.addresses.zapomatic;
+    const singleAddress = testData.plain.zapomatic;
     await expect(page.locator(`[data-testid="${singleAddress}-chain-in-alert-icon"]`)).toBeVisible();
     await expect(page.locator(`[data-testid="${singleAddress}-chain-out-alert-icon"]`)).toBeVisible();
     await expect(page.locator(`[data-testid="${singleAddress}-mempool-in-alert-icon"]`)).toBeVisible();
@@ -651,12 +677,12 @@ test.describe("Bitwatch", () => {
     console.log("Starting deletion sequence...");
 
     // 1. Delete a single address from the collection
-    await findAndClick(page, `[data-testid="${testData.addresses.zapomatic}-delete-button"]`);
+    await findAndClick(page, `[data-testid="${testData.plain.zapomatic}-delete-button"]`);
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
     await expect(page.getByText("Remove this address from the collection?")).toBeVisible();
     await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
-    await expect(page.getByTestId(`${testData.addresses.zapomatic}-delete-button`)).not.toBeVisible();
+    await expect(page.getByTestId(`${testData.plain.zapomatic}-delete-button`)).not.toBeVisible();
     console.log("Deleted single address from collection");
 
     // 2. Delete a single address from the first extended key

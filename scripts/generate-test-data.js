@@ -157,15 +157,78 @@ const generateTestKeys = () => {
 };
 
 // Generate test addresses from keys
-const generateTestAddresses = (keys) => {
-  const addresses = {};
+const generateAddressesForKey = (key, keyType, network, skip = 0) => {
+  const node = bip32.fromBase58(key, network);
+  if (!node) {
+    console.error(`Failed to decode key: ${key}`);
+    return [];
+  }
 
-  // Generate addresses for each key type
+  const addresses = [];
+  // Generate first 6 addresses for each key, taking skip into account
+  for (let i = 0; i < 6; i++) {
+    const actualIndex = i + skip;
+    console.log(
+      `Generating address at index ${actualIndex} (base index ${i} + skip ${skip})`
+    );
+    const child = node.derive(0).derive(actualIndex);
+    let address;
+
+    if (keyType === "xpub") {
+      // P2PKH (legacy)
+      const { address: p2pkh } = bitcoin.payments.p2pkh({
+        pubkey: child.publicKey,
+        network: bitcoin.networks.bitcoin,
+      });
+      address = p2pkh;
+    } else if (keyType === "ypub") {
+      // P2SH-P2WPKH (nested SegWit)
+      const { address: p2sh } = bitcoin.payments.p2sh({
+        redeem: bitcoin.payments.p2wpkh({
+          pubkey: child.publicKey,
+          network: bitcoin.networks.bitcoin,
+        }),
+        network: bitcoin.networks.bitcoin,
+      });
+      address = p2sh;
+    } else if (keyType === "zpub") {
+      // P2WPKH (native SegWit)
+      const { address: p2wpkh } = bitcoin.payments.p2wpkh({
+        pubkey: child.publicKey,
+        network: bitcoin.networks.bitcoin,
+      });
+      address = p2wpkh;
+    }
+
+    if (!address) {
+      console.error(`Failed to generate address at index ${actualIndex}`);
+      continue;
+    }
+
+    addresses.push({
+      index: actualIndex,
+      address,
+    });
+  }
+
+  return addresses;
+};
+
+const generateTestAddresses = (keys) => {
+  const result = {
+    plain: {
+      zapomatic: "bc1q67csgqm9muhynyd864tj2p48g8gachyg2nwara",
+    },
+    extended: {},
+    descriptors: {},
+  };
+
+  // Process extended keys
   Object.entries(keys).forEach(([keyName, key]) => {
-    // Skip descriptor keys as they're handled separately
+    // Skip descriptor keys
     if (keyName.startsWith("desc_")) return;
 
-    // Determine key type from the key prefix instead of the key name
+    // Determine key type from the key prefix
     let keyType;
     const keyLower = key.toLowerCase();
     if (keyLower.startsWith("zpub")) {
@@ -179,65 +242,50 @@ const generateTestAddresses = (keys) => {
       return;
     }
 
-    console.log(`Processing key ${keyName} of type ${keyType}`);
+    // Set skip values to match our test configuration
+    const skip = keyName === "xpub1" ? 2 : 0; // xpub1 has skip=2 in our test
+    console.log(
+      `Processing extended key ${keyName} of type ${keyType} with skip=${skip}`
+    );
     const network = NETWORKS[keyType];
-    console.log(`Using network:`, network);
 
-    const node = bip32.fromBase58(key, network);
-    if (!node) {
-      console.error(`Failed to decode key: ${keyName}`);
-      return;
-    }
-
-    addresses[keyName] = {
+    result.extended[keyName] = {
       key,
-      addresses: [],
+      type: keyType,
+      addresses: generateAddressesForKey(key, keyType, network, skip),
     };
-
-    // Generate first 5 addresses for each key
-    for (let i = 0; i < 5; i++) {
-      const child = node.derive(0).derive(i);
-      let address;
-
-      if (keyType === "xpub") {
-        // P2PKH (legacy)
-        const { address: p2pkh } = bitcoin.payments.p2pkh({
-          pubkey: child.publicKey,
-          network: bitcoin.networks.bitcoin,
-        });
-        address = p2pkh;
-      } else if (keyType === "ypub") {
-        // P2SH-P2WPKH (nested SegWit)
-        const { address: p2sh } = bitcoin.payments.p2sh({
-          redeem: bitcoin.payments.p2wpkh({
-            pubkey: child.publicKey,
-            network: bitcoin.networks.bitcoin,
-          }),
-          network: bitcoin.networks.bitcoin,
-        });
-        address = p2sh;
-      } else if (keyType === "zpub") {
-        // P2WPKH (native SegWit)
-        const { address: p2wpkh } = bitcoin.payments.p2wpkh({
-          pubkey: child.publicKey,
-          network: bitcoin.networks.bitcoin,
-        });
-        address = p2wpkh;
-      }
-
-      if (!address) {
-        console.error(`Failed to generate address at index ${i}`);
-        return;
-      }
-
-      addresses[keyName].addresses.push({
-        index: i,
-        address,
-      });
-    }
   });
 
-  return addresses;
+  // Process descriptors
+  const descriptors = generateTestDescriptors(keys);
+  Object.entries(descriptors).forEach(([name, descriptor]) => {
+    console.log(`Processing descriptor ${name}`);
+    // For descriptors, we'll use the first key in the descriptor to generate addresses
+    // This is a simplification - in reality descriptor addresses would be generated differently
+    const firstKey = descriptor.match(/[xyz]pub[A-Za-z0-9]+/)[0];
+    const keyType = firstKey.toLowerCase().startsWith("zpub")
+      ? "zpub"
+      : firstKey.toLowerCase().startsWith("ypub")
+      ? "ypub"
+      : "xpub";
+
+    // Set skip values to match our test configuration
+    const skip = name === "xpubSingle" ? 1 : 0; // xpubSingle has skip=1 in our test
+    console.log(`Using skip=${skip} for descriptor ${name}`);
+
+    result.descriptors[name] = {
+      key: descriptor,
+      type: keyType,
+      addresses: generateAddressesForKey(
+        firstKey,
+        keyType,
+        NETWORKS[keyType],
+        skip
+      ),
+    };
+  });
+
+  return result;
 };
 
 // Generate test descriptors
@@ -258,19 +306,11 @@ const generateTestDescriptors = (keys) => {
 const main = async () => {
   const testKeys = generateTestKeys();
   const testAddresses = generateTestAddresses(testKeys);
-  const testDescriptors = generateTestDescriptors(testKeys);
-  testAddresses.zapomatic = "bc1q67csgqm9muhynyd864tj2p48g8gachyg2nwara";
-
-  const testData = {
-    keys: testKeys,
-    addresses: testAddresses,
-    descriptors: testDescriptors,
-  };
 
   // Save to file
   const outputPath = path.join(__dirname, "../test-data/keys.json");
   await fs.mkdir(path.dirname(outputPath), { recursive: true });
-  await fs.writeFile(outputPath, JSON.stringify(testData, null, 2));
+  await fs.writeFile(outputPath, JSON.stringify(testAddresses, null, 2));
   console.log("Test data generated and saved to:", outputPath);
 };
 
