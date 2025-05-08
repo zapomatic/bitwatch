@@ -82,52 +82,77 @@ const generateTestKeys = () => {
     desc_zpub: bip32.fromSeed(seeds.desc_zpub, NETWORKS.zpub),
   };
 
+  // Define derivation paths for each key type
+  const derivationPaths = {
+    xpub: {
+      receive: "m/44/0/0", // Legacy receive
+      change: "m/44/0/1", // Legacy change
+      test: "m/44/0/2", // Test path
+    },
+    ypub: {
+      receive: "m/49/0/0", // P2SH-P2WPKH receive
+      change: "m/49/0/1", // P2SH-P2WPKH change
+      test: "m/49/0/2", // Test path
+    },
+    zpub: {
+      receive: "m/84/0/0", // Native SegWit receive
+      change: "m/84/0/1", // Native SegWit change
+      test: "m/84/0/2", // Test path
+    },
+  };
+
   // Derive test keys for extended keys
   // Call .toBase58() without arguments to use the node's inherent network
-  const xpub1 = roots.xpub.derivePath("m/44'/0'/0'").neutered().toBase58();
+  const xpub1 = roots.xpub
+    .derivePath(derivationPaths.xpub.receive)
+    .neutered()
+    .toBase58();
   console.log("Generated xpub1:", xpub1);
 
-  const xpub2 = roots.xpub.derivePath("m/44'/0'/1'").neutered().toBase58();
+  const xpub2 = roots.xpub
+    .derivePath(derivationPaths.xpub.change)
+    .neutered()
+    .toBase58();
   console.log("Generated xpub2:", xpub2);
 
   // Generate ypub with correct format
   const ypub1 = roots.ypub
-    .derivePath("m/49'/0'/0'") // Standard path for P2SH-P2WPKH
+    .derivePath(derivationPaths.ypub.receive)
     .neutered()
-    .toBase58(); // Will use NETWORKS.ypub due to root node's initialization
-  console.log("Generated ypub1:", ypub1); // Should now start with 'ypub'
+    .toBase58();
+  console.log("Generated ypub1:", ypub1);
 
   // Generate zpub with correct format
   const zpub1 = roots.zpub
-    .derivePath("m/84'/0'/0'") // Standard path for P2WPKH
+    .derivePath(derivationPaths.zpub.receive)
     .neutered()
-    .toBase58(); // Will use NETWORKS.zpub due to root node's initialization
-  console.log("Generated zpub1:", zpub1); // Should now start with 'zpub'
+    .toBase58();
+  console.log("Generated zpub1:", zpub1);
 
   // Derive test keys for descriptors
   const desc_xpub = roots.desc_xpub
-    .derivePath("m/44'/0'/0'")
+    .derivePath(derivationPaths.xpub.receive)
     .neutered()
     .toBase58();
   console.log("Generated desc_xpub:", desc_xpub);
 
   const desc_xpub2 = roots.desc_xpub2
-    .derivePath("m/44'/0'/0'")
+    .derivePath(derivationPaths.xpub.receive)
     .neutered()
     .toBase58();
   console.log("Generated desc_xpub2:", desc_xpub2);
 
   const desc_ypub = roots.desc_ypub
-    .derivePath("m/49'/0'/0'")
+    .derivePath(derivationPaths.ypub.receive)
     .neutered()
     .toBase58();
-  console.log("Generated desc_ypub:", desc_ypub); // Should now be ypub
+  console.log("Generated desc_ypub:", desc_ypub);
 
   const desc_zpub = roots.desc_zpub
-    .derivePath("m/84'/0'/0'")
+    .derivePath(derivationPaths.zpub.receive)
     .neutered()
     .toBase58();
-  console.log("Generated desc_zpub:", desc_zpub); // Should now be zpub
+  console.log("Generated desc_zpub:", desc_zpub);
 
   return {
     // Extended keys
@@ -140,14 +165,32 @@ const generateTestKeys = () => {
     desc_xpub2,
     desc_ypub,
     desc_zpub,
+    // Derivation paths
+    derivationPaths,
   };
 };
 
 // Generate test addresses from keys
-const generateAddressesForKey = (key, keyType, network, skip = 0) => {
+const generateAddressesForKey = (
+  key,
+  keyType,
+  network,
+  skip = 0,
+  derivationPath = "m/0"
+) => {
   // First decode using the correct network for the key type
   // This should now work as the key string will have the correct version bytes
-  const node = bip32.fromBase58(key, NETWORKS[keyType]);
+  let node;
+  try {
+    node = bip32.fromBase58(key, NETWORKS[keyType]);
+  } catch (error) {
+    console.error(
+      `Failed to decode key: ${key} with keyType ${keyType}`,
+      error
+    );
+    return { addresses: [], key };
+  }
+
   if (!node) {
     console.error(`Failed to decode key: ${key} with keyType ${keyType}`);
     return { addresses: [], key };
@@ -157,15 +200,21 @@ const generateAddressesForKey = (key, keyType, network, skip = 0) => {
   // Generate first 6 addresses for each key, taking skip into account
   for (let i = 0; i < 6; i++) {
     const actualIndex = i + skip;
-    // console.log( // Optional: uncomment for detailed logging
-    //   `Generating address at index ${actualIndex} (base index ${i} + skip ${skip}) for key ${key}`
-    // );
 
-    // For xpub/ypub/zpub used in this context, they are typically used as account-level keys.
-    // Addresses are derived from child keys at path /0/actualIndex (external chain) or /1/actualIndex (internal chain)
-    // The current derivation node.derive(0).derive(actualIndex) assumes the passed 'key' is already at account level
-    // and we are deriving chain (0 for external) and then address index.
-    const child = node.derive(0).derive(actualIndex); // Standard is 0 for receive, 1 for change
+    // Parse derivation path and get the base node
+    const pathParts = derivationPath.split("/").slice(1); // Remove 'm'
+    let baseNode = node;
+    for (const part of pathParts) {
+      const index = parseInt(part);
+      if (isNaN(index)) {
+        console.error("Invalid derivation path index");
+        return { addresses: [], key };
+      }
+      baseNode = baseNode.derive(index);
+    }
+
+    // Derive the final address index
+    const child = baseNode.derive(actualIndex);
     let address;
 
     if (keyType === "xpub") {
@@ -212,8 +261,9 @@ const generateTestAddresses = (keys) => {
   };
 
   // Process extended keys
-  for (const [name, key] of Object.entries(keys)) {
+  for (const [name, keyData] of Object.entries(keys)) {
     if (name.startsWith("desc_")) continue; // Skip descriptor keys for now
+    if (name === "derivationPaths") continue; // Skip the derivationPaths object
 
     // Determine key type from the key name
     let keyType;
@@ -226,20 +276,36 @@ const generateTestAddresses = (keys) => {
     }
 
     // Set skip values to match our test configuration
-    // const skip = name === "xpub1" ? 2 : 0; // xpub1 has skip=2 in our test
-    const skip = 0;
+    const skip = name === "xpub1" ? 2 : 0;
+
+    // Make sure we're passing the key string, not the key object
+    const keyString = typeof keyData === "string" ? keyData : keyData.key;
+    if (!keyString) {
+      console.error(`No key found for ${name}`);
+      continue;
+    }
+
+    // Get the appropriate derivation path based on the key name
+    let derivationPath;
+    if (name === "xpub1" || name === "ypub1" || name === "zpub1") {
+      derivationPath = keys.derivationPaths[keyType].receive;
+    } else if (name === "xpub2") {
+      derivationPath = keys.derivationPaths.xpub.change;
+    }
 
     const { addresses } = generateAddressesForKey(
-      key,
+      keyString,
       keyType,
       NETWORKS[keyType],
-      skip
+      skip,
+      derivationPath
     );
 
     result.extendedKeys[name] = {
-      key,
+      key: keyString,
       type: keyType,
       addresses,
+      derivationPath,
     };
   }
 
@@ -270,10 +336,23 @@ const generateTestAddresses = (keys) => {
       skip
     );
 
+    // Get the appropriate derivation path based on the descriptor type
+    let derivationPath;
+    if (name.includes("Single")) {
+      derivationPath = keys.derivationPaths[keyType].receive;
+    } else if (name.includes("Multi")) {
+      // For multi-sig, we use a combination of receive and change paths
+      derivationPath = `${keys.derivationPaths[keyType].receive},${keys.derivationPaths[keyType].change}`;
+    } else if (name === "mixedKeyTypes") {
+      // For mixed key types, we need both ypub and zpub paths
+      derivationPath = `${keys.derivationPaths.ypub.receive},${keys.derivationPaths.zpub.receive}`;
+    }
+
     result.descriptors[name] = {
       key: descriptor,
       type: keyType,
       addresses,
+      derivationPath,
     };
   }
 
