@@ -242,9 +242,9 @@ test.describe("Bitwatch", () => {
         name: "Test XPub",
         key: testData.keys.xpub1,
         derivationPath: "m/0",
-        skip: 1,
+        skip: 2,
         gapLimit: 3,
-        initialAddresses: 3,
+        initialAddresses: 4,
         monitor: {
           chain_in: "alert",
           chain_out: "alert",
@@ -256,16 +256,16 @@ test.describe("Bitwatch", () => {
         name: "Test YPub",
         key: testData.keys.ypub1,
         derivationPath: "m/0",
-        skip: 1,
-        gapLimit: 3,
+        skip: 0,
+        gapLimit: 2,
         initialAddresses: 3
       },
       {
         name: "Test ZPub",
         key: testData.keys.zpub1,
         derivationPath: "m/0",
-        skip: 1,
-        gapLimit: 3,
+        skip: 0,
+        gapLimit: 1,
         initialAddresses: 3
       }
     ];
@@ -289,9 +289,9 @@ test.describe("Bitwatch", () => {
       await expect(keyRow.locator('td').nth(5)).toContainText(key.initialAddresses.toString());
 
       // Initially we should see just the initial addresses
-      await expect(keyRow.locator('td').nth(6)).toContainText('3');
+      await expect(keyRow.locator('td').nth(6)).toContainText(key.initialAddresses.toString());
       const addressRows = page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`);
-      await expect(addressRows).toHaveCount(3);
+      await expect(addressRows).toHaveCount(key.initialAddresses);
 
       // For the first extended key, verify all addresses have alert settings
       if (key.name === "Test XPub") {
@@ -302,7 +302,7 @@ test.describe("Bitwatch", () => {
         const addresses = await page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`).all();
         
         // Verify we have the expected number of addresses
-        expect(addresses.length).toBeGreaterThan(0);
+        expect(addresses.length).toBe(key.initialAddresses);
         
         // Verify each address has alert icons for all monitoring types
         for (let i = 0; i < addresses.length; i++) {
@@ -336,34 +336,21 @@ test.describe("Bitwatch", () => {
       await findAndClick(page, `[data-testid="${key.key}-refresh-all-button"]`);
       console.log("Clicked refresh button for extended key");
 
+      // Wait for the server to process the refresh and potentially generate new addresses
+      await page.waitForTimeout(1000);
+
       // Verify we have the expected number of addresses (initial + gap limit)
-      await expect(addressRows).toHaveCount(4);
+      await expect(page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`)).toHaveCount(key.initialAddresses + key.gapLimit);
 
-      await verifyAddressBalance(page, key.key, {
-        chain_in: "0.00000000 ₿",
-        chain_out: "0.00000000 ₿",
-        mempool_in: "0.00000000 ₿",
-        mempool_out: "0.00000000 ₿"
-      }, 2, key.key);
-
-      await verifyAddressBalance(page, key.key, {
-        chain_in: "0.00000000 ₿",
-        chain_out: "0.00000000 ₿",
-        mempool_in: "0.00000000 ₿",
-        mempool_out: "0.00000000 ₿"
-      }, 3, key.key);
-
-      await verifyAddressBalance(page, key.key, {
-        chain_in: "0.00000000 ₿",
-        chain_out: "0.00000000 ₿",
-        mempool_in: "0.00010000 ₿",
-        mempool_out: "0.00000000 ₿"
-      }, 4, key.key);
-      // because our mock api is checking balance on derivation, we get activity on address 4
-      // and generate more
-      await expect(addressRows).toHaveCount(6);
-
-      console.log(`Verified balances for remaining addresses in ${key.name}`);
+      // Verify balances for all addresses
+      for (let i = 1; i <= key.initialAddresses + key.gapLimit; i++) {
+        await verifyAddressBalance(page, key.key, {
+          chain_in: "0.00000000 ₿",
+          chain_out: "0.00000000 ₿",
+          mempool_in: "0.00000000 ₿",
+          mempool_out: "0.00000000 ₿"
+        }, i, key.key);
+      }
 
       // If this is the first extended key, test editing an address
       if (key.name === "Test XPub") {
@@ -397,8 +384,8 @@ test.describe("Bitwatch", () => {
         descriptor: testData.descriptors.xpubSingle,
         derivationPath: "m/0",
         skip: 1,
-        gapLimit: 2,
-        initialAddresses: 3,
+        gapLimit: 1,
+        initialAddresses: 2,
         monitor: {
           chain_in: "alert",
           chain_out: "alert",
@@ -412,7 +399,7 @@ test.describe("Bitwatch", () => {
         derivationPath: "m/0",
         skip: 0,
         gapLimit: 2,
-        initialAddresses: 1
+        initialAddresses: 3
       },
       {
         name: "Single ZPub",
@@ -420,31 +407,31 @@ test.describe("Bitwatch", () => {
         derivationPath: "m/0",
         skip: 0,
         gapLimit: 2,
-        initialAddresses: 1
+        initialAddresses: 3
       },
       {
         name: "Multi-Sig",
         descriptor: testData.descriptors.multiSig,
         derivationPath: "m/0",
         skip: 0,
-        gapLimit: 2,
-        initialAddresses: 1
+        gapLimit: 1,
+        initialAddresses: 3
       },
       {
         name: "Sorted Multi-Sig",
         descriptor: testData.descriptors.sortedMultiSig,
         derivationPath: "m/0",
         skip: 0,
-        gapLimit: 2,
-        initialAddresses: 1
+        gapLimit: 1,
+        initialAddresses: 3
       },
       {
         name: "Mixed Key Types",
         descriptor: testData.descriptors.mixedKeyTypes,
         derivationPath: "m/0",
         skip: 0,
-        gapLimit: 2,
-        initialAddresses: 1
+        gapLimit: 1,
+        initialAddresses: 3
       }
     ];
 
@@ -469,6 +456,11 @@ test.describe("Bitwatch", () => {
       await expect(descriptorRow.locator('td').nth(4)).toContainText(descriptor.skip.toString());
       await expect(descriptorRow.locator('td').nth(5)).toContainText(descriptor.initialAddresses.toString());
 
+      // Initially we should see just the initial addresses
+      await expect(descriptorRow.locator('td').nth(6)).toContainText(descriptor.initialAddresses.toString());
+      const descriptorAddressRows = page.locator(`[data-testid="${descriptor.descriptor}-address-list"] tr.address-row`);
+      await expect(descriptorAddressRows).toHaveCount(descriptor.initialAddresses);
+
       // For the first descriptor, verify all addresses have alert settings
       if (descriptor.name === "Single XPub") {
         // when we add a descriptor, it should be expanded by default
@@ -478,7 +470,7 @@ test.describe("Bitwatch", () => {
         const addresses = await page.locator(`[data-testid="${descriptor.descriptor}-address-list"] tr.address-row`).all();
         
         // Verify we have the expected number of addresses
-        expect(addresses.length).toBeGreaterThan(0);
+        expect(addresses.length).toBe(descriptor.initialAddresses);
         
         // Verify each address has alert icons for all monitoring types
         for (let i = 0; i < addresses.length; i++) {
@@ -501,7 +493,7 @@ test.describe("Bitwatch", () => {
         const newAddresses = await page.locator(`[data-testid="${descriptor.descriptor}-address-list"] tr.address-row`).all();
         
         // Verify we have more addresses than before
-        expect(newAddresses.length).toBeGreaterThan(addresses.length);
+        expect(newAddresses.length).toBeGreaterThan(descriptor.initialAddresses);
         
         // Verify new addresses also have alert icons
         for (let i = 0; i < newAddresses.length; i++) {

@@ -196,7 +196,7 @@ export default function Addresses() {
       return;
     }
     socketIO.emit(
-      "add",
+      "addCollection",
       {
         collection,
         extendedKeys: [],
@@ -219,7 +219,7 @@ export default function Addresses() {
 
   const handleAddAddress = (collection, name, address, setNewAddress) => {
     socketIO.emit(
-      "add",
+      "addAddress",
       {
         collection,
         name,

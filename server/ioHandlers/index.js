@@ -4,7 +4,8 @@ import { saveConfig } from "./saveConfig.js";
 import { getConfig } from "./getConfig.js";
 import { saveIntegrations } from "./saveIntegrations.js";
 import { getIntegrations } from "./getIntegrations.js";
-import { add } from "./add.js";
+import { addAddress } from "./addAddress.js";
+import { addCollection } from "./addCollection.js";
 import { saveExpected } from "./saveExpected.js";
 import { addDescriptor } from "./addDescriptor.js";
 import { editDescriptor } from "./editDescriptor.js";
@@ -31,7 +32,8 @@ export default {
   saveIntegrations,
 
   // Collection and address management
-  add,
+  addAddress,
+  addCollection,
   saveExpected,
   importCollections,
 

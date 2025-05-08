@@ -1,5 +1,4 @@
 import { test as base, expect } from "@playwright/test";
-import { set } from "express/lib/application";
 import fs from "fs";
 import path from "path";
 
@@ -233,6 +232,8 @@ export const addAddress = async (
     await page
       .getByTestId(`address-monitor-chain-in-${monitor.chain_in}`)
       .click();
+    // Wait for menu to close
+    await page.waitForSelector('[role="menu"]', { state: "hidden" });
 
     // Set chain out monitoring
     const chainOutSelect = page.getByTestId("address-monitor-chain-out");
@@ -240,6 +241,8 @@ export const addAddress = async (
     await page
       .getByTestId(`address-monitor-chain-out-${monitor.chain_out}`)
       .click();
+    // Wait for menu to close
+    await page.waitForSelector('[role="menu"]', { state: "hidden" });
 
     // Set mempool in monitoring
     const mempoolInSelect = page.getByTestId("address-monitor-mempool-in");
@@ -247,6 +250,8 @@ export const addAddress = async (
     await page
       .getByTestId(`address-monitor-mempool-in-${monitor.mempool_in}`)
       .click();
+    // Wait for menu to close
+    await page.waitForSelector('[role="menu"]', { state: "hidden" });
 
     // Set mempool out monitoring
     const mempoolOutSelect = page.getByTestId("address-monitor-mempool-out");
@@ -254,11 +259,18 @@ export const addAddress = async (
     await page
       .getByTestId(`address-monitor-mempool-out-${monitor.mempool_out}`)
       .click();
+    // Wait for menu to close
+    await page.waitForSelector('[role="menu"]', { state: "hidden" });
   }
+
+  // Ensure any open menus are closed
+  await page.keyboard.press("Escape");
+  await page.waitForTimeout(100); // Small delay to ensure menus are closed
 
   // Click the save button - allow clicking in overlay since it's in a dialog
   await findAndClick(page, '[data-testid="address-dialog-save"]', {
     allowOverlay: true,
+    force: true, // Force the click in case there are still invisible overlays
   });
 
   // Wait for the dialog to disappear

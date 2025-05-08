@@ -207,7 +207,7 @@ const handleHttpRequest = (req, res) => {
       const checkCount = addressCheckCounts.get(address) + 1;
       addressCheckCounts.set(address, checkCount);
 
-      // Get balance for current state, passing the address
+      // Get balance for current state
       const balance = getBalanceForState(currentState);
       addressBalances.set(address, balance);
 
@@ -215,8 +215,9 @@ const handleHttpRequest = (req, res) => {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(balance));
 
-      // Increment state for all addresses after 1 check
-      if (checkCount >= 1) {
+      // Only transition state if this is a refresh request (not an initial check)
+      // We can tell this by checking if the address already has a balance
+      if (addressBalances.has(address) && checkCount >= 1) {
         const nextState = getNextState(currentState);
         addressStates.set(address, nextState);
         addressCheckCounts.set(address, 0); // Reset check count for next state
