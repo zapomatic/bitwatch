@@ -127,6 +127,8 @@ export const findAndClick = async (page, selector, options = {}) => {
   } = options;
   const locator = page.locator(selector);
 
+  console.log(`Waiting for selector: ${selector}`);
+
   // Wait for any matching element to be visible
   await page.waitForSelector(selector, { state: "visible", timeout });
 
@@ -137,23 +139,36 @@ export const findAndClick = async (page, selector, options = {}) => {
     const overlay = page.locator(overlaySelector);
     const hasOverlay = await overlay.isVisible().catch(() => false);
     if (hasOverlay) {
+      console.log("Overlay detected, waiting for it to disappear...");
       await page.waitForSelector(overlaySelector, { state: "hidden", timeout });
     }
   }
 
-  // Wait for the element to be stable
-  await page.waitForFunction(
-    (sel) => {
-      const element = document.querySelector(sel);
-      if (!element) return false;
-      const rect = element.getBoundingClientRect();
-      return rect.width > 0 && rect.height > 0;
-    },
-    selector,
-    { timeout }
-  );
+  // Wait for the element to be stable with retries
+  let retries = 3;
+  while (retries > 0) {
+    try {
+      await page.waitForFunction(
+        (sel) => {
+          const element = document.querySelector(sel);
+          if (!element) return false;
+          const rect = element.getBoundingClientRect();
+          return rect.width > 0 && rect.height > 0;
+        },
+        selector,
+        { timeout: timeout / 3 }
+      );
+      break;
+    } catch (error) {
+      retries--;
+      if (retries === 0) throw error;
+      console.log(`Element not stable, retrying... (${retries} attempts left)`);
+      await page.waitForTimeout(1000);
+    }
+  }
 
   // Click with stability checks
+  console.log(`Clicking element: ${selector}`);
   if (exact) {
     await locator.first().click({ timeout, force });
   } else {
@@ -200,6 +215,9 @@ export const addCollection = async (page, name) => {
 
   // Verify that collection row has been added with the new name
   await page.waitForSelector(`text=${name}`);
+
+  // Add a small delay to ensure UI is fully updated
+  await page.waitForTimeout(1000);
 };
 
 export const addAddress = async (
@@ -209,63 +227,48 @@ export const addAddress = async (
 ) => {
   await findAndClick(page, `[data-testid="${collection}-add-address"]`);
 
-  // Wait for the dialog to be visible
+  // Wait for dialog to be visible
   await page.waitForSelector('[data-testid="address-dialog"]', {
     state: "visible",
+    timeout: 2000,
   });
 
-  // Fill in the address name
-  await page.fill('[data-testid="address-name-input"]', name);
-
-  // Fill in the Bitcoin address
-  await page.fill('[data-testid="address-input"]', address);
+  // Fill in the form fields
+  await page.getByTestId("address-name-input").fill(name);
+  await page.getByTestId("address-input").fill(address);
 
   // Set monitoring options if provided
   if (monitor) {
-    await page.waitForSelector('[data-testid="address-dialog"]', {
-      state: "visible",
-    });
+    // Helper function to handle dropdown selection
+    const selectMonitorOption = async (field, value) => {
+      // Click the select dropdown
+      const select = page.getByTestId(`address-monitor-${field}`);
+      await select.waitFor({ state: "visible" });
+      await page.waitForTimeout(100); // Small delay before clicking
+      await select.click({ force: true });
 
-    // Set chain in monitoring
-    const chainInSelect = page.getByTestId("address-monitor-chain-in");
-    await chainInSelect.click();
-    await page
-      .getByTestId(`address-monitor-chain-in-${monitor.chain_in}`)
-      .click();
-    // Wait for menu to close
-    await page.waitForSelector('[role="menu"]', { state: "hidden" });
+      // Wait for the menu to be visible
+      await page.waitForSelector('[role="listbox"]', { state: "visible" });
+      await page.waitForTimeout(100); // Small delay before selecting option
 
-    // Set chain out monitoring
-    const chainOutSelect = page.getByTestId("address-monitor-chain-out");
-    await chainOutSelect.click();
-    await page
-      .getByTestId(`address-monitor-chain-out-${monitor.chain_out}`)
-      .click();
-    // Wait for menu to close
-    await page.waitForSelector('[role="menu"]', { state: "hidden" });
+      // Click the option
+      const option = page.getByTestId(`address-monitor-${field}-${value}`);
+      await option.waitFor({ state: "visible" });
+      await option.click({ force: true });
 
-    // Set mempool in monitoring
-    const mempoolInSelect = page.getByTestId("address-monitor-mempool-in");
-    await mempoolInSelect.click();
-    await page
-      .getByTestId(`address-monitor-mempool-in-${monitor.mempool_in}`)
-      .click();
-    // Wait for menu to close
-    await page.waitForSelector('[role="menu"]', { state: "hidden" });
+      // Wait for the menu to close
+      await page.waitForSelector('[role="listbox"]', { state: "hidden" });
+      await page.waitForTimeout(100); // Small delay after selection
+    };
 
-    // Set mempool out monitoring
-    const mempoolOutSelect = page.getByTestId("address-monitor-mempool-out");
-    await mempoolOutSelect.click();
-    await page
-      .getByTestId(`address-monitor-mempool-out-${monitor.mempool_out}`)
-      .click();
-    // Wait for menu to close
-    await page.waitForSelector('[role="menu"]', { state: "hidden" });
+    // Set each monitoring option
+    await selectMonitorOption("chain-in", monitor.chain_in);
+    await selectMonitorOption("chain-out", monitor.chain_out);
+    await selectMonitorOption("mempool-in", monitor.mempool_in);
+    await selectMonitorOption("mempool-out", monitor.mempool_out);
   }
 
-  // Ensure any open menus are closed
-  await page.keyboard.press("Escape");
-  await page.waitForTimeout(100); // Small delay to ensure menus are closed
+  await page.waitForTimeout(100);
 
   // Click the save button - allow clicking in overlay since it's in a dialog
   await findAndClick(page, '[data-testid="address-dialog-save"]', {

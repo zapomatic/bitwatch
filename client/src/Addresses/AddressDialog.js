@@ -6,8 +6,6 @@ import {
   DialogActions,
   Button,
   TextField,
-  Typography,
-  Grid,
   Box,
 } from "@mui/material";
 import MonitorSettings from "../components/MonitorSettings";
@@ -41,16 +39,6 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
     setFormData((prev) => ({
       ...prev,
       [field]: value,
-    }));
-  };
-
-  const handleExpectChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      expect: {
-        ...prev.expect,
-        [field]: parseInt(value) || 0,
-      },
     }));
   };
 
@@ -89,78 +77,6 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
               "aria-label": "Bitcoin address",
             }}
           />
-          <Typography variant="subtitle1">Expected Balances</Typography>
-          <Grid
-            container
-            spacing={2}
-            sx={{
-              display: "grid",
-              gridTemplateColumns: {
-                xs: "1fr",
-                md: "repeat(2, 1fr)",
-              },
-              gap: 2,
-            }}
-          >
-            <Grid item>
-              <TextField
-                label="Chain In"
-                type="number"
-                value={formData.expect.chain_in}
-                onChange={(e) => handleExpectChange("chain_in", e.target.value)}
-                fullWidth
-                inputProps={{
-                  "data-testid": "address-chain-in-input",
-                  "aria-label": "Expected chain incoming balance",
-                }}
-              />
-            </Grid>
-            <Grid item>
-              <TextField
-                label="Chain Out"
-                type="number"
-                value={formData.expect.chain_out}
-                onChange={(e) =>
-                  handleExpectChange("chain_out", e.target.value)
-                }
-                fullWidth
-                inputProps={{
-                  "data-testid": "address-chain-out-input",
-                  "aria-label": "Expected chain outgoing balance",
-                }}
-              />
-            </Grid>
-            <Grid item>
-              <TextField
-                label="Mempool In"
-                type="number"
-                value={formData.expect.mempool_in}
-                onChange={(e) =>
-                  handleExpectChange("mempool_in", e.target.value)
-                }
-                fullWidth
-                inputProps={{
-                  "data-testid": "address-mempool-in-input",
-                  "aria-label": "Expected mempool incoming balance",
-                }}
-              />
-            </Grid>
-            <Grid item>
-              <TextField
-                label="Mempool Out"
-                type="number"
-                value={formData.expect.mempool_out}
-                onChange={(e) =>
-                  handleExpectChange("mempool_out", e.target.value)
-                }
-                fullWidth
-                inputProps={{
-                  "data-testid": "address-mempool-out-input",
-                  "aria-label": "Expected mempool outgoing balance",
-                }}
-              />
-            </Grid>
-          </Grid>
           <MonitorSettings
             value={formData.monitor || {}}
             onChange={(newMonitor) =>

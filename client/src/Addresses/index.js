@@ -218,19 +218,21 @@ export default function Addresses() {
     );
   };
 
-  const handleAddAddress = (collection, name, address, setNewAddress) => {
+  const handleAddAddress = (
+    collection,
+    name,
+    address,
+    monitor,
+    setNewAddress
+  ) => {
+    console.log("addAddress", { collection, name, address, monitor });
     socketIO.emit(
       "addAddress",
       {
         collection,
         name,
         address,
-        monitor: {
-          chain_in: "alert",
-          chain_out: "alert",
-          mempool_in: "alert",
-          mempool_out: "alert",
-        },
+        monitor,
       },
       (response) => {
         console.log("add", response);

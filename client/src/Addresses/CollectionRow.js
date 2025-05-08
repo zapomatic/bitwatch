@@ -364,8 +364,12 @@ const CollectionRow = ({
         open={addressDialogOpen}
         onClose={() => setAddressDialogOpen(false)}
         onSave={(data) =>
-          onAddAddress(collection.name, data.name, data.address, () =>
-            setAddressDialogOpen(false)
+          onAddAddress(
+            collection.name,
+            data.name,
+            data.address,
+            data.monitor,
+            () => setAddressDialogOpen(false)
           )
         }
       />
