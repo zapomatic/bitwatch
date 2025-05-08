@@ -200,6 +200,7 @@ export default function Addresses() {
       {
         collection,
         extendedKeys: [],
+        descriptors: [],
         addresses: [],
       },
       (response) => {
