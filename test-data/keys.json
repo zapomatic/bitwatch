@@ -5,6 +5,14 @@
       "type": "xpub",
       "addresses": [
         {
+          "index": 0,
+          "address": "1FoUUDu3zK4WHxvu2BywgZdaHprJpjWTqc"
+        },
+        {
+          "index": 1,
+          "address": "1BCyPjrjdoumJ9Ls6DhH2eQh1TKchyhqFC"
+        },
+        {
           "index": 2,
           "address": "1wqff7JhwUjDXc1NV9QhKmX1KGLJVhfDH"
         },
@@ -19,14 +27,6 @@
         {
           "index": 5,
           "address": "18uJEhryLCo7YEb2CtmS9rLZx5uzLj1duu"
-        },
-        {
-          "index": 6,
-          "address": "1HwXbt8LBHbcRSCprbhmDX6Divo8ksCWNx"
-        },
-        {
-          "index": 7,
-          "address": "1CHFxpcDjnkagmLNEbGhoJu8B8dryJ38mG"
         }
       ],
       "derivationPath": "m/44/0/0"

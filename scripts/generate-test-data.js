@@ -276,7 +276,7 @@ const generateTestAddresses = (keys) => {
     }
 
     // Set skip values to match our test configuration
-    const skip = name === "xpub1" ? 2 : 0;
+    const skip = 0;
 
     // Make sure we're passing the key string, not the key object
     const keyString = typeof keyData === "string" ? keyData : keyData.key;
