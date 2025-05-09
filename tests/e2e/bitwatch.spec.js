@@ -392,7 +392,7 @@ test.describe("Bitwatch", () => {
     // Add descriptors (pkh, sh(wpkh), wpkh, wsh(multi), wsh(sortedmulti), wsh(multi-mixed))
     const descriptors = [
       {
-        name: "Single XPub",  // Base name, index will be added by server
+        name: "xpubSingle",
         descriptor: testData.descriptors.xpubSingle.key,
         derivationPath: testData.descriptors.xpubSingle.derivationPath,
         skip: 0,
@@ -406,7 +406,7 @@ test.describe("Bitwatch", () => {
         }
       },
       {
-        name: "Single YPub",
+        name: "ypubSingle",
         descriptor: testData.descriptors.ypubSingle.key,
         derivationPath: testData.descriptors.ypubSingle.derivationPath,
         skip: 1,
@@ -414,7 +414,7 @@ test.describe("Bitwatch", () => {
         initialAddresses: 3
       },
       {
-        name: "Single ZPub",
+        name: "zpubSingle",
         descriptor: testData.descriptors.zpubSingle.key,
         derivationPath: testData.descriptors.zpubSingle.derivationPath,
         skip: 0,
@@ -422,7 +422,7 @@ test.describe("Bitwatch", () => {
         initialAddresses: 3
       },
       {
-        name: "Multi-Sig",
+        name: "multiSig",
         descriptor: testData.descriptors.multiSig.key,
         derivationPath: testData.descriptors.multiSig.derivationPath,
         skip: 0,
@@ -430,7 +430,7 @@ test.describe("Bitwatch", () => {
         initialAddresses: 3
       },
       {
-        name: "Sorted Multi-Sig",
+        name: "sortedMultiSig",
         descriptor: testData.descriptors.sortedMultiSig.key,
         derivationPath: testData.descriptors.sortedMultiSig.derivationPath,
         skip: 0,
@@ -438,7 +438,7 @@ test.describe("Bitwatch", () => {
         initialAddresses: 3
       },
       {
-        name: "Mixed Key Types",
+        name: "mixedKeyTypes",
         descriptor: testData.descriptors.mixedKeyTypes.key,
         derivationPath: testData.descriptors.mixedKeyTypes.derivationPath,
         skip: 0,
@@ -499,10 +499,7 @@ test.describe("Bitwatch", () => {
         await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-mempool-out-alert-icon"]`)).toBeVisible();
 
         // Verify the address matches the expected address from test data
-        const descriptorId = descriptor.name.toLowerCase()
-          .replace(/\s+/g, '')
-          .replace('single', '')
-          .toLowerCase() + 'Single';
+        const descriptorId = descriptor.name;
         console.log('Looking up descriptor:', descriptorId, 'Available descriptors:', Object.keys(testData.descriptors));
         console.log(`Checking address at index ${i} (with skip ${descriptor.skip}), actual index ${i + descriptor.skip}`);
         const expectedAddress = testData.descriptors[descriptorId].addresses[i + descriptor.skip].address;
