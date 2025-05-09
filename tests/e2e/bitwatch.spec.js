@@ -137,7 +137,7 @@ test.describe("Bitwatch", () => {
     console.log("Added single address");
 
     // Verify address is visible in the expanded table
-    await expect(page.locator('text=Single Addresses')).toBeVisible();
+    await expect(page.getByText("Single Addresses")).toBeVisible();
     await expect(page.locator('table.address-subtable')).toBeVisible();
     await expect(page.locator(`text=${testData.plain.zapomatic.slice(0, 15)}...`)).toBeVisible();
     console.log("Verified address table is visible");
@@ -596,13 +596,13 @@ test.describe("Bitwatch", () => {
         // Verify the dialog shows the correct values
         await expect(page.getByTestId("descriptor-name-input")).toHaveValue(descriptor.name);
         await expect(page.getByTestId("descriptor-input")).toHaveValue(descriptor.descriptor);
-        await expect(page.getByTestId("skip-input")).toHaveValue("0");
+        await expect(page.getByTestId("descriptor-skip-input")).toHaveValue("0");
         
         // Update the skip value to 1
-        await page.getByTestId("skip-input").fill("1");
+        await page.getByTestId("descriptor-skip-input").fill("1");
         
         // Save the changes
-        await findAndClick(page, '[data-testid="save-descriptor-button"]');
+        await findAndClick(page, '[data-testid="descriptor-submit-button"]');
         
         // Wait for the dialog to close
         await expect(page.locator('[data-testid="descriptor-dialog"]')).not.toBeVisible();

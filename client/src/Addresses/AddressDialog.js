@@ -26,12 +26,7 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
     if (!formData.name || !formData.address) {
       return;
     }
-    // Ensure monitor settings are included using current system defaults
-    const dataToSave = {
-      ...formData,
-      monitor: formData.monitor || { ...DEFAULT_ADDRESS_FORM.monitor },
-    };
-    onSave(dataToSave);
+    onSave(formData);
     onClose();
   };
 

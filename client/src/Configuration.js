@@ -37,7 +37,7 @@ const Configs = {
     label: "Update Interval (ms)",
     help: (value) =>
       `Updates every ${formatInterval(
-        parseInt(value)
+        value
       )} (if running local mempool, you can run this much more frequently)`,
     default: DEFAULT_CONFIG.interval,
   },
@@ -88,9 +88,9 @@ function Config() {
       "saveConfig",
       {
         api: config.api,
-        apiDelay: parseInt(config.apiDelay),
-        apiParallelLimit: parseInt(config.apiParallelLimit),
-        interval: parseInt(config.interval),
+        apiDelay: config.apiDelay,
+        apiParallelLimit: config.apiParallelLimit,
+        interval: config.interval,
         debugLogging: config.debugLogging,
         monitor: config.monitor || Configs.monitor.default,
         updateAllAddresses,

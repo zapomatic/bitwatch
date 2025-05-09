@@ -29,9 +29,9 @@ const ExtendedKeyDialog = ({
         name: extendedKey.name,
         key: extendedKey.key,
         derivationPath: extendedKey.derivationPath,
-        gapLimit: Number(extendedKey.gapLimit),
-        initialAddresses: Number(extendedKey.initialAddresses),
-        skip: Number(extendedKey.skip),
+        gapLimit: extendedKey.gapLimit,
+        initialAddresses: extendedKey.initialAddresses,
+        skip: extendedKey.skip,
         monitor: extendedKey.monitor || {
           ...DEFAULT_EXTENDED_KEY_FORM.monitor,
         },

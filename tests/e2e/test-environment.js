@@ -399,10 +399,11 @@ export const addDescriptor = async (
   // Click the Add button - allow clicking in overlay since it's in a dialog
   await findAndClick(page, '[data-testid="descriptor-submit-button"]', {
     allowOverlay: true,
+    force: true, // Force the click in case there are still invisible overlays
   });
 
   // Wait for the dialog to disappear
-  await page.waitForSelector('[data-testid="descriptor-name-input"]', {
+  await page.waitForSelector('[data-testid="descriptor-dialog"]', {
     state: "hidden",
     timeout: 2000,
   });
