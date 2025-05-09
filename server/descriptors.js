@@ -204,7 +204,10 @@ export const deriveAddresses = (descriptor, startIndex, count, skip = 0) => {
   const result = parseDescriptor(descriptor);
   if (!result.success) {
     logger.error(`Failed to parse descriptor: ${result.error}`);
-    return [];
+    return {
+      success: false,
+      error: result.error,
+    };
   }
 
   const addresses = [];
@@ -213,12 +216,18 @@ export const deriveAddresses = (descriptor, startIndex, count, skip = 0) => {
     const address = deriveAddress(descriptor, index);
     if (!address) {
       logger.error(`Failed to derive address at index ${index}`);
-      return [];
+      return {
+        success: false,
+        error: `Failed to derive address at index ${index}`,
+      };
     }
     addresses.push(address);
   }
 
-  return addresses;
+  return {
+    success: true,
+    data: addresses,
+  };
 };
 
 // Derive a single address from a descriptor

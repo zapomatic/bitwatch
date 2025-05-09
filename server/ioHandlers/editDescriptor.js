@@ -51,7 +51,7 @@ export const editDescriptor = async ({ data, io }) => {
   );
 
   if (!allAddressesResult.success) {
-    logger.error(allAddressesResult.error || "Failed to derive addresses");
+    logger.error(`Failed to derive addresses: ${allAddressesResult.error}`);
     return { error: allAddressesResult.error || "Failed to derive addresses" };
   }
 
