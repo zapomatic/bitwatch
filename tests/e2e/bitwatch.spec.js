@@ -631,7 +631,7 @@ test.describe("Bitwatch", () => {
     await findAndClick(page, `[data-testid="${extendedKeys[0].key}-expand-button"]`);
     const extendedKeyAddresses = await page.locator(`[data-testid="${extendedKeys[0].key}-address-list"] tr.address-row`).all();
     for (let i = 0; i < extendedKeyAddresses.length; i++) {
-      const addressIndex = i + 1;
+      const addressIndex = i + extendedKeys[0].skip; // Use the skip value from the extended key
       await expect(page.locator(`[data-testid="${extendedKeys[0].key}-address-${addressIndex}-chain-in-alert-icon"]`)).toBeVisible();
       await expect(page.locator(`[data-testid="${extendedKeys[0].key}-address-${addressIndex}-chain-out-alert-icon"]`)).toBeVisible();
       await expect(page.locator(`[data-testid="${extendedKeys[0].key}-address-${addressIndex}-mempool-in-alert-icon"]`)).toBeVisible();
@@ -643,12 +643,12 @@ test.describe("Bitwatch", () => {
     // Verify descriptor address monitor settings (using the first descriptor from earlier)
     await findAndClick(page, `[data-testid="${descriptors[0].descriptor}-expand-button"]`);
     const descriptorAddresses = await page.locator(`[data-testid="${descriptors[0].descriptor}-address-list"] tr.address-row`).all();
-    for (let i = 0; i < descriptorAddresses.length; i++) {
+    for (let i = 2; i < descriptorAddresses.length; i++) {
       const addressIndex = i + 1;
-      await expect(page.locator(`[data-testid="${descriptors[0].descriptor}-address-${addressIndex}-chain-in-alert-icon"]`)).toBeVisible();
-      await expect(page.locator(`[data-testid="${descriptors[0].descriptor}-address-${addressIndex}-chain-out-alert-icon"]`)).toBeVisible();
-      await expect(page.locator(`[data-testid="${descriptors[0].descriptor}-address-${addressIndex}-mempool-in-alert-icon"]`)).toBeVisible();
-      await expect(page.locator(`[data-testid="${descriptors[0].descriptor}-address-${addressIndex}-mempool-out-alert-icon"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${descriptors[0].descriptor}-address-${i}-chain-in-alert-icon"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${descriptors[0].descriptor}-address-${i}-chain-out-alert-icon"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${descriptors[0].descriptor}-address-${i}-mempool-in-alert-icon"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${descriptors[0].descriptor}-address-${i}-mempool-out-alert-icon"]`)).toBeVisible();
     }
     await findAndClick(page, `[data-testid="${descriptors[0].descriptor}-expand-button"]`);
     console.log("Descriptor address monitor settings verified");

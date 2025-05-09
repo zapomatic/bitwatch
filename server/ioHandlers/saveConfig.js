@@ -25,7 +25,11 @@ export const saveConfig = async ({ data }) => {
 
   // Update all addresses if requested
   if (data.updateAllAddresses && data.monitor) {
-    logger.info("Updating all addresses with new monitor settings");
+    logger.info(
+      `Updating all addresses with new monitor settings: ${logger.getMonitorLog(
+        data.monitor
+      )}`
+    );
 
     // Iterate through all collections
     Object.values(memory.db.collections || {}).forEach((collection) => {
