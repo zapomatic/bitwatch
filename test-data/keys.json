@@ -154,7 +154,8 @@
           "index": 5,
           "address": "1BQVrydbZcXPd15fu15k1bydNhWKEYV9Ce"
         }
-      ]
+      ],
+      "derivationPath": "m/0"
     },
     "ypubSingle": {
       "key": "sh(wpkh(ypub6XkVNfvpBnBSVoB3YizsEufoHk6Dr8314nidPUZgbi8nRryjFQbWTT9FmX8YynV95WJWj9udyXVxQDAiv6WswHUMPrUBwZ6AF7zppe84R7y/0/*))",
@@ -184,7 +185,8 @@
           "index": 5,
           "address": "32S1nE4KGEED6HKA7DQuuPmbzmMNSNZj7D"
         }
-      ]
+      ],
+      "derivationPath": "m/0"
     },
     "zpubSingle": {
       "key": "wpkh(zpub6qbttNurRMxugJyZLQYf9D9SYhpgyKBfaZbg91LU8NTp2zPDUcG85JXHsZx47cp734nk4z8T8x7zuZiv1jGixD2PkFYUCEw7qaAvwUAPnSq/0/*)",
@@ -214,7 +216,8 @@
           "index": 5,
           "address": "bc1qej5nme6ydd2htpa87r5fvksyjha2cyea5eugyk"
         }
-      ]
+      ],
+      "derivationPath": "m/0"
     },
     "multiSig": {
       "key": "wsh(multi(2,xpub6CDfqUCidksQ1e17HxEXpXd1A6RPPbkAHdUDCJPHSvW5ou7gZo8ZtTLSDLo4hVDuwaXveuevAnKNism4xXME9xzcRDuwm59c8rWHgpcuVD5/0/*,xpub6CDfqUCidksQ1e17HxEXpXd1A6RPPbkAHdUDCJPHSvW5ou7gZo8ZtTLSDLo4hVDuwaXveuevAnKNism4xXME9xzcRDuwm59c8rWHgpcuVD5/1/*))",
@@ -244,7 +247,8 @@
           "index": 5,
           "address": "1BQVrydbZcXPd15fu15k1bydNhWKEYV9Ce"
         }
-      ]
+      ],
+      "derivationPath": "m/0,m/1"
     },
     "sortedMultiSig": {
       "key": "wsh(sortedmulti(2,xpub6Cgq8W5wAsoi3CyDcDCCgVCF7UgyYt1pjDDVE4Moq56Aja7PEENWX6C21QMRNysVF5dmAaYA6jbj2neNFocMKmcEjYHhKnEXZkry6HtWYiE/0/*,xpub6CDfqUCidksQ1e17HxEXpXd1A6RPPbkAHdUDCJPHSvW5ou7gZo8ZtTLSDLo4hVDuwaXveuevAnKNism4xXME9xzcRDuwm59c8rWHgpcuVD5/0/*))",
@@ -274,7 +278,8 @@
           "index": 5,
           "address": "1K7d569niqP4phbrAEnLH7aaPJ13qW3ih6"
         }
-      ]
+      ],
+      "derivationPath": "m/0"
     },
     "mixedKeyTypes": {
       "key": "wsh(multi(2,ypub6XkVNfvpBnBSVoB3YizsEufoHk6Dr8314nidPUZgbi8nRryjFQbWTT9FmX8YynV95WJWj9udyXVxQDAiv6WswHUMPrUBwZ6AF7zppe84R7y/0/*,zpub6qbttNurRMxugJyZLQYf9D9SYhpgyKBfaZbg91LU8NTp2zPDUcG85JXHsZx47cp734nk4z8T8x7zuZiv1jGixD2PkFYUCEw7qaAvwUAPnSq/0/*))",
@@ -304,7 +309,8 @@
           "index": 5,
           "address": "32S1nE4KGEED6HKA7DQuuPmbzmMNSNZj7D"
         }
-      ]
+      ],
+      "derivationPath": "m/0"
     }
   },
   "plain": {

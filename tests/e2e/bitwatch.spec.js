@@ -394,6 +394,7 @@ test.describe("Bitwatch", () => {
       {
         name: "Single XPub",  // Base name, index will be added by server
         descriptor: testData.descriptors.xpubSingle.key,
+        derivationPath: testData.descriptors.xpubSingle.derivationPath,
         skip: 0,
         gapLimit: 1,
         initialAddresses: 2,
@@ -407,6 +408,7 @@ test.describe("Bitwatch", () => {
       {
         name: "Single YPub",
         descriptor: testData.descriptors.ypubSingle.key,
+        derivationPath: testData.descriptors.ypubSingle.derivationPath,
         skip: 1,
         gapLimit: 2,
         initialAddresses: 3
@@ -414,6 +416,7 @@ test.describe("Bitwatch", () => {
       {
         name: "Single ZPub",
         descriptor: testData.descriptors.zpubSingle.key,
+        derivationPath: testData.descriptors.zpubSingle.derivationPath,
         skip: 0,
         gapLimit: 2,
         initialAddresses: 3
@@ -421,6 +424,7 @@ test.describe("Bitwatch", () => {
       {
         name: "Multi-Sig",
         descriptor: testData.descriptors.multiSig.key,
+        derivationPath: testData.descriptors.multiSig.derivationPath,
         skip: 0,
         gapLimit: 1,
         initialAddresses: 3
@@ -428,6 +432,7 @@ test.describe("Bitwatch", () => {
       {
         name: "Sorted Multi-Sig",
         descriptor: testData.descriptors.sortedMultiSig.key,
+        derivationPath: testData.descriptors.sortedMultiSig.derivationPath,
         skip: 0,
         gapLimit: 1,
         initialAddresses: 3
@@ -435,6 +440,7 @@ test.describe("Bitwatch", () => {
       {
         name: "Mixed Key Types",
         descriptor: testData.descriptors.mixedKeyTypes.key,
+        derivationPath: testData.descriptors.mixedKeyTypes.derivationPath,
         skip: 0,
         gapLimit: 1,
         initialAddresses: 3
@@ -454,14 +460,23 @@ test.describe("Bitwatch", () => {
       // Find the descriptor row
       const descriptorRow = page.getByTestId(`${descriptor.descriptor}-descriptor-row`);
       
+      // Debug: Log all cells in the row
+      const cells = await descriptorRow.locator('td').all();
+      console.log('Descriptor row contents:');
+      for (let i = 0; i < cells.length; i++) {
+        const text = await cells[i].textContent();
+        console.log(`Cell ${i}: "${text}"`);
+      }
+      console.log('Descriptor object:', descriptor);
+      
       // Verify descriptor information
       await expect(descriptorRow.locator('td').nth(0)).toContainText(descriptor.name);
       await expect(descriptorRow.locator('td').nth(1)).toContainText(descriptor.descriptor.slice(0, 15));
       await expect(descriptorRow.locator('td').nth(2)).toContainText(descriptor.derivationPath);
-      await expect(descriptorRow.locator('td').nth(2)).toContainText(descriptor.gapLimit.toString());
-      await expect(descriptorRow.locator('td').nth(3)).toContainText(descriptor.skip.toString());
-      await expect(descriptorRow.locator('td').nth(4)).toContainText(descriptor.initialAddresses.toString());
-
+      await expect(descriptorRow.locator('td').nth(3)).toContainText(descriptor.gapLimit.toString());
+      await expect(descriptorRow.locator('td').nth(4)).toContainText(descriptor.skip.toString());
+      await expect(descriptorRow.locator('td').nth(5)).toContainText(descriptor.initialAddresses.toString());
+      await expect(descriptorRow.locator('td').nth(6)).toContainText(descriptor.initialAddresses.toString());
       // Initially we should see just the initial addresses
       const descriptorAddressRows = page.locator(`[data-testid="${descriptor.descriptor}-address-list"] tr.address-row`);
       await expect(descriptorAddressRows).toHaveCount(descriptor.initialAddresses);

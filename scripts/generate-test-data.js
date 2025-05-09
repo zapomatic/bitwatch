@@ -340,6 +340,7 @@ const generateTestAddresses = (keys) => {
       key: descriptor.key,
       type: keyType,
       addresses,
+      derivationPath: descriptor.derivationPath,
     };
   }
 
@@ -348,8 +349,21 @@ const generateTestAddresses = (keys) => {
 
 // Generate test descriptors
 const generateTestDescriptors = (keys) => {
-  // keys.desc_xpub, keys.desc_ypub, keys.desc_zpub are now correctly formatted extended public keys
-  return {
+  const extractDerivationPath = (descriptor) => {
+    // Match all derivation paths ending in /* inside the descriptor
+    const matches = [...descriptor.matchAll(/\/([0-9h/'\/]+)\/\*/g)];
+
+    // Extract and normalize the paths
+    const paths = matches.map((match) => `m/${match[1]}`);
+
+    // Deduplicate and join
+    const uniquePaths = [...new Set(paths)];
+
+    return uniquePaths.join(",");
+  };
+
+  // Create descriptors first, then add derivation paths
+  const descriptors = {
     // Single key descriptors
     xpubSingle: {
       key: `pkh(${keys.desc_xpub}/0/*)`,
@@ -371,6 +385,13 @@ const generateTestDescriptors = (keys) => {
       key: `wsh(multi(2,${keys.desc_ypub}/0/*,${keys.desc_zpub}/0/*))`,
     },
   };
+
+  // Add derivation paths to each descriptor
+  for (const [_name, descriptor] of Object.entries(descriptors)) {
+    descriptor.derivationPath = extractDerivationPath(descriptor.key);
+  }
+
+  return descriptors;
 };
 
 const main = async () => {
