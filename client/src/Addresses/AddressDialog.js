@@ -9,27 +9,27 @@ import {
   Box,
 } from "@mui/material";
 import MonitorSettings from "../components/MonitorSettings";
-import {
-  DEFAULT_ADDRESS_FORM,
-  COLLAPSE_ANIMATION_DURATION,
-  SYSTEM_MONITOR_SETTINGS,
-} from "../config";
+import { DEFAULT_ADDRESS_FORM, COLLAPSE_ANIMATION_DURATION } from "../config";
 
 const AddressDialog = ({ open, onClose, address, onSave }) => {
   const [formData, setFormData] = useState(DEFAULT_ADDRESS_FORM);
 
   useEffect(() => {
-    setFormData({ ...DEFAULT_ADDRESS_FORM, ...(address || {}) });
+    setFormData({
+      ...DEFAULT_ADDRESS_FORM,
+      monitor: { ...DEFAULT_ADDRESS_FORM.monitor },
+      ...(address || {}),
+    });
   }, [address, open]);
 
   const handleSave = () => {
     if (!formData.name || !formData.address) {
       return;
     }
-    // Ensure monitor settings are included using system defaults
+    // Ensure monitor settings are included using current system defaults
     const dataToSave = {
       ...formData,
-      monitor: formData.monitor || SYSTEM_MONITOR_SETTINGS,
+      monitor: formData.monitor || { ...DEFAULT_ADDRESS_FORM.monitor },
     };
     onSave(dataToSave);
     onClose();

@@ -27,7 +27,7 @@ import CrystalNotification from "../components/CrystalNotification.js";
 import AddressDialog from "./AddressDialog.js";
 import CollectionRow from "./CollectionRow.js";
 import { calculateCollectionTotals } from "../utils/collection.js";
-import { updateSystemMonitorSettings } from "../config";
+import { defaultMonitorSettings } from "../config";
 
 export default function Addresses() {
   const [collections, setCollections] = useState({});
@@ -123,7 +123,7 @@ export default function Addresses() {
 
       // Update monitor settings if provided
       if (updatedState?.monitor) {
-        updateSystemMonitorSettings(updatedState.monitor);
+        Object.assign(defaultMonitorSettings, updatedState.monitor);
       }
 
       // If we're in a refresh operation, check for errors

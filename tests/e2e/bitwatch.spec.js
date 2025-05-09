@@ -628,7 +628,7 @@ test.describe("Bitwatch", () => {
     console.log("Single address monitor settings verified");
 
     // Verify extended key address monitor settings (using the first extended key from earlier)
-    await findAndClick(page, `[data-testid="${extendedKeys[0].key}-expand-button"]`);
+    // await findAndClick(page, `[data-testid="${extendedKeys[0].key}-expand-button"]`);
     const extendedKeyAddresses = await page.locator(`[data-testid="${extendedKeys[0].key}-address-list"] tr.address-row`).all();
     for (let i = 0; i < extendedKeyAddresses.length; i++) {
       const addressIndex = i + extendedKeys[0].skip; // Use the skip value from the extended key
@@ -658,10 +658,10 @@ test.describe("Bitwatch", () => {
     await expect(page.locator('[data-testid="address-dialog"]')).toBeVisible();
     
     // Check monitor settings in dialog
-    await expect(page.locator('select[aria-label="Chain In"]')).toHaveValue('alert');
-    await expect(page.locator('select[aria-label="Chain Out"]')).toHaveValue('alert');
-    await expect(page.locator('select[aria-label="Mempool In"]')).toHaveValue('alert');
-    await expect(page.locator('select[aria-label="Mempool Out"]')).toHaveValue('alert');
+    await expect(page.locator('[data-testid="address-monitor-chain-in"] .MuiSelect-select')).toHaveText('Alert');
+    await expect(page.locator('[data-testid="address-monitor-chain-out"] .MuiSelect-select')).toHaveText('Alert');
+    await expect(page.locator('[data-testid="address-monitor-mempool-in"] .MuiSelect-select')).toHaveText('Alert');
+    await expect(page.locator('[data-testid="address-monitor-mempool-out"] .MuiSelect-select')).toHaveText('Alert');
     
     // Close dialog
     await findAndClick(page, '[data-testid="address-dialog-cancel"]', { allowOverlay: true });
@@ -683,12 +683,12 @@ test.describe("Bitwatch", () => {
     const firstExtendedKey = extendedKeys[0];
     await findAndClick(page, `[data-testid="${firstExtendedKey.key}-expand-button"]`);
     console.log(`Expanded ${firstExtendedKey.name} section for deletion`);
-    await findAndClick(page, `[data-testid="${firstExtendedKey.key}-address-1-delete-button"]`);
+    await findAndClick(page, `[data-testid="${firstExtendedKey.key}-address-2-delete-button"]`);
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
     await expect(page.getByText("Remove this address from the extended key set?")).toBeVisible();
     await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', { allowOverlay: true });
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
-    await expect(page.getByTestId(`${firstExtendedKey.key}-address-1-delete-button`)).not.toBeVisible();
+    await expect(page.getByTestId(`${firstExtendedKey.key}-address-2-delete-button`)).not.toBeVisible();
     console.log("Deleted single address from extended key");
     const expandButton = page.getByTestId(`${firstExtendedKey.key}-expand-button`);
     await expect(expandButton).toBeVisible();

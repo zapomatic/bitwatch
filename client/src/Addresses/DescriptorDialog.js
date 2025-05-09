@@ -31,10 +31,13 @@ const DescriptorDialog = ({
         gapLimit: descriptor.gapLimit,
         initialAddresses: descriptor.initialAddresses,
         skip: descriptor.skip,
-        monitor: descriptor.monitor || DEFAULT_DESCRIPTOR_FORM.monitor,
+        monitor: descriptor.monitor || { ...DEFAULT_DESCRIPTOR_FORM.monitor },
       });
     } else {
-      setFormData(DEFAULT_DESCRIPTOR_FORM);
+      setFormData({
+        ...DEFAULT_DESCRIPTOR_FORM,
+        monitor: { ...DEFAULT_DESCRIPTOR_FORM.monitor },
+      });
     }
   }, [descriptor]);
 

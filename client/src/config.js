@@ -35,7 +35,7 @@ export const NOTIFICATION_DURATION = 3000; // Duration to show notifications in 
 export const COLLAPSE_ANIMATION_DURATION = 300; // Duration of collapse/expand animations in ms
 
 // System monitor settings
-export const SYSTEM_MONITOR_SETTINGS = {
+export const defaultMonitorSettings = {
   chain_in: "auto-accept",
   chain_out: "alert",
   mempool_in: "auto-accept",
@@ -47,7 +47,7 @@ export const DEFAULT_ADDRESS_FORM = {
   name: "",
   address: "",
   expect: DEFAULT_EXPECTED_BALANCES,
-  monitor: SYSTEM_MONITOR_SETTINGS,
+  monitor: defaultMonitorSettings,
 };
 
 export const DEFAULT_EXTENDED_KEY_FORM = {
@@ -57,7 +57,7 @@ export const DEFAULT_EXTENDED_KEY_FORM = {
   initialAddresses: DEFAULT_INITIAL_ADDRESSES,
   derivationPath: "m/0",
   skip: DEFAULT_SKIP_ADDRESSES,
-  monitor: SYSTEM_MONITOR_SETTINGS,
+  monitor: defaultMonitorSettings,
 };
 
 export const DEFAULT_DESCRIPTOR_FORM = {
@@ -66,14 +66,5 @@ export const DEFAULT_DESCRIPTOR_FORM = {
   gapLimit: DEFAULT_GAP_LIMIT,
   initialAddresses: DEFAULT_INITIAL_ADDRESSES,
   skip: DEFAULT_SKIP_ADDRESSES,
-  monitor: SYSTEM_MONITOR_SETTINGS,
-};
-
-// Function to update system monitor settings
-let currentMonitorSettings = { ...SYSTEM_MONITOR_SETTINGS };
-export const updateSystemMonitorSettings = (settings) => {
-  if (settings) {
-    currentMonitorSettings = settings;
-  }
-  return currentMonitorSettings;
+  monitor: defaultMonitorSettings,
 };

@@ -24,7 +24,7 @@ import { BrowserRouter, Routes, Route, useNavigate } from "react-router-dom";
 import WatchListIcon from "@mui/icons-material/List";
 import IntegrationIcon from "@mui/icons-material/Extension";
 import Tooltip from "@mui/material/Tooltip";
-import { updateSystemMonitorSettings } from "./config";
+import { defaultMonitorSettings } from "./config";
 
 const AppBar = styled(MuiAppBar)(({ theme }) => ({
   zIndex: theme.zIndex.drawer + 1,
@@ -127,7 +127,7 @@ function AppContent() {
           setInterval(interval);
         }
         if (monitor) {
-          updateSystemMonitorSettings(monitor);
+          Object.assign(defaultMonitorSettings, monitor);
         }
       }
     );
@@ -164,7 +164,7 @@ function AppContent() {
       }
       if (state.monitor) {
         console.log("Updating monitor settings to:", state.monitor);
-        updateSystemMonitorSettings(state.monitor);
+        Object.assign(defaultMonitorSettings, state.monitor);
       }
     });
 

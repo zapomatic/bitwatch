@@ -1,5 +1,5 @@
 import memory from "../memory.js";
-import logger from "../logger.js";
+import logger, { getMonitorLog } from "../logger.js";
 
 export const saveConfig = async ({ data }) => {
   if (
@@ -26,7 +26,7 @@ export const saveConfig = async ({ data }) => {
   // Update all addresses if requested
   if (data.updateAllAddresses && data.monitor) {
     logger.info(
-      `Updating all addresses with new monitor settings: ${logger.getMonitorLog(
+      `Updating all addresses with new monitor settings: ${getMonitorLog(
         data.monitor
       )}`
     );

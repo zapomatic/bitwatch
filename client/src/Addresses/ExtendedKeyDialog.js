@@ -32,10 +32,15 @@ const ExtendedKeyDialog = ({
         gapLimit: Number(extendedKey.gapLimit),
         initialAddresses: Number(extendedKey.initialAddresses),
         skip: Number(extendedKey.skip),
-        monitor: extendedKey.monitor || DEFAULT_EXTENDED_KEY_FORM.monitor,
+        monitor: extendedKey.monitor || {
+          ...DEFAULT_EXTENDED_KEY_FORM.monitor,
+        },
       });
     } else {
-      setFormData(DEFAULT_EXTENDED_KEY_FORM);
+      setFormData({
+        ...DEFAULT_EXTENDED_KEY_FORM,
+        monitor: { ...DEFAULT_EXTENDED_KEY_FORM.monitor },
+      });
     }
   }, [extendedKey]);
 
