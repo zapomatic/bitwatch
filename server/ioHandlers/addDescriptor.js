@@ -59,6 +59,15 @@ export const addDescriptor = async ({ data, io }) => {
     desc.skip || 0 // skip
   );
 
+  // Check if address derivation failed
+  if (!addresses || addresses.length === 0) {
+    logger.error("Failed to derive addresses from descriptor");
+    return {
+      error:
+        "Failed to derive addresses from descriptor. Please check the descriptor format and keys.",
+    };
+  }
+
   // Add monitor settings to each address
   desc.addresses = addresses.map((address) => ({
     ...address,

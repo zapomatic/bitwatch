@@ -2,7 +2,7 @@ manifestVersion: 1
 id: bitwatch
 category: bitcoin
 name: Bitwatch
-version: "1.6.1"
+version: "1.6.2"
 tagline: Monitor Bitcoin addresses in real-time
 description: >-
   Monitor Bitcoin addresses in the mempool and on-chain using the mempool.space API and websocket.
@@ -37,6 +37,8 @@ releaseNotes: >-
     - adds better public mempool.space API rate limiting and a new apiDelay config for being nicer to the API
     - new defaults in config for public mempool.space API usage to better align with rate limits
     - UI impprovements to unify styles, cleanup modules and make buttons cleaner
+    - Allows saving default monitor settings
+    - Refresh buttons on addresses and descriptor/extended key sets
     - fix bug in reloading on sub-pages
 
 website: https://github.com/zapomatic/bitwatch

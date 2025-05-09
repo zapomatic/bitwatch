@@ -1,45 +1,83 @@
 import { BIP32Factory } from "bip32";
 import * as ecc from "tiny-secp256k1";
 import * as bitcoin from "bitcoinjs-lib";
+import bs58check from "bs58check";
 
 import logger from "./logger.js";
 
 const bip32 = BIP32Factory(ecc);
 
-// Create networks for different key types
-const networks = {
+// Define networks according to SLIP-132
+const NETWORK_TYPES = {
   xpub: {
     ...bitcoin.networks.bitcoin,
     bip32: {
-      public: 0x0488b21e, // xpub
-      private: 0x0488ade4, // xprv
+      public: 0x0488b21e,
+      private: 0x0488ade4,
     },
   },
   ypub: {
     ...bitcoin.networks.bitcoin,
     bip32: {
-      public: 0x049d7cb2, // ypub
-      private: 0x049d7878, // yprv
+      public: 0x049d7cb2,
+      private: 0x049d7878,
+    },
+  },
+  Ypub: {
+    ...bitcoin.networks.bitcoin,
+    bip32: {
+      public: 0x0295b43f,
+      private: 0x0295b005,
     },
   },
   zpub: {
     ...bitcoin.networks.bitcoin,
     bip32: {
-      public: 0x04b24746, // zpub
-      private: 0x04b2430c, // zprv
+      public: 0x04b24746,
+      private: 0x04b2430c,
+    },
+  },
+  Zpub: {
+    ...bitcoin.networks.bitcoin,
+    bip32: {
+      public: 0x02aa7ed3,
+      private: 0x02aa7a99,
     },
   },
 };
 
-// Helper to validate and get network for a key
-export const getKeyNetwork = (key) => {
-  const keyLower = key.toLowerCase();
-  if (keyLower.startsWith("ypub")) {
-    return networks.ypub;
-  } else if (keyLower.startsWith("zpub")) {
-    return networks.zpub;
+// Convert between extended public key formats
+const convertExtendedKey = (key) => {
+  // Extract just the key part (before any derivation path)
+  const keyPart = key.split("/")[0];
+
+  try {
+    // Decode the base58check data
+    const data = bs58check.decode(keyPart);
+    // Remove the first 4 bytes (version)
+    const payload = data.slice(4);
+    // Create new data with xpub version
+    const newData = Buffer.concat([
+      Buffer.from([0x04, 0x88, 0xb2, 0x1e]), // xpub version bytes
+      payload,
+    ]);
+    // Encode back to base58check
+    const xpub = bs58check.encode(newData);
+    logger.debug(`Converted ${keyPart} to ${xpub}`);
+
+    // Reattach the derivation path if it exists
+    const path = key.slice(keyPart.length);
+    return xpub + path;
+  } catch (err) {
+    logger.error(`Error converting key ${keyPart}: ${err.message}`);
+    return null;
   }
-  return networks.xpub;
+};
+
+// Helper to validate and get network for a key
+export const getKeyNetwork = (__key) => {
+  // Always use xpub network version for parsing
+  return NETWORK_TYPES.xpub;
 };
 
 const cleanPath = (path) => {
@@ -120,7 +158,21 @@ const parseMultiSigDescriptor = (descriptor) => {
       )}`
     );
 
-    const parsedKeys = keys.map((key) => parseKey(key));
+    // Convert all keys to xpub format first
+    const convertedKeys = keys.map((key) => {
+      const converted = convertExtendedKey(key);
+      if (!converted) {
+        logger.error(`Failed to convert key: ${key}`);
+        return null;
+      }
+      return converted;
+    });
+
+    if (convertedKeys.some((k) => k === null)) {
+      return { success: false, error: "Failed to convert one or more keys" };
+    }
+
+    const parsedKeys = convertedKeys.map((key) => parseKey(key));
     const failedKey = parsedKeys.find((k) => !k.success);
     if (failedKey) {
       return { success: false, error: failedKey.error };
@@ -166,16 +218,35 @@ const parseKey = (key) => {
     const finalPath = cleanPath(fullPath.join("/"));
     logger.debug(`Final path: ${finalPath}`);
 
+    // Convert the key to xpub format if needed
+    const convertedKey = convertExtendedKey(xpub);
+    if (!convertedKey) {
+      return {
+        success: false,
+        error: "Invalid extended key format",
+      };
+    }
+
     return {
       success: true,
       fingerprint,
       path: finalPath,
-      xpub,
+      xpub: convertedKey,
     };
   } else if (simpleFormat) {
     // Simple format without fingerprint
     const [, xpub, path = ""] = simpleFormat;
     logger.debug(`Found simple format: xpub=${xpub}, path=${path}`);
+
+    // Convert the key to xpub format if needed
+    const convertedKey = convertExtendedKey(xpub);
+    if (!convertedKey) {
+      return {
+        success: false,
+        error: "Invalid extended key format",
+      };
+    }
+
     // Remove leading slash if present and clean the path
     const cleanedPath = cleanPath(path.replace(/^\//, ""));
     logger.debug(`Cleaned path: ${cleanedPath}`);
@@ -184,7 +255,7 @@ const parseKey = (key) => {
       success: true,
       fingerprint: null,
       path: cleanedPath,
-      xpub,
+      xpub: convertedKey,
     };
   }
 
@@ -230,31 +301,41 @@ export const deriveAddresses = (
     // Process each key in the descriptor
     for (const key of parsed.data.keys) {
       logger.debug(`Processing key: ${key.xpub}`);
-      currentKey = bip32.fromBase58(key.xpub, getKeyNetwork(key.xpub));
+      try {
+        const network = getKeyNetwork(key.xpub);
+        if (!network) {
+          logger.error(`Invalid network for key: ${key.xpub}`);
+          return [];
+        }
+        currentKey = bip32.fromBase58(key.xpub, network);
 
-      // If there's a path, derive each component
-      if (key.path) {
-        const pathParts = key.path.split("/").filter((p) => p !== "");
-        logger.debug(`Path parts: ${JSON.stringify(pathParts)}`);
+        // If there's a path, derive each component
+        if (key.path) {
+          const pathParts = key.path.split("/").filter((p) => p !== "");
+          logger.debug(`Path parts: ${JSON.stringify(pathParts)}`);
 
-        for (const part of pathParts) {
-          if (part === "*") {
-            // For wildcard, derive the current index
-            logger.debug(`Deriving wildcard index ${derivationIndex}`);
-            currentKey = currentKey.derive(derivationIndex);
-          } else {
-            // For regular path components, derive the specified index
-            const index = parseInt(part);
-            if (isNaN(index)) {
-              logger.error(`Invalid path component: ${part}`);
-              continue;
+          for (const part of pathParts) {
+            if (part === "*") {
+              // For wildcard, derive the current index
+              logger.debug(`Deriving wildcard index ${derivationIndex}`);
+              currentKey = currentKey.derive(derivationIndex);
+            } else {
+              // For regular path components, derive the specified index
+              const index = parseInt(part);
+              if (isNaN(index)) {
+                logger.error(`Invalid path component: ${part}`);
+                continue;
+              }
+              currentKey = currentKey.derive(index);
             }
-            currentKey = currentKey.derive(index);
           }
         }
-      }
 
-      publicKeys.push(currentKey.publicKey);
+        publicKeys.push(currentKey.publicKey);
+      } catch (err) {
+        logger.error(`Error processing key ${key.xpub}: ${err.message}`);
+        return [];
+      }
     }
 
     // Create the address based on the descriptor type
