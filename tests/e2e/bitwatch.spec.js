@@ -430,17 +430,17 @@ test.describe("Bitwatch", () => {
         initialAddresses: 3
       },
       {
-        name: "sortedMultiSig",
-        descriptor: testData.descriptors.sortedMultiSig.key,
-        derivationPath: testData.descriptors.sortedMultiSig.derivationPath,
+        name: "sortedMulti",
+        descriptor: testData.descriptors.sortedMulti.key,
+        derivationPath: testData.descriptors.sortedMulti.derivationPath,
         skip: 0,
         gapLimit: 1,
         initialAddresses: 3
       },
       {
-        name: "mixedKeyTypes",
-        descriptor: testData.descriptors.mixedKeyTypes.key,
-        derivationPath: testData.descriptors.mixedKeyTypes.derivationPath,
+        name: "mixedKeys",
+        descriptor: testData.descriptors.mixedKeys.key,
+        derivationPath: testData.descriptors.mixedKeys.derivationPath,
         skip: 0,
         gapLimit: 1,
         initialAddresses: 3

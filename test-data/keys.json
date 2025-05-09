@@ -3,6 +3,7 @@
     "xpub1": {
       "key": "xpub6D8aLzrzMa4KyUxpoqp7gtvCchRLzfzLApCKsnURjJrh7RrmDCkRYfgYQfUq2g7eVn6aCcLAKXS6fbcp1GYa1jvqG1fxhaiMq2V3PxTTmQN",
       "type": "xpub",
+      "derivationPath": "m/44/0/0",
       "addresses": [
         {
           "index": 0,
@@ -28,12 +29,12 @@
           "index": 5,
           "address": "18uJEhryLCo7YEb2CtmS9rLZx5uzLj1duu"
         }
-      ],
-      "derivationPath": "m/44/0/0"
+      ]
     },
     "xpub2": {
       "key": "xpub6D8aLzrzMa4L2KxvGAD5ZZspt4qqdAifCPj2A2UX1cxAXYEb6d9YXbe82iaJj5p4rme3uu9wAyk5Q4o2tnz5UXuiT4v6A93drEWNyZkjZRf",
       "type": "xpub",
+      "derivationPath": "m/44/0/1",
       "addresses": [
         {
           "index": 0,
@@ -59,12 +60,12 @@
           "index": 5,
           "address": "1LphQCNhTSLPghWZsKUcCNED74zVDZV1CH"
         }
-      ],
-      "derivationPath": "m/44/0/1"
+      ]
     },
     "ypub1": {
       "key": "ypub6X9eFyFW6nCGqegpGSiN5xKzRDmHuLpBNG7ZPnt3s57Zcq4nfW5qsgHKUPpCFyQoD3k3wJAV8kAhusuDx9r6n8P1QboAPUetkTmu71v8bfW",
       "type": "ypub",
+      "derivationPath": "m/49/0/0",
       "addresses": [
         {
           "index": 0,
@@ -90,12 +91,12 @@
           "index": 5,
           "address": "3AV6VoEC8KhSr2iHxssPhDuTLG2t2AgQpE"
         }
-      ],
-      "derivationPath": "m/49/0/0"
+      ]
     },
     "zpub1": {
       "key": "zpub6qKUY3s8oMKW81qDYLA1owU4pDXLNwDxs9SUhKch38SRyYa2zmtWQ7D9LGR8bc1UhQUTACu7uD35wTUjXUJLoNeu8k9iTSZHyEiZBTM1TSG",
       "type": "zpub",
+      "derivationPath": "m/84/0/0",
       "addresses": [
         {
           "index": 0,
@@ -121,14 +122,13 @@
           "index": 5,
           "address": "bc1qq9fj9y0q8nlxl4qn4whc5al7gz82k4q67p6tr7"
         }
-      ],
-      "derivationPath": "m/84/0/0"
+      ]
     }
   },
   "descriptors": {
     "xpubSingle": {
       "key": "pkh(xpub6CDfqUCidksQ1e17HxEXpXd1A6RPPbkAHdUDCJPHSvW5ou7gZo8ZtTLSDLo4hVDuwaXveuevAnKNism4xXME9xzcRDuwm59c8rWHgpcuVD5/0/*)",
-      "type": "xpub",
+      "derivationPath": "m/0",
       "addresses": [
         {
           "index": 0,
@@ -154,12 +154,11 @@
           "index": 5,
           "address": "1BQVrydbZcXPd15fu15k1bydNhWKEYV9Ce"
         }
-      ],
-      "derivationPath": "m/0"
+      ]
     },
     "ypubSingle": {
       "key": "sh(wpkh(ypub6XkVNfvpBnBSVoB3YizsEufoHk6Dr8314nidPUZgbi8nRryjFQbWTT9FmX8YynV95WJWj9udyXVxQDAiv6WswHUMPrUBwZ6AF7zppe84R7y/0/*))",
-      "type": "ypub",
+      "derivationPath": "m/0",
       "addresses": [
         {
           "index": 0,
@@ -185,12 +184,11 @@
           "index": 5,
           "address": "32S1nE4KGEED6HKA7DQuuPmbzmMNSNZj7D"
         }
-      ],
-      "derivationPath": "m/0"
+      ]
     },
     "zpubSingle": {
       "key": "wpkh(zpub6qbttNurRMxugJyZLQYf9D9SYhpgyKBfaZbg91LU8NTp2zPDUcG85JXHsZx47cp734nk4z8T8x7zuZiv1jGixD2PkFYUCEw7qaAvwUAPnSq/0/*)",
-      "type": "zpub",
+      "derivationPath": "m/0",
       "addresses": [
         {
           "index": 0,
@@ -216,101 +214,97 @@
           "index": 5,
           "address": "bc1qej5nme6ydd2htpa87r5fvksyjha2cyea5eugyk"
         }
-      ],
-      "derivationPath": "m/0"
+      ]
     },
     "multiSig": {
       "key": "wsh(multi(2,xpub6CDfqUCidksQ1e17HxEXpXd1A6RPPbkAHdUDCJPHSvW5ou7gZo8ZtTLSDLo4hVDuwaXveuevAnKNism4xXME9xzcRDuwm59c8rWHgpcuVD5/0/*,xpub6CDfqUCidksQ1e17HxEXpXd1A6RPPbkAHdUDCJPHSvW5ou7gZo8ZtTLSDLo4hVDuwaXveuevAnKNism4xXME9xzcRDuwm59c8rWHgpcuVD5/1/*))",
-      "type": "xpub",
+      "derivationPath": "m/0,m/1",
       "addresses": [
         {
           "index": 0,
-          "address": "1J8jMftMcqVuEA5u7vy3AxyzTtsxF4SD5j"
+          "address": "bc1qefd60sqaja0sfpje0ww0yfwjlfr7tj8j7927ytwnskkd07gfwhdqvhhxkw"
         },
         {
           "index": 1,
-          "address": "1G5Fbeu9gDV2bQS7vBiCiuTs9QverCAbsn"
+          "address": "bc1qu59ryggp4sft42klxxk4emgv5fem0hrlumgpn8q05s20mudwxksqaeydk0"
         },
         {
           "index": 2,
-          "address": "1MG2QrrEq1sTuz38ttqtXTtWfshvGQFQ8a"
+          "address": "bc1q9lwqargglfztns7gvh56l5w3qy42fe592yqdv9r7dsk3jva7vmysy49ch2"
         },
         {
           "index": 3,
-          "address": "17qrPaiAZmaWfLf5nc9XqRGn8yLxwivee9"
+          "address": "bc1qfqj373j8dpmw6gzhu3xpjqqxc49r2mffcewcs7dgql9jvv88353ssmkfx5"
         },
         {
           "index": 4,
-          "address": "19gqY3zhqfU9wGDzPnzxuFeuKjXZvp4RCU"
+          "address": "bc1qr5hgm7r7zqf64k4zu9c9lza25wqnv4h5n9q9fmrzqg6x0d6h6g2q5hcdyp"
         },
         {
           "index": 5,
-          "address": "1BQVrydbZcXPd15fu15k1bydNhWKEYV9Ce"
+          "address": "bc1q9vaj6hydjtegs8tfgugqj8g3hcg7dxxznvv7lx57uwklgv9s80yslpa4ky"
         }
-      ],
-      "derivationPath": "m/0,m/1"
+      ]
     },
-    "sortedMultiSig": {
+    "sortedMulti": {
       "key": "wsh(sortedmulti(2,xpub6Cgq8W5wAsoi3CyDcDCCgVCF7UgyYt1pjDDVE4Moq56Aja7PEENWX6C21QMRNysVF5dmAaYA6jbj2neNFocMKmcEjYHhKnEXZkry6HtWYiE/0/*,xpub6CDfqUCidksQ1e17HxEXpXd1A6RPPbkAHdUDCJPHSvW5ou7gZo8ZtTLSDLo4hVDuwaXveuevAnKNism4xXME9xzcRDuwm59c8rWHgpcuVD5/0/*))",
-      "type": "xpub",
+      "derivationPath": "m/0",
       "addresses": [
         {
           "index": 0,
-          "address": "1ACPo6PExeiTQqou43oVr5pSLJmQjHZ8fJ"
+          "address": "bc1qjr4hyl54pfyumfyzgeykljvcdjscp722fmf7d8ufe9t0jlaxgttq6vhyqj"
         },
         {
           "index": 1,
-          "address": "1NahArHTJpNYfM8jqLHias4AMXLJG5PXT1"
+          "address": "bc1q75k2xn0egjaahglvfrkzgtudy0vzp3c49j0w5s947fvseekvdxvqyqkg5d"
         },
         {
           "index": 2,
-          "address": "1PE3WXcsf6deTaEFWQhEBpKayKpoNEgk83"
+          "address": "bc1qna596x9ug2vqrwgqr0fw7a8z6nkshf4x09mkun46n2m0nvze0zqsdslkrq"
         },
         {
           "index": 3,
-          "address": "1HU7iCmhuJbTCdphAtewsJKKaLa8xSRvvC"
+          "address": "bc1qehercurkqysrklkypp2fl0khnt9xxnjvc4ddszz4v4nqhyffhsgs98ys3g"
         },
         {
           "index": 4,
-          "address": "1HVMXsZ6Z4aivYLg7FA7JoqU5s9Nbp5Lmx"
+          "address": "bc1quuf8dvr337jl8e7s2a468drez8pyl8efdxxsgkmmq2mzkhhhj83qv4v8k8"
         },
         {
           "index": 5,
-          "address": "1K7d569niqP4phbrAEnLH7aaPJ13qW3ih6"
+          "address": "bc1qp2tzwtz6k3gh4zxea7tlcf4kj7k59840wg7ue2pdm38d434n34ts5qr5vj"
         }
-      ],
-      "derivationPath": "m/0"
+      ]
     },
-    "mixedKeyTypes": {
+    "mixedKeys": {
       "key": "wsh(multi(2,ypub6XkVNfvpBnBSVoB3YizsEufoHk6Dr8314nidPUZgbi8nRryjFQbWTT9FmX8YynV95WJWj9udyXVxQDAiv6WswHUMPrUBwZ6AF7zppe84R7y/0/*,zpub6qbttNurRMxugJyZLQYf9D9SYhpgyKBfaZbg91LU8NTp2zPDUcG85JXHsZx47cp734nk4z8T8x7zuZiv1jGixD2PkFYUCEw7qaAvwUAPnSq/0/*))",
-      "type": "ypub",
+      "derivationPath": "m/0",
       "addresses": [
         {
           "index": 0,
-          "address": "3737epQrvoV6bDc3DD42YrmpNy8Pn1L4r8"
+          "address": "bc1qvvcu9rc9gtmmka7ccge0rs7u7006u9umwjyyhrrv9renrxv9sl6srvg59w"
         },
         {
           "index": 1,
-          "address": "36PxAVgKncfkNsYD1c57xM8LRDn7Fej8LW"
+          "address": "bc1ql9sslk3vnku380x5x9thfxu709vzgtnpgdzyfls2dj422rgfkssq8p5ytx"
         },
         {
           "index": 2,
-          "address": "38Jd8marTuSXUMBweBk9r2PJR9KCCJs2P3"
+          "address": "bc1q8e2hrrxrphwhn7dgr5gqdxw3qllpdfyx6t828fv7um3hz9xf793sydaz6c"
         },
         {
           "index": 3,
-          "address": "3GKwsdKaNjUzaUspwnT52RkeFCVnC6ZehP"
+          "address": "bc1qk0d5ra8l7kqvxtzq5xuenqnqres948umtwqzu48g9zvzalyupy9qnn862m"
         },
         {
           "index": 4,
-          "address": "38ioUKgLUuBe9aRkkSjnje1iRQKyGc7Hnm"
+          "address": "bc1qcvdj3pre7hjqjf67malj0chnsgzs0rsaz08epnc2czufhz5zujeqva04r2"
         },
         {
           "index": 5,
-          "address": "32S1nE4KGEED6HKA7DQuuPmbzmMNSNZj7D"
+          "address": "bc1q6efund85dwgmmdnukltm5yuy2xqv6mql9edue4n884aezp7d2yesxjtz0s"
         }
-      ],
-      "derivationPath": "m/0"
+      ]
     }
   },
   "plain": {
