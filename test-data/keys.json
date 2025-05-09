@@ -31,37 +31,6 @@
         }
       ]
     },
-    "xpub2": {
-      "key": "xpub6D8aLzrzMa4L2KxvGAD5ZZspt4qqdAifCPj2A2UX1cxAXYEb6d9YXbe82iaJj5p4rme3uu9wAyk5Q4o2tnz5UXuiT4v6A93drEWNyZkjZRf",
-      "type": "xpub",
-      "derivationPath": "m/44/0/1",
-      "addresses": [
-        {
-          "index": 0,
-          "address": "18N3JetrsEgi91vqVCadygUG2Z2sEZfuXF"
-        },
-        {
-          "index": 1,
-          "address": "1LugQUyVybMqPTBaT2LzYeXrXN6QjPggnk"
-        },
-        {
-          "index": 2,
-          "address": "14xER4rUsDk7WasgEi6B9qRKvzx9JYDTg2"
-        },
-        {
-          "index": 3,
-          "address": "12N8K2xAYDEnY8cxtPFwBH9btfJcfj3Fqe"
-        },
-        {
-          "index": 4,
-          "address": "1DWyeNDfsd52V5QNdTQdJreTNwRmHfXt11"
-        },
-        {
-          "index": 5,
-          "address": "1LphQCNhTSLPghWZsKUcCNED74zVDZV1CH"
-        }
-      ]
-    },
     "ypub1": {
       "key": "ypub6X9eFyFW6nCGqegpGSiN5xKzRDmHuLpBNG7ZPnt3s57Zcq4nfW5qsgHKUPpCFyQoD3k3wJAV8kAhusuDx9r6n8P1QboAPUetkTmu71v8bfW",
       "type": "ypub",

@@ -178,19 +178,19 @@ export const parseSingleKeyDescriptor = (descriptor) => {
 
 // Parse any descriptor type
 export const parseDescriptor = (descriptor) => {
-  // First try multisig format
+  // First try single-key format since it's more common
+  const singleResult = parseSingleKeyDescriptor(descriptor);
+  if (singleResult.success) {
+    return singleResult;
+  }
+
+  // Then try multisig format
   const multiResult = parseMultiSigDescriptor(descriptor);
   if (multiResult.success) {
     return {
       ...multiResult,
       type: "multi",
     };
-  }
-
-  // Then try single-key format
-  const singleResult = parseSingleKeyDescriptor(descriptor);
-  if (singleResult.success) {
-    return singleResult;
   }
 
   return {
@@ -200,7 +200,7 @@ export const parseDescriptor = (descriptor) => {
 };
 
 // Derive addresses from a descriptor
-export const deriveAddresses = (descriptor, startIndex, count) => {
+export const deriveAddresses = (descriptor, startIndex, count, skip = 0) => {
   const result = parseDescriptor(descriptor);
   if (!result.success) {
     logger.error(`Failed to parse descriptor: ${result.error}`);
@@ -209,7 +209,7 @@ export const deriveAddresses = (descriptor, startIndex, count) => {
 
   const addresses = [];
   for (let i = 0; i < count; i++) {
-    const index = startIndex + i;
+    const index = startIndex + skip + i;
     const address = deriveAddress(descriptor, index);
     if (!address) {
       logger.error(`Failed to derive address at index ${index}`);

@@ -26,7 +26,10 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
     if (!formData.name || !formData.address) {
       return;
     }
-    onSave(formData);
+    onSave({
+      ...formData,
+      address: formData.address, // Ensure address is passed as unique identifier
+    });
     onClose();
   };
 

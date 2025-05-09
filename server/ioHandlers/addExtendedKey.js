@@ -1,6 +1,7 @@
 import memory from "../memory.js";
 import logger, { getMonitorLog } from "../logger.js";
 import { deriveExtendedKeyAddresses } from "../deriveExtendedKeyAddresses.js";
+import { editExtendedKey } from "./editExtendedKey.js";
 
 export const addExtendedKey = async ({ data, io }) => {
   // Debug log incoming data (excluding io property)
@@ -35,13 +36,13 @@ export const addExtendedKey = async ({ data, io }) => {
 
   // Check if extended key already exists
   const collection = memory.db.collections[data.collection];
-  if (
-    collection.extendedKeys.some(
-      (k) => k.name === data.name || k.key === data.key
-    )
-  ) {
-    logger.error("Extended key with this name or key already exists");
-    return { error: "Extended key with this name or key already exists" };
+  const existingKey = collection.extendedKeys.find(
+    (k) => k.name === data.name || k.key === data.key
+  );
+
+  if (existingKey) {
+    logger.info("Extended key already exists, editing instead");
+    return editExtendedKey({ data, io });
   }
 
   // Set default values if not provided

@@ -236,43 +236,34 @@ test.describe("Bitwatch", () => {
     await expect(page.getByText("test rename")).toBeVisible();
     console.log("Address rename verified");
 
+    // basic settings for extended keys and descriptors
+    // we will test editiing these fields after we create them all with these
+    const settings = {
+      skip: 0,
+      gapLimit: 2,
+      initialAddresses: 3
+    }
+
     // Add extended keys (xpub, ypub, zpub)
-    const extendedKeys = [
-      {
-        name: "Test XPub",  // Base name, index will be added by server
-        key: testData.extendedKeys.xpub1.key,
-        derivationPath: testData.extendedKeys.xpub1.derivationPath,
-        skip: 2,
-        gapLimit: 3,
-        initialAddresses: 4,
-        monitor: {
-          chain_in: "alert",
-          chain_out: "alert",
-          mempool_in: "alert",
-          mempool_out: "alert"
-        }
-      },
-      {
-        name: "Test YPub",  // Base name, index will be added by server
-        key: testData.extendedKeys.ypub1.key,
-        derivationPath: testData.extendedKeys.ypub1.derivationPath,
-        skip: 0,
-        gapLimit: 2,
-        initialAddresses: 3
-      },
-      {
-        name: "Test ZPub",  // Base name, index will be added by server
-        key: testData.extendedKeys.zpub1.key,
-        derivationPath: testData.extendedKeys.zpub1.derivationPath,
-        skip: 0,
-        gapLimit: 1,
-        initialAddresses: 3
-      }
-    ];
+    const extendedKeys = Object.entries(testData.extendedKeys).map(([id, key]) => ({
+      name: `Test ${key.type.toUpperCase()}`,  // Base name, index will be added by server
+      key: key.key,
+      keyId: id,
+      derivationPath: key.derivationPath,
+      ...settings,
+      monitor: id === 'xpub1' ? {
+        chain_in: "alert",
+        chain_out: "alert",
+        mempool_in: "alert",
+        mempool_out: "alert"
+      } : undefined
+    }));
 
     for (const key of extendedKeys) {
       await addExtendedKey(page, "Donations", key);
       console.log(`Added ${key.name}`);
+
+      const firstAddressIndex = key.skip ? key.skip-1 : 0;
 
       // Verify the key-derived addresses section is visible
       await expect(page.getByText("Key-Derived Addresses")).toBeVisible();
@@ -308,14 +299,8 @@ test.describe("Bitwatch", () => {
         await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-mempool-in-alert-icon"]`)).toBeVisible();
         await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-mempool-out-alert-icon"]`)).toBeVisible();
 
-        // Verify the address matches the expected address from test data
-        const keyId = key.name.toLowerCase()
-          .replace(/\s+/g, '')
-          .replace('test', '')
-          .toLowerCase() + '1';
-        console.log('Looking up extended key:', keyId, 'Available keys:', Object.keys(testData.extendedKeys));
         console.log(`Checking address at index ${i} (with skip ${key.skip}), actual index ${i + key.skip}`);
-        const expectedAddress = testData.extendedKeys[keyId].addresses[i + key.skip].address;
+        const expectedAddress = testData.extendedKeys[key.keyId].addresses[i + key.skip].address;
         const addressCell = page.locator(`[data-testid="${key.key}-address-${addressIndex}-row"] td:nth-child(2)`);
         await expect(addressCell).toContainText(expectedAddress.slice(0, 15));
 
@@ -324,15 +309,15 @@ test.describe("Bitwatch", () => {
         await expect(nameCell).toContainText(`${key.name} ${addressIndex}`);
       }
       // For the first extended key, verify all addresses have alert settings
-      if (key.name === "Test XPub") {
+      if (key.name === "Test XPUB") {
         // Test single address refresh using helper (should show 0 balances)
         await refreshAddressBalance(page, key.key, {
           chain_in: "0.00000000 ₿",
           chain_out: "0.00000000 ₿",
           mempool_in: "0.00000000 ₿",
           mempool_out: "0.00000000 ₿"
-        }, 2, key.key);  // Index 2 is our first address
-        console.log(`Verified initial zero balance for ${key.name} address 2`);
+        }, firstAddressIndex, key.key);
+        console.log(`Verified initial zero balance for ${key.name} address ${firstAddressIndex}`);
 
         // Test mempool input state
         await refreshAddressBalance(page, key.key, {
@@ -340,8 +325,8 @@ test.describe("Bitwatch", () => {
           chain_out: "0.00000000 ₿",
           mempool_in: "0.00010000 ₿",
           mempool_out: "0.00000000 ₿"
-        }, 2, key.key);  // Index 2 is our first address
-        console.log(`Verified mempool input for ${key.name} address 2`);
+        }, firstAddressIndex, key.key);
+        console.log(`Verified mempool input for ${key.name} address ${firstAddressIndex}`);
 
         // Then test full row refresh
         await findAndClick(page, `[data-testid="${key.key}-refresh-all-button"]`);
@@ -355,10 +340,10 @@ test.describe("Bitwatch", () => {
             chain_out: "0.00000000 ₿",
             mempool_in: "0.00000000 ₿",
             mempool_out: "0.00000000 ₿"
-        }, 2, key.key);  // Index 2 is our first address
+        }, firstAddressIndex, key.key);
 
-        // Verify balances for all addresses
-        for (let i = 3; i < key.initialAddresses + key.skip; i++) {  // Start at 3 since our first address is at 2
+        // Verify balances for all other addresses
+        for (let i = 1; i < key.initialAddresses + key.skip; i++) {  // Start at 3 since our first address is at 2
           await verifyAddressBalance(page, key.key, {
             chain_in: "0.00000000 ₿",
             chain_out: "0.00000000 ₿",
@@ -366,12 +351,12 @@ test.describe("Bitwatch", () => {
             mempool_out: "0.00000000 ₿"
           }, i, key.key);
         }
-        // Edit the first derived address (which is at index 2)
-        await findAndClick(page, `[data-testid="${key.key}-address-2-edit-button"]`);
+        // Edit the first derived address
+        await findAndClick(page, `[data-testid="${key.key}-address-${firstAddressIndex}-edit-button"]`);
         
         // Wait for the dialog to be visible
         await expect(page.locator('[data-testid="address-dialog"]')).toBeVisible();
-        await expect(page.getByTestId("address-name-input")).toHaveValue(`${key.name} 2`);
+        await expect(page.getByTestId("address-name-input")).toHaveValue(`${key.name} 0`);
         
         // Change the name
         await page.getByTestId("address-name-input").fill(`${key.name} 2 Edited`);
@@ -380,7 +365,7 @@ test.describe("Bitwatch", () => {
         // Verify the dialog closed and name was updated
         await page.waitForSelector('[data-testid="address-dialog"]', { state: "hidden", timeout: 2000 });
         await expect(page.getByText("Address updated successfully")).toBeVisible();
-        await expect(page.getByTestId(`${key.key}-address-2-name`)).toContainText(`${key.name} 2 Edited`);
+        await expect(page.getByTestId(`${key.key}-address-${firstAddressIndex}-name`)).toContainText(`${key.name} 2 Edited`);
         console.log(`Edited address name in ${key.name}`);
       }
 
@@ -390,62 +375,18 @@ test.describe("Bitwatch", () => {
     }
 
     // Add descriptors (pkh, sh(wpkh), wpkh, wsh(multi), wsh(sortedmulti), wsh(multi-mixed))
-    const descriptors = [
-      {
-        name: "xpubSingle",
-        descriptor: testData.descriptors.xpubSingle.key,
-        derivationPath: testData.descriptors.xpubSingle.derivationPath,
-        skip: 0,
-        gapLimit: 1,
-        initialAddresses: 2,
-        monitor: {
-          chain_in: "alert",
-          chain_out: "alert",
-          mempool_in: "alert",
-          mempool_out: "alert"
-        }
-      },
-      {
-        name: "ypubSingle",
-        descriptor: testData.descriptors.ypubSingle.key,
-        derivationPath: testData.descriptors.ypubSingle.derivationPath,
-        skip: 1,
-        gapLimit: 2,
-        initialAddresses: 3
-      },
-      {
-        name: "zpubSingle",
-        descriptor: testData.descriptors.zpubSingle.key,
-        derivationPath: testData.descriptors.zpubSingle.derivationPath,
-        skip: 0,
-        gapLimit: 2,
-        initialAddresses: 3
-      },
-      {
-        name: "multiSig",
-        descriptor: testData.descriptors.multiSig.key,
-        derivationPath: testData.descriptors.multiSig.derivationPath,
-        skip: 0,
-        gapLimit: 1,
-        initialAddresses: 3
-      },
-      {
-        name: "sortedMulti",
-        descriptor: testData.descriptors.sortedMulti.key,
-        derivationPath: testData.descriptors.sortedMulti.derivationPath,
-        skip: 0,
-        gapLimit: 1,
-        initialAddresses: 3
-      },
-      {
-        name: "mixedKeys",
-        descriptor: testData.descriptors.mixedKeys.key,
-        derivationPath: testData.descriptors.mixedKeys.derivationPath,
-        skip: 0,
-        gapLimit: 1,
-        initialAddresses: 3
-      }
-    ];
+    const descriptors = Object.entries(testData.descriptors).map(([id, desc]) => ({
+      name: id,
+      descriptor: desc.key,
+      derivationPath: desc.derivationPath,
+      ...settings,
+      monitor: id === 'xpubSingle' ? {
+        chain_in: "alert",
+        chain_out: "alert",
+        mempool_in: "alert",
+        mempool_out: "alert"
+      } : undefined
+    }));
 
     for (const descriptor of descriptors) {
       await addDescriptor(page, "Donations", descriptor);
@@ -499,10 +440,8 @@ test.describe("Bitwatch", () => {
         await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-mempool-out-alert-icon"]`)).toBeVisible();
 
         // Verify the address matches the expected address from test data
-        const descriptorId = descriptor.name;
-        // console.log('Looking up descriptor:', descriptorId, 'Available descriptors:', Object.keys(testData.descriptors));
         console.log(`Checking address at index ${i} (with skip ${descriptor.skip}), actual index ${i + descriptor.skip}`);
-        const expectedAddress = testData.descriptors[descriptorId].addresses[i + descriptor.skip].address;
+        const expectedAddress = testData.descriptors[descriptor.name].addresses[i + descriptor.skip].address;
         const addressCell = page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-row"] td:nth-child(2)`);
         await expect(addressCell).toContainText(expectedAddress.slice(0, 15));
 
@@ -511,7 +450,7 @@ test.describe("Bitwatch", () => {
         await expect(nameCell).toContainText(`${descriptor.name} ${addressIndex}`);
       }
       // For the first descriptor, verify all addresses have alert settings
-      if (descriptor.name === "Single XPub") {
+      if (descriptor.name === "xpubSingle") {
         // Trigger a balance change to generate new addresses
         await refreshAddressBalance(page, descriptor.descriptor, {
           chain_in: "0.00010000 ₿"
@@ -596,10 +535,10 @@ test.describe("Bitwatch", () => {
         // Verify the dialog shows the correct values
         await expect(page.getByTestId("descriptor-name-input")).toHaveValue(descriptor.name);
         await expect(page.getByTestId("descriptor-input")).toHaveValue(descriptor.descriptor);
-        await expect(page.getByTestId("descriptor-skip-input")).toHaveValue("0");
+        await expect(page.getByTestId("descriptor-skip-input")).toHaveValue(0);
         
         // Update the skip value to 1
-        await page.getByTestId("descriptor-skip-input").fill("1");
+        await page.getByTestId("descriptor-skip-input").fill(1);
         
         // Save the changes
         await findAndClick(page, '[data-testid="descriptor-submit-button"]');
@@ -611,6 +550,9 @@ test.describe("Bitwatch", () => {
         await expect(page.getByText("xpubSingle 1")).toBeVisible();
         await expect(page.getByText("xpubSingle 3")).toBeVisible();
         await expect(page.getByText("xpubSingle 5")).toBeVisible();
+        // verify number of addresses
+        const addresses = await page.locator(`[data-testid="${descriptor.descriptor}-address-list"] tr.address-row`).all();
+        expect(addresses.length).toBe(descriptor.initialAddresses + descriptor.skip);
       }
     }
 

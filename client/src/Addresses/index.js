@@ -546,19 +546,23 @@ export default function Addresses() {
     setEditDialog({
       open: true,
       collection: collection.name,
-      address,
+      address: {
+        ...address,
+        parentKey: address.parentKey || null, // Preserve parentKey if it exists
+      },
     });
   };
 
   const handleSaveAddress = (updatedAddress) => {
     socketIO.emit(
-      "updateAddress",
+      "editAddress",
       {
         collection: editDialog.collection,
         address: {
           address: editDialog.address.address,
           name: updatedAddress.name,
           monitor: updatedAddress.monitor,
+          parentKey: editDialog.address.parentKey, // Include parentKey in the update
         },
       },
       (response) => {
@@ -635,6 +639,7 @@ export default function Addresses() {
   };
 
   const handleEditDescriptor = (collection, data) => {
+    console.log("handleEditDescriptor", { collection, data });
     socketIO.emit(
       "editDescriptor",
       {

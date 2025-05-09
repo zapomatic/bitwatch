@@ -27,6 +27,7 @@ const DescriptorInfo = ({
   collection,
   displayBtc,
   setNotification,
+  onEditAddress,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -225,7 +226,7 @@ const DescriptorInfo = ({
                       parentKey={descriptor.descriptor}
                       index={address.index}
                       onDelete={onDelete}
-                      onEditAddress={onEdit}
+                      onEditAddress={onEditAddress}
                     />
                   ))}
                 </TableBody>

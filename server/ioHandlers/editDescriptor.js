@@ -1,26 +1,37 @@
 import memory from "../memory.js";
-import logger from "../logger.js";
+import logger, { getMonitorLog } from "../logger.js";
 import { deriveAddresses } from "../descriptors.js";
 
 export const editDescriptor = async ({ data, io }) => {
-  if (
-    !data.collection ||
-    !data.name ||
-    !data.descriptor ||
-    data.descriptorIndex === undefined
-  ) {
+  logger.info(
+    `editDescriptor: ${data.collection}/${data.descriptor}, gap ${
+      data.gapLimit
+    }, initialAddresses ${data.initialAddresses}, skip ${
+      data.skip
+    } with ${getMonitorLog(data.monitor)}`
+  );
+  if (!data.collection || !data.name || !data.descriptor) {
     logger.error("Missing required fields");
     return { error: "Missing required fields" };
   }
 
   const collection = memory.db.collections[data.collection];
-  if (!collection || !collection.descriptors[data.descriptorIndex]) {
+  if (!collection) {
+    logger.error("Collection not found");
+    return { error: "Collection not found" };
+  }
+
+  // Find descriptor by its descriptor string
+  const descriptorIndex = collection.descriptors.findIndex(
+    (d) => d.descriptor === data.descriptor
+  );
+  if (descriptorIndex === -1) {
     logger.error("Descriptor not found");
     return { error: "Descriptor not found" };
   }
 
   // Get existing descriptor
-  const existingDescriptor = collection.descriptors[data.descriptorIndex];
+  const existingDescriptor = collection.descriptors[descriptorIndex];
 
   // Only check for name conflicts if the name is actually changing
   if (data.name !== existingDescriptor.name) {
@@ -49,7 +60,7 @@ export const editDescriptor = async ({ data, io }) => {
     data.monitor || existingDescriptor.monitor || memory.db.monitor;
 
   // Update the descriptor
-  collection.descriptors[data.descriptorIndex] = {
+  collection.descriptors[descriptorIndex] = {
     ...existingDescriptor,
     ...data,
     monitor: {

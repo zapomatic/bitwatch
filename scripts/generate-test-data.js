@@ -234,10 +234,6 @@ function generateTestKeys() {
     .derivePath(derivationPaths.xpub.receive)
     .neutered()
     .toBase58();
-  const xpub2 = roots.xpub
-    .derivePath(derivationPaths.xpub.change)
-    .neutered()
-    .toBase58();
   const ypub1 = roots.ypub
     .derivePath(derivationPaths.ypub.receive)
     .neutered()
@@ -265,7 +261,6 @@ function generateTestKeys() {
 
   return {
     xpub1,
-    xpub2,
     ypub1,
     zpub1,
     desc_xpub: desc_x,
@@ -315,10 +310,7 @@ function generateTestData() {
       ? "zpub"
       : "xpub";
 
-    const derivationPath =
-      name === "xpub2"
-        ? keys.derivationPaths.xpub.change
-        : keys.derivationPaths[keyType].receive;
+    const derivationPath = keys.derivationPaths[keyType].receive;
 
     // reuse deriveAddresses for single‑key descriptors by forming a faux descriptor:
     //  pkh(xpub/derivation/*)  or wpkh/sh(wpkh) as needed

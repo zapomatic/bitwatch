@@ -1,27 +1,36 @@
 import memory from "../memory.js";
-import logger from "../logger.js";
+import logger, { getMonitorLog } from "../logger.js";
 import { deriveExtendedKeyAddresses } from "../deriveExtendedKeyAddresses.js";
 
 export const editExtendedKey = async ({ data, io }) => {
-  if (
-    !data.collection ||
-    !data.name ||
-    !data.key ||
-    data.keyIndex === undefined
-  ) {
+  logger.info(
+    `editExtendedKey: ${data.collection}/${data.name}, gap ${
+      data.gapLimit
+    }, initialAddresses ${data.initialAddresses}, skip ${
+      data.skip
+    } with ${getMonitorLog(data.monitor)}`
+  );
+  if (!data.collection || !data.name || !data.key) {
     logger.error("Missing required fields");
     return { error: "Missing required fields" };
   }
 
   const collection = memory.db.collections[data.collection];
-  if (!collection || !collection.extendedKeys[data.keyIndex]) {
+  if (!collection) {
+    logger.error("Collection not found");
+    return { error: "Collection not found" };
+  }
+
+  // Find extended key by its key string
+  const keyIndex = collection.extendedKeys.findIndex((k) => k.key === data.key);
+  if (keyIndex === -1) {
     logger.error("Extended key not found");
     return { error: "Extended key not found" };
   }
 
   // Check if another extended key with the same name exists (excluding the current one)
   const nameExists = collection.extendedKeys.some(
-    (k, i) => i !== data.keyIndex && k.name === data.name
+    (k, i) => i !== keyIndex && k.name === data.name
   );
   if (nameExists) {
     logger.error("Another extended key with this name already exists");
@@ -42,11 +51,11 @@ export const editExtendedKey = async ({ data, io }) => {
   }
 
   // Get existing monitor settings or use system defaults
-  const existingKey = collection.extendedKeys[data.keyIndex];
+  const existingKey = collection.extendedKeys[keyIndex];
   const monitor = data.monitor || existingKey.monitor || memory.db.monitor;
 
   // Update the extended key
-  collection.extendedKeys[data.keyIndex] = {
+  collection.extendedKeys[keyIndex] = {
     ...existingKey,
     ...data,
     monitor: {

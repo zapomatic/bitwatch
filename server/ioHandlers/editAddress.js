@@ -1,8 +1,13 @@
 import memory from "../memory.js";
-import logger from "../logger.js";
+import logger, { getMonitorLog } from "../logger.js";
 
-export const updateAddress = async ({ data, io }) => {
+export const editAddress = async ({ data, io }) => {
   const { collection, address } = data;
+  logger.info(
+    `editAddress: ${collection}/${address.address} with ${getMonitorLog(
+      address.monitor
+    )}`
+  );
 
   if (!collection || !address) {
     logger.error("Missing collection or address data");
