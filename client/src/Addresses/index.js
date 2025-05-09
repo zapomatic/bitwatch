@@ -614,13 +614,7 @@ export default function Addresses() {
       "addDescriptor",
       {
         collection,
-        name: data.name,
-        descriptor: data.descriptor,
-        derivationPath: data.derivationPath || "m/0",
-        gapLimit: parseInt(data.gapLimit) || 2,
-        initialAddresses: parseInt(data.initialAddresses) || 10,
-        skip: parseInt(data.skip) || 0,
-        monitor: data.monitor,
+        ...data,
       },
       (response) => {
         if (response.error) {

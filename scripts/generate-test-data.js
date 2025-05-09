@@ -5,6 +5,8 @@ import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 
+import { descriptorExtractPaths } from "../server/descriptorExtractPaths.js";
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const bip32 = BIP32Factory(ecc);
 
@@ -349,19 +351,6 @@ const generateTestAddresses = (keys) => {
 
 // Generate test descriptors
 const generateTestDescriptors = (keys) => {
-  const extractDerivationPath = (descriptor) => {
-    // Match all derivation paths ending in /* inside the descriptor
-    const matches = [...descriptor.matchAll(/\/([0-9h/'\/]+)\/\*/g)];
-
-    // Extract and normalize the paths
-    const paths = matches.map((match) => `m/${match[1]}`);
-
-    // Deduplicate and join
-    const uniquePaths = [...new Set(paths)];
-
-    return uniquePaths.join(",");
-  };
-
   // Create descriptors first, then add derivation paths
   const descriptors = {
     // Single key descriptors
@@ -388,7 +377,7 @@ const generateTestDescriptors = (keys) => {
 
   // Add derivation paths to each descriptor
   for (const [_name, descriptor] of Object.entries(descriptors)) {
-    descriptor.derivationPath = extractDerivationPath(descriptor.key);
+    descriptor.derivationPath = descriptorExtractPaths(descriptor.key);
   }
 
   return descriptors;

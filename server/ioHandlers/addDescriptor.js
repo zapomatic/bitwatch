@@ -1,7 +1,7 @@
 import memory from "../memory.js";
 import logger, { getMonitorLog } from "../logger.js";
 import { deriveAddresses, validateDescriptor } from "../descriptors.js";
-
+import { descriptorExtractPaths } from "../descriptorExtractPaths.js";
 export const addDescriptor = async ({ data, io }) => {
   if (!data.collection || !data.name || !data.descriptor) {
     logger.error("Missing required fields");
@@ -47,6 +47,7 @@ export const addDescriptor = async ({ data, io }) => {
   // Set default values if not provided
   const desc = {
     ...data,
+    derivationPath: descriptorExtractPaths(data.descriptor),
     addresses: [],
   };
 
@@ -54,7 +55,7 @@ export const addDescriptor = async ({ data, io }) => {
   const addresses = deriveAddresses(
     desc.descriptor,
     0, // startIndex
-    desc.initialAddresses || 10, // count
+    desc.initialAddresses || 5, // count
     desc.skip || 0 // skip
   );
 

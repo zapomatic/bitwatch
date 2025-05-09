@@ -198,18 +198,13 @@ const parseKey = (key) => {
 export const deriveAddresses = (
   descriptor,
   startIndex = 0,
-  count = 10,
+  count = 5,
   skip = 0
 ) => {
   logger.debug(`Deriving addresses for descriptor: ${descriptor}`);
   logger.debug(
     `Parameters: startIndex=${startIndex}, count=${count}, skip=${skip}`
   );
-
-  // Ensure numeric inputs
-  startIndex = parseInt(startIndex) || 0;
-  count = parseInt(count) || 10;
-  skip = parseInt(skip) || 0;
 
   const addresses = [];
   const parsed = parseMultiSigDescriptor(descriptor);
