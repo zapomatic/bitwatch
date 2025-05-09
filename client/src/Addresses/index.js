@@ -634,6 +634,56 @@ export default function Addresses() {
     );
   };
 
+  const handleEditDescriptor = (collection, data) => {
+    socketIO.emit(
+      "editDescriptor",
+      {
+        collection,
+        ...data,
+      },
+      (response) => {
+        if (response.error) {
+          setNotification({
+            open: true,
+            message: `Error updating descriptor: ${response.error}`,
+            severity: "error",
+          });
+        } else {
+          setNotification({
+            open: true,
+            message: "Descriptor updated successfully",
+            severity: "success",
+          });
+        }
+      }
+    );
+  };
+
+  const handleEditExtendedKey = (collection, data) => {
+    socketIO.emit(
+      "editExtendedKey",
+      {
+        collection,
+        ...data,
+      },
+      (response) => {
+        if (response.error) {
+          setNotification({
+            open: true,
+            message: `Error updating extended key: ${response.error}`,
+            severity: "error",
+          });
+        } else {
+          setNotification({
+            open: true,
+            message: "Extended key updated successfully",
+            severity: "success",
+          });
+        }
+      }
+    );
+  };
+
   // Add loading state to the UI
   if (loading) {
     return (
@@ -949,11 +999,13 @@ export default function Addresses() {
                   onAddAddress={handleAddAddress}
                   onAddExtendedKey={handleAddExtendedKey}
                   onAddDescriptor={handleAddDescriptor}
+                  onEditDescriptor={handleEditDescriptor}
+                  onEditExtendedKey={handleEditExtendedKey}
                   onRenameCollection={handleRenameCollection}
                   onEditAddress={handleEditAddress}
-                  autoShowAddForm={name === justCreatedCollection}
                   displayBtc={displayBtc}
                   setNotification={setNotification}
+                  autoShowAddForm={justCreatedCollection === name}
                 />
               ))}
             </TableBody>

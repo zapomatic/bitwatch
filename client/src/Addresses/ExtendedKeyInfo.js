@@ -49,7 +49,12 @@ const ExtendedKeyInfo = ({
   const handleEditClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    onEdit(extendedKey);
+    onEdit({
+      ...extendedKey,
+      keyIndex: collection.extendedKeys.findIndex(
+        (k) => k.key === extendedKey.key
+      ),
+    });
   };
 
   const handleDeleteClick = (e) => {

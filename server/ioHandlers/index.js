@@ -10,6 +10,7 @@ import { saveExpected } from "./saveExpected.js";
 import { addDescriptor } from "./addDescriptor.js";
 import { editDescriptor } from "./editDescriptor.js";
 import { addExtendedKey } from "./addExtendedKey.js";
+import { editExtendedKey } from "./editExtendedKey.js";
 import { deleteHandler } from "./delete.js";
 import { updateAddress } from "./updateAddress.js";
 import { requestState } from "./requestState.js";
@@ -43,6 +44,7 @@ export default {
 
   // Extended key management
   addExtendedKey,
+  editExtendedKey,
 
   // Deletion
   delete: deleteHandler,

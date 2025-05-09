@@ -500,7 +500,7 @@ test.describe("Bitwatch", () => {
 
         // Verify the address matches the expected address from test data
         const descriptorId = descriptor.name;
-        console.log('Looking up descriptor:', descriptorId, 'Available descriptors:', Object.keys(testData.descriptors));
+        // console.log('Looking up descriptor:', descriptorId, 'Available descriptors:', Object.keys(testData.descriptors));
         console.log(`Checking address at index ${i} (with skip ${descriptor.skip}), actual index ${i + descriptor.skip}`);
         const expectedAddress = testData.descriptors[descriptorId].addresses[i + descriptor.skip].address;
         const addressCell = page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-row"] td:nth-child(2)`);
@@ -584,6 +584,34 @@ test.describe("Bitwatch", () => {
       // Collapse the descriptor section after testing
       await findAndClick(page, `[data-testid="${descriptor.descriptor}-expand-button"]`);
       console.log(`Collapsed ${descriptor.name} section`);
+
+      // Test editing the descriptor itself
+      if (descriptor.name === "xpubSingle") {
+        // Click the edit button on the descriptor row
+        await findAndClick(page, `[data-testid="${descriptor.descriptor}-edit-button"]`);
+        
+        // Wait for the descriptor dialog to be visible
+        await expect(page.locator('[data-testid="descriptor-dialog"]')).toBeVisible();
+        
+        // Verify the dialog shows the correct values
+        await expect(page.getByTestId("descriptor-name-input")).toHaveValue(descriptor.name);
+        await expect(page.getByTestId("descriptor-input")).toHaveValue(descriptor.descriptor);
+        await expect(page.getByTestId("skip-input")).toHaveValue("0");
+        
+        // Update the skip value to 1
+        await page.getByTestId("skip-input").fill("1");
+        
+        // Save the changes
+        await findAndClick(page, '[data-testid="save-descriptor-button"]');
+        
+        // Wait for the dialog to close
+        await expect(page.locator('[data-testid="descriptor-dialog"]')).not.toBeVisible();
+        
+        // Verify that new addresses are generated with skip=1
+        await expect(page.getByText("xpubSingle 1")).toBeVisible();
+        await expect(page.getByText("xpubSingle 3")).toBeVisible();
+        await expect(page.getByText("xpubSingle 5")).toBeVisible();
+      }
     }
 
     // Now that we've verified all balances, let's verify monitor settings update

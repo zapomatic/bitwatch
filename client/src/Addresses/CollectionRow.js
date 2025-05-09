@@ -34,6 +34,8 @@ const CollectionRow = ({
   onAddAddress,
   onAddExtendedKey,
   onAddDescriptor,
+  onEditDescriptor,
+  onEditExtendedKey,
   onRenameCollection,
   onEditAddress,
   displayBtc,
@@ -46,6 +48,8 @@ const CollectionRow = ({
   const [extendedKeyDialogOpen, setExtendedKeyDialogOpen] = useState(false);
   const [descriptorDialogOpen, setDescriptorDialogOpen] = useState(false);
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
+  const [editingDescriptor, setEditingDescriptor] = useState(null);
+  const [editingExtendedKey, setEditingExtendedKey] = useState(null);
 
   useEffect(() => {
     if (
@@ -79,6 +83,16 @@ const CollectionRow = ({
   const handleAddDescriptor = () => {
     setDescriptorDialogOpen(true);
     setIsExpanded(true);
+  };
+
+  const handleEditDescriptor = (descriptor) => {
+    setEditingDescriptor(descriptor);
+    setDescriptorDialogOpen(true);
+  };
+
+  const handleEditExtendedKey = (extendedKey) => {
+    setEditingExtendedKey(extendedKey);
+    setExtendedKeyDialogOpen(true);
   };
 
   const handleRenameCollection = () => {
@@ -319,7 +333,7 @@ const CollectionRow = ({
                         <ExtendedKeyInfo
                           key={extendedKey.key}
                           extendedKey={extendedKey}
-                          onEdit={() => setExtendedKeyDialogOpen(true)}
+                          onEdit={() => handleEditExtendedKey(extendedKey)}
                           onDelete={onDelete}
                           collection={collection}
                           displayBtc={displayBtc}
@@ -332,7 +346,7 @@ const CollectionRow = ({
                           key={descriptor.descriptor}
                           descriptor={descriptor}
                           collection={collection}
-                          onEdit={onEditAddress}
+                          onEdit={handleEditDescriptor}
                           onDelete={onDelete}
                           onEditAddress={onEditAddress}
                           onSaveExpected={onSaveExpected}
@@ -350,15 +364,23 @@ const CollectionRow = ({
       </TableRow>
       <ExtendedKeyDialog
         open={extendedKeyDialogOpen}
-        onClose={() => setExtendedKeyDialogOpen(false)}
-        onSave={onAddExtendedKey}
+        onClose={() => {
+          setExtendedKeyDialogOpen(false);
+          setEditingExtendedKey(null);
+        }}
+        onSave={editingExtendedKey ? onEditExtendedKey : onAddExtendedKey}
         collection={collection.name}
+        extendedKey={editingExtendedKey}
       />
       <DescriptorDialog
         open={descriptorDialogOpen}
-        onClose={() => setDescriptorDialogOpen(false)}
-        onSave={onAddDescriptor}
+        onClose={() => {
+          setDescriptorDialogOpen(false);
+          setEditingDescriptor(null);
+        }}
+        onSave={editingDescriptor ? onEditDescriptor : onAddDescriptor}
         collection={collection.name}
+        descriptor={editingDescriptor}
       />
       <AddressDialog
         open={addressDialogOpen}

@@ -1,39 +1,36 @@
 import memory from "../memory.js";
 import logger from "../logger.js";
-import { deriveAddresses } from "../descriptors.js";
+import { deriveExtendedKeyAddresses } from "../deriveExtendedKeyAddresses.js";
 
-export const editDescriptor = async ({ data, io }) => {
+export const editExtendedKey = async ({ data, io }) => {
   if (
     !data.collection ||
     !data.name ||
-    !data.descriptor ||
-    data.descriptorIndex === undefined
+    !data.key ||
+    data.keyIndex === undefined
   ) {
     logger.error("Missing required fields");
     return { error: "Missing required fields" };
   }
 
   const collection = memory.db.collections[data.collection];
-  if (!collection || !collection.descriptors[data.descriptorIndex]) {
-    logger.error("Descriptor not found");
-    return { error: "Descriptor not found" };
+  if (!collection || !collection.extendedKeys[data.keyIndex]) {
+    logger.error("Extended key not found");
+    return { error: "Extended key not found" };
   }
 
-  // Get existing descriptor
-  const existingDescriptor = collection.descriptors[data.descriptorIndex];
-
-  // Only check for name conflicts if the name is actually changing
-  if (data.name !== existingDescriptor.name) {
-    const nameExists = collection.descriptors.some((d) => d.name === data.name);
-    if (nameExists) {
-      logger.error("Another descriptor with this name already exists");
-      return { error: "Another descriptor with this name already exists" };
-    }
+  // Check if another extended key with the same name exists (excluding the current one)
+  const nameExists = collection.extendedKeys.some(
+    (k, i) => i !== data.keyIndex && k.name === data.name
+  );
+  if (nameExists) {
+    logger.error("Another extended key with this name already exists");
+    return { error: "Another extended key with this name already exists" };
   }
 
   // Get all addresses in one batch
-  const allAddressesResult = await deriveAddresses(
-    data.descriptor,
+  const allAddressesResult = await deriveExtendedKeyAddresses(
+    data.key,
     0,
     data.initialAddresses || 5,
     data.skip || 0
@@ -45,12 +42,12 @@ export const editDescriptor = async ({ data, io }) => {
   }
 
   // Get existing monitor settings or use system defaults
-  const monitor =
-    data.monitor || existingDescriptor.monitor || memory.db.monitor;
+  const existingKey = collection.extendedKeys[data.keyIndex];
+  const monitor = data.monitor || existingKey.monitor || memory.db.monitor;
 
-  // Update the descriptor
-  collection.descriptors[data.descriptorIndex] = {
-    ...existingDescriptor,
+  // Update the extended key
+  collection.extendedKeys[data.keyIndex] = {
+    ...existingKey,
     ...data,
     monitor: {
       ...monitor,

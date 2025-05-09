@@ -2,6 +2,7 @@ import { BIP32Factory } from "bip32";
 import * as bitcoin from "bitcoinjs-lib";
 import * as ecc from "tiny-secp256k1";
 import logger from "./logger.js";
+import { getKeyNetwork, getAddressType } from "./extendedKeyUtils.js";
 
 const bip32 = BIP32Factory(ecc);
 
@@ -22,40 +23,11 @@ export const deriveExtendedKeyAddresses = (
     `Deriving ${count} addresses starting from index ${startIndex} with skip ${skipValue}`
   );
 
-  // Create networks for different key types
-  const networks = {
-    xpub: {
-      ...bitcoin.networks.bitcoin,
-      bip32: {
-        public: 0x0488b21e, // xpub
-        private: 0x0488ade4, // xprv
-      },
-    },
-    ypub: {
-      ...bitcoin.networks.bitcoin,
-      bip32: {
-        public: 0x049d7cb2, // ypub
-        private: 0x049d7878, // yprv
-      },
-    },
-    zpub: {
-      ...bitcoin.networks.bitcoin,
-      bip32: {
-        public: 0x04b24746, // zpub
-        private: 0x04b2430c, // zprv
-      },
-    },
-  };
-
-  // Determine which network to use based on key prefix
-  const keyLower = keyString.toLowerCase();
-  let network;
-  if (keyLower.startsWith("zpub")) {
-    network = networks.zpub;
-  } else if (keyLower.startsWith("ypub")) {
-    network = networks.ypub;
-  } else {
-    network = networks.xpub;
+  // Get network for the key
+  const network = getKeyNetwork(keyString);
+  if (!network) {
+    logger.error("Invalid key format");
+    return null;
   }
 
   // Decode the extended key
@@ -91,6 +63,9 @@ export const deriveExtendedKeyAddresses = (
   // Calculate the actual start index including skip
   const actualStartIndex = startIndex + skipValue;
 
+  // Get address type for the key
+  const addressType = getAddressType(keyString);
+
   // Derive addresses starting from the actual start index
   for (let i = 0; i < count; i++) {
     const derivationIndex = actualStartIndex + i;
@@ -102,13 +77,13 @@ export const deriveExtendedKeyAddresses = (
 
     // Use appropriate address type based on key prefix
     let address;
-    if (keyLower.startsWith("zpub")) {
+    if (addressType === "p2wpkh") {
       // Native segwit (P2WPKH)
       address = bitcoin.payments.p2wpkh({
         pubkey: child.publicKey,
         network,
       }).address;
-    } else if (keyLower.startsWith("ypub")) {
+    } else if (addressType === "p2sh-p2wpkh") {
       // P2SH-wrapped segwit (P2SH-P2WPKH)
       const p2wpkh = bitcoin.payments.p2wpkh({
         pubkey: child.publicKey,

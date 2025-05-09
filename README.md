@@ -38,6 +38,8 @@ There are many reasons you might want automated monitoring of Bitcoin addresses.
 
 ## Installation
 
+Note that the main branch of this repo is ahead of releases and working on the next version update and may be unstable. Releases are available at: https://github.com/zapomatic/bitwatch/releases and are tagged with vM.m.p version numbers. Each versioned release is built as a docker image and is available on the releases page.
+
 ### As a Docker Container
 
 ```bash
