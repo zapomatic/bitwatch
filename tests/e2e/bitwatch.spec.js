@@ -594,10 +594,14 @@ test.describe("Bitwatch", () => {
     console.log("Settings opened");
 
     // Set all monitor settings to alert
-    await page.selectOption('[data-testid="config-monitor-chain-in"]', 'alert');
-    await page.selectOption('[data-testid="config-monitor-chain-out"]', 'alert');
-    await page.selectOption('[data-testid="config-monitor-mempool-in"]', 'alert');
-    await page.selectOption('[data-testid="config-monitor-mempool-out"]', 'alert');
+    await page.click('[data-testid="address-monitor-chain-in"]');
+    await page.click('[data-testid="address-monitor-chain-in-alert"]');
+    await page.click('[data-testid="address-monitor-chain-out"]');
+    await page.click('[data-testid="address-monitor-chain-out-alert"]');
+    await page.click('[data-testid="address-monitor-mempool-in"]');
+    await page.click('[data-testid="address-monitor-mempool-in-alert"]');
+    await page.click('[data-testid="address-monitor-mempool-out"]');
+    await page.click('[data-testid="address-monitor-mempool-out-alert"]');
     
     // Enable update all addresses
     await findAndClick(page, '[data-testid="config-update-all-addresses"]');
