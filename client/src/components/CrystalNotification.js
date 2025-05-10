@@ -12,7 +12,7 @@ const CrystalNotification = ({
   <div
     style={{
       position: "fixed",
-      top: 0,
+      top: "50px",
       right: 0,
       width: "100%",
       zIndex: 9999,
