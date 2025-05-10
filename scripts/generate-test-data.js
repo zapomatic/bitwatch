@@ -35,138 +35,90 @@ const getKeyNetwork = (key) => {
   if (lk.startsWith("zpub")) return networks.zpub;
   return networks.xpub;
 };
-
-// --- HELPER: CLEAN DERIVATION PATH ----------------------------------------
-
-const cleanPath = (p) =>
-  p
-    ? p
-        .split("/")
-        .filter((seg) => seg && seg !== "")
-        .join("/")
-    : "";
-
-// --- PARSING A SINGLE KEY WITH OPTIONAL ORIGIN ----------------------------
-
-function parseKey(key) {
-  // [fingerprint/...']xpub.../rest or xpub.../rest
-  const fpRe = /^\[([0-9a-f]{8}(?:\/[0-9]+'?)*)\]([A-Za-z0-9]+)(\/.*)?$/;
-  const simpleRe = /^([A-Za-z0-9]+)(\/.*)?$/;
-
-  let m = key.match(fpRe);
-  if (m) {
-    const [, origin, xpub, rem] = m;
-    const parts = origin.split("/").slice(1);
-    if (rem) parts.push(cleanPath(rem));
-    return {
-      success: true,
-      xpub,
-      path: cleanPath(parts.join("/")),
-      fingerprint: origin.split("/")[0],
-    };
-  }
-
-  m = key.match(simpleRe);
-  if (m) {
-    const [, xpub, rem = ""] = m;
-    return {
-      success: true,
-      xpub,
-      path: cleanPath(rem.replace(/^\//, "")),
-      fingerprint: null,
-    };
-  }
-
-  return { success: false, error: `Invalid key format: ${key}` };
-}
-
-// --- PARSE DESCRIPTOR INTO { type, threshold, keys: [ {xpub,path}, ... ] } --
-
-function parseMultiSigDescriptor(desc) {
-  const pkhRe = /^pkh\(([^)]+)\)$/;
-  const shWpkhRe = /^sh\(wpkh\(([^)]+)\)\)$/;
-  const wpkhRe = /^wpkh\(([^)]+)\)$/;
-  const wshMultiRe = /^wsh\(multi\((\d+),([^)]+)\)\)$/;
-  const wshSortRe = /^wsh\(sortedmulti\((\d+),([^)]+)\)\)$/;
-
-  let m, data;
-
-  if ((m = desc.match(pkhRe))) {
-    data = { type: "pkh", keys: [m[1]], threshold: 1 };
-  } else if ((m = desc.match(shWpkhRe))) {
-    data = { type: "sh_wpkh", keys: [m[1]], threshold: 1 };
-  } else if ((m = desc.match(wpkhRe))) {
-    data = { type: "wpkh", keys: [m[1]], threshold: 1 };
-  } else if ((m = desc.match(wshMultiRe)) || (m = desc.match(wshSortRe))) {
-    const isSorted = desc.startsWith("wsh(sortedmulti");
-    data = {
-      type: isSorted ? "wsh_sortedmulti" : "wsh_multi",
-      threshold: parseInt(m[1], 10),
-      keys: m[2].split(",").map((k) => k.trim()),
-    };
-  } else {
-    return { success: false, error: `Unsupported descriptor: ${desc}` };
-  }
-
-  const parsedKeys = data.keys.map(parseKey);
-  const bad = parsedKeys.find((k) => !k.success);
-  if (bad) return { success: false, error: bad.error };
-
-  data.keys = parsedKeys;
-  return { success: true, data };
-}
-
 // --- DERIVE ADDRESSES FROM ANY SUPPORTED DESCRIPTOR -----------------------
 
-function deriveAddresses(descriptor, start = 0, count = 6, skip = 0) {
-  const p = parseMultiSigDescriptor(descriptor);
-  if (!p.success) {
-    logger.error(p.error);
-    return [];
+function parseDescriptorType(descriptor) {
+  // Recursively unwrap wrappers
+  // let type = null;
+  let inner = descriptor;
+  let wrappers = [];
+  while (true) {
+    const m = inner.match(/^(\w+)\((.*)\)$/);
+    if (!m) break;
+    wrappers.push(m[1]);
+    inner = m[2];
+    // If we hit multi or sortedmulti, stop unwrapping
+    if (m[1] === "multi" || m[1] === "sortedmulti") break;
   }
-  const { type, threshold, keys } = p.data;
+  return { wrappers, inner };
+}
+
+function deriveAddresses(descriptor, start = 0, count = 6, skip = 0) {
+  // Determine descriptor type and unwrap
+  const { wrappers, inner } = parseDescriptorType(descriptor);
+  // let type = wrappers[0];
+  let isMulti = wrappers.includes("multi") || wrappers.includes("sortedmulti");
+  let isSorted = wrappers.includes("sortedmulti");
+
+  // For multi/sortedmulti, parse threshold and keys
+  let threshold = 1;
+  let keys = [];
+  if (isMulti) {
+    // multi(2,xpub/0/*,xpub/1/*) or sortedmulti(2,xpub/0/*,xpub/1/*)
+    const multiMatch = inner.match(/^(\d+),(.+)$/);
+    if (!multiMatch) throw new Error("Invalid multi descriptor");
+    threshold = parseInt(multiMatch[1], 10);
+    keys = multiMatch[2].split(",").map((k) => k.trim());
+  } else {
+    keys = [inner];
+  }
+
   const baseIndex = start + skip;
   const out = [];
 
   for (let i = 0; i < count; i++) {
     const idx = baseIndex + i;
-    // 1) derive all public keys
-    const pubs = keys.map(({ xpub, path }) => {
+    // Derive all public keys
+    const pubs = keys.map((key) => {
+      // Remove any origin info
+      const keyMatch = key.match(/^(\[.*\])?([A-Za-z0-9]+)(\/.*)?$/);
+      const xpub = keyMatch ? keyMatch[2] : key;
+      const path =
+        keyMatch && keyMatch[3] ? keyMatch[3].replace(/^\//, "") : "";
       let node = bip32.fromBase58(xpub, getKeyNetwork(xpub));
       if (path) {
         for (const seg of path.split("/")) {
           node =
             seg === "*" ? node.derive(idx) : node.derive(parseInt(seg, 10));
         }
+      } else {
+        node = node.derive(idx);
       }
       return node.publicKey;
     });
 
-    // 2) build the right payment
+    // Build the right payment
     let payment;
-    switch (type) {
-      case "pkh":
-        payment = bitcoin.payments.p2pkh({ pubkey: pubs[0] });
-        break;
-      case "sh_wpkh":
-        payment = bitcoin.payments.p2sh({
-          redeem: bitcoin.payments.p2wpkh({ pubkey: pubs[0] }),
-        });
-        break;
-      case "wpkh":
-        payment = bitcoin.payments.p2wpkh({ pubkey: pubs[0] });
-        break;
-      case "wsh_multi":
-      case "wsh_sortedmulti":
-        // eslint-disable-next-line no-case-declarations
-        const usePubs =
-          type === "wsh_sortedmulti" ? [...pubs].sort(Buffer.compare) : pubs;
-        // eslint-disable-next-line no-case-declarations
-        const ms = bitcoin.payments.p2ms({ m: threshold, pubkeys: usePubs });
+    if (isMulti) {
+      const usePubs = isSorted ? [...pubs].sort(Buffer.compare) : pubs;
+      const ms = bitcoin.payments.p2ms({ m: threshold, pubkeys: usePubs });
+      if (wrappers[0] === "wsh") {
         payment = bitcoin.payments.p2wsh({ redeem: ms });
-        break;
-      default:
-        logger.error(`Unknown descriptor type: ${type}`);
+      } else if (wrappers[0] === "sh") {
+        payment = bitcoin.payments.p2sh({ redeem: ms });
+      } else {
+        throw new Error("Unsupported multisig wrapper");
+      }
+    } else if (wrappers[0] === "pkh") {
+      payment = bitcoin.payments.p2pkh({ pubkey: pubs[0] });
+    } else if (wrappers[0] === "wpkh") {
+      payment = bitcoin.payments.p2wpkh({ pubkey: pubs[0] });
+    } else if (wrappers[0] === "sh" && wrappers[1] === "wpkh") {
+      // sh(wpkh(...))
+      const p2wpkh = bitcoin.payments.p2wpkh({ pubkey: pubs[0] });
+      payment = bitcoin.payments.p2sh({ redeem: p2wpkh });
+    } else {
+      throw new Error("Unsupported descriptor type: " + descriptor);
     }
 
     if (payment?.address) out.push({ index: idx, address: payment.address });

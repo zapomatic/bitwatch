@@ -1,6 +1,6 @@
 import memory from "../memory.js";
 import logger, { getMonitorLog } from "../logger.js";
-import { deriveAddresses } from "../descriptors.js";
+import { deriveAddresses, deriveAddress } from "../descriptors.js";
 
 export const editDescriptor = async ({ data, io }) => {
   logger.info(
@@ -42,6 +42,12 @@ export const editDescriptor = async ({ data, io }) => {
     }
   }
 
+  // Validate by trying to derive the first address
+  const testAddress = deriveAddress(data.descriptor, 0);
+  if (!testAddress) {
+    logger.error(`Invalid descriptor: Could not derive address`);
+    return { error: "Invalid descriptor: Could not derive address" };
+  }
   // Get all addresses in one batch
   const allAddressesResult = await deriveAddresses(
     data.descriptor,

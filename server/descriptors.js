@@ -52,8 +52,10 @@ export const parseKey = (key) => {
 
 // Parse a multisig descriptor
 export const parseMultiSigDescriptor = (descriptor) => {
+  console.log("[DEBUG] parseMultiSigDescriptor input:", descriptor);
   // Remove whitespace and split into parts
   const parts = descriptor.replace(/\s+/g, "").split(",");
+  console.log("[DEBUG] multisig parts:", parts);
   if (parts.length < 3) {
     logger.error("Invalid descriptor format: too few parts");
     return {
@@ -178,21 +180,28 @@ export const parseSingleKeyDescriptor = (descriptor) => {
 
 // Parse any descriptor type
 export const parseDescriptor = (descriptor) => {
+  console.log("[DEBUG] parseDescriptor input:", descriptor);
+
+  // Unwrap wsh(...), sh(...), etc. and recursively parse the inner content
+  const outerMatch = descriptor.match(/^(wsh|sh|sh\(wpkh)\((.+)\)$/);
+  if (outerMatch) {
+    const inner = outerMatch[2];
+    console.log(
+      "[DEBUG] Unwrapped outer function:",
+      outerMatch[1],
+      "->",
+      inner
+    );
+    return parseDescriptor(inner);
+  }
+
   // First try single-key format since it's more common
   const singleResult = parseSingleKeyDescriptor(descriptor);
   if (singleResult.success) {
     return singleResult;
   }
 
-  // Then try multisig format
-  const multiResult = parseMultiSigDescriptor(descriptor);
-  if (multiResult.success) {
-    return {
-      ...multiResult,
-      type: "multi",
-    };
-  }
-
+  // Remove the call to parseMultiSigDescriptor and just return failure for non-single-key
   return {
     success: false,
     error: "Invalid descriptor format",
@@ -201,15 +210,6 @@ export const parseDescriptor = (descriptor) => {
 
 // Derive addresses from a descriptor
 export const deriveAddresses = (descriptor, startIndex, count, skip = 0) => {
-  const result = parseDescriptor(descriptor);
-  if (!result.success) {
-    logger.error(`Failed to parse descriptor: ${result.error}`);
-    return {
-      success: false,
-      error: result.error,
-    };
-  }
-
   const addresses = [];
   for (let i = 0; i < count; i++) {
     const index = startIndex + skip + i;
@@ -223,119 +223,90 @@ export const deriveAddresses = (descriptor, startIndex, count, skip = 0) => {
     }
     addresses.push(address);
   }
-
   return {
     success: true,
     data: addresses,
   };
 };
 
+// Recursively parse and unwrap descriptor wrappers
+function parseDescriptorType(descriptor) {
+  let inner = descriptor;
+  let wrappers = [];
+  while (true) {
+    const m = inner.match(/^(\w+)\((.*)\)$/);
+    if (!m) break;
+    wrappers.push(m[1]);
+    inner = m[2];
+    if (m[1] === "multi" || m[1] === "sortedmulti") break;
+  }
+  return { wrappers, inner };
+}
+
 // Derive a single address from a descriptor
 export const deriveAddress = (descriptor, index) => {
-  const result = parseDescriptor(descriptor);
-  if (!result.success) {
-    logger.error(`Failed to parse descriptor: ${result.error}`);
-    return null;
+  const { wrappers, inner } = parseDescriptorType(descriptor);
+  let isMulti = wrappers.includes("multi") || wrappers.includes("sortedmulti");
+  let isSorted = wrappers.includes("sortedmulti");
+  let threshold = 1;
+  let keys = [];
+  if (isMulti) {
+    const multiMatch = inner.match(/^(\d+),(.+)$/);
+    if (!multiMatch) throw new Error("Invalid multi descriptor");
+    threshold = parseInt(multiMatch[1], 10);
+    keys = multiMatch[2].split(",").map((k) => k.trim());
+  } else {
+    keys = [inner];
   }
 
-  // Get the network for the key
-  const network = getKeyNetwork(
-    result.type === "multi" ? result.keys[0].key : result.key.key
-  );
-  if (!network) {
-    logger.error("Invalid key format");
-    return null;
-  }
-
-  // Derive the address
-  try {
-    let address;
-    if (result.type === "multi") {
-      address = bitcoin.payments.p2ms({
-        m: result.threshold,
-        pubkeys: result.keys.map((key) => {
-          const node = bip32.fromBase58(key.key, network);
-          if (!node) {
-            throw new Error("Failed to decode extended key");
-          }
-          // Handle derivation path if present
-          let derivedNode = node;
-          if (key.path) {
-            const pathParts = key.path.split("/").slice(1); // Remove leading slash
-            for (const part of pathParts) {
-              if (part === "*") {
-                derivedNode = derivedNode.derive(index);
-              } else {
-                const index = parseInt(part.replace(/['h]/g, ""));
-                if (isNaN(index)) {
-                  throw new Error(`Invalid path index: ${part}`);
-                }
-                derivedNode = derivedNode.derive(index);
-              }
-            }
-          } else {
-            derivedNode = derivedNode.derive(index);
-          }
-          return derivedNode.publicKey;
-        }),
-        network,
-      }).address;
+  // Derive all public keys
+  const pubs = keys.map((key) => {
+    const keyMatch = key.match(/^(\[.*\])?([A-Za-z0-9]+)(\/.*)?$/);
+    const xpub = keyMatch ? keyMatch[2] : key;
+    const path = keyMatch && keyMatch[3] ? keyMatch[3].replace(/^\//, "") : "";
+    let node = bip32.fromBase58(xpub, getKeyNetwork(xpub));
+    if (path) {
+      for (const seg of path.split("/")) {
+        node =
+          seg === "*" ? node.derive(index) : node.derive(parseInt(seg, 10));
+      }
     } else {
-      // Single key descriptor
-      const node = bip32.fromBase58(result.key.key, network);
-      if (!node) {
-        throw new Error("Failed to decode extended key");
-      }
-
-      // Handle derivation path if present
-      let derivedNode = node;
-      if (result.key.path) {
-        const pathParts = result.key.path.split("/").slice(1); // Remove leading slash
-        for (const part of pathParts) {
-          if (part === "*") {
-            derivedNode = derivedNode.derive(index);
-          } else {
-            const index = parseInt(part.replace(/['h]/g, ""));
-            if (isNaN(index)) {
-              throw new Error(`Invalid path index: ${part}`);
-            }
-            derivedNode = derivedNode.derive(index);
-          }
-        }
-      } else {
-        derivedNode = derivedNode.derive(index);
-      }
-
-      if (result.type === "pkh") {
-        address = bitcoin.payments.p2pkh({
-          pubkey: derivedNode.publicKey,
-          network,
-        }).address;
-      } else if (result.type === "wpkh") {
-        address = bitcoin.payments.p2wpkh({
-          pubkey: derivedNode.publicKey,
-          network,
-        }).address;
-      } else if (result.type === "sh_wpkh") {
-        const p2wpkh = bitcoin.payments.p2wpkh({
-          pubkey: derivedNode.publicKey,
-          network,
-        });
-        address = bitcoin.payments.p2sh({ redeem: p2wpkh, network }).address;
-      }
+      node = node.derive(index);
     }
+    return node.publicKey;
+  });
 
-    if (!address) {
-      logger.error("Failed to generate address");
-      return null;
+  // Build the right payment
+  let payment;
+  if (isMulti) {
+    const usePubs = isSorted ? [...pubs].sort(Buffer.compare) : pubs;
+    const ms = bitcoin.payments.p2ms({ m: threshold, pubkeys: usePubs });
+    if (wrappers[0] === "wsh") {
+      payment = bitcoin.payments.p2wsh({ redeem: ms });
+    } else if (wrappers[0] === "sh") {
+      payment = bitcoin.payments.p2sh({ redeem: ms });
+    } else {
+      throw new Error("Unsupported multisig wrapper");
     }
+  } else if (wrappers[0] === "pkh") {
+    payment = bitcoin.payments.p2pkh({ pubkey: pubs[0] });
+  } else if (wrappers[0] === "wpkh") {
+    payment = bitcoin.payments.p2wpkh({ pubkey: pubs[0] });
+  } else if (wrappers[0] === "sh" && wrappers[1] === "wpkh") {
+    // sh(wpkh(...))
+    const p2wpkh = bitcoin.payments.p2wpkh({ pubkey: pubs[0] });
+    payment = bitcoin.payments.p2sh({ redeem: p2wpkh });
+  } else {
+    throw new Error("Unsupported descriptor type: " + descriptor);
+  }
 
-    return {
-      address,
-      index,
-    };
-  } catch (err) {
-    logger.error(`Error deriving address: ${err.message}`);
+  if (!payment?.address) {
+    logger.error("Failed to generate address");
     return null;
   }
+
+  return {
+    address: payment.address,
+    index,
+  };
 };
