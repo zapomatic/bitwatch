@@ -183,14 +183,14 @@ export default async (page) => {
         // Verify the dialog shows the correct values
         await expect(page.getByTestId("extended-key-name-input")).toHaveValue(key.name);
         await expect(page.getByTestId("extended-key-key-input")).toHaveValue(key.key);
-        await expect(page.getByTestId("extended-key-skip-input")).toHaveValue("0");
-        await expect(page.getByTestId("extended-key-initial-input")).toHaveValue("3");
+        await expect(page.getByTestId("extended-key-skip-input")).toHaveValue(key.skip.toString());
+        await expect(page.getByTestId("extended-key-initial-input")).toHaveValue(key.initialAddresses.toString());
         
         // Update the skip value to 1
         await page.getByTestId("extended-key-skip-input").fill("1");
         
         // Save the changes
-        await findAndClick(page, '[data-testid="extended-key-submit-button"]');
+        await findAndClick(page, '[data-testid="extended-key-submit-button"]', { allowOverlay: true });
         
         // Wait for the dialog to close
         await expect(page.locator('[data-testid="extended-key-dialog"]')).not.toBeVisible();
