@@ -6,25 +6,21 @@ import { getKeyNetwork, getAddressType } from "./extendedKeyUtils.js";
 
 const bip32 = BIP32Factory(ecc);
 
-export const deriveExtendedKeyAddresses = (
-  extendedKey,
-  startIndex,
+export const deriveExtendedKeyAddresses = ({
+  key,
+  skip = 0,
+  startIndex = 0,
   count,
-  derivationPath
-) => {
+  derivationPath = "m/0",
+}) => {
   const addresses = [];
 
-  // Extract key from extendedKey object if needed
-  const keyString =
-    typeof extendedKey === "object" ? extendedKey.key : extendedKey;
-  const skipValue = typeof extendedKey === "object" ? extendedKey.skip || 0 : 0;
-
   logger.scan(
-    `Deriving ${count} addresses starting from index ${startIndex} with skip ${skipValue}, using path: ${derivationPath}`
+    `Deriving ${count} addresses starting from index ${startIndex} with skip ${skip}, using path: ${derivationPath}`
   );
 
   // Get network for the key
-  const network = getKeyNetwork(keyString);
+  const network = getKeyNetwork(key);
   if (!network) {
     logger.error("Invalid key format");
     return null;
@@ -33,7 +29,7 @@ export const deriveExtendedKeyAddresses = (
   // Decode the extended key
   let node;
   // fromBase58 will throw if invalid, we'll let it return undefined
-  node = bip32.fromBase58(keyString, network);
+  node = bip32.fromBase58(key, network);
   if (!node) {
     logger.error("Failed to decode extended key");
     return null;
@@ -61,10 +57,10 @@ export const deriveExtendedKeyAddresses = (
   }
 
   // Calculate the actual start index including skip
-  const actualStartIndex = startIndex + skipValue;
+  const actualStartIndex = startIndex + skip;
 
   // Get address type for the key
-  const addressType = getAddressType(keyString);
+  const addressType = getAddressType(key);
 
   // Derive addresses starting from the actual start index
   for (let i = 0; i < count; i++) {
@@ -103,15 +99,10 @@ export const deriveExtendedKeyAddresses = (
       return null;
     }
 
-    // Debug log the derived address
-    const addressObj = {
-      name: `${extendedKey.name || "Address"} ${derivationIndex}`,
+    addresses.push({
       address,
       index: derivationIndex,
-    };
-    logger.debug(`Derived address at index ${derivationIndex}:`, addressObj);
-
-    addresses.push(addressObj);
+    });
   }
 
   return addresses;

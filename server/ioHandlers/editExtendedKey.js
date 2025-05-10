@@ -38,16 +38,17 @@ export const editExtendedKey = async ({ data, io }) => {
   }
 
   // Get all addresses in one batch
-  const allAddressesResult = await deriveExtendedKeyAddresses(
-    data.key,
-    0,
-    data.initialAddresses || 5,
-    data.skip || 0
-  );
+  const addresses = await deriveExtendedKeyAddresses({
+    key: data.key,
+    skip: data.skip || 0,
+    startIndex: 0,
+    count: data.initialAddresses || 5,
+    derivationPath: data.derivationPath,
+  });
 
-  if (!allAddressesResult.success) {
-    logger.error(allAddressesResult.error || "Failed to derive addresses");
-    return { error: allAddressesResult.error || "Failed to derive addresses" };
+  if (!addresses) {
+    logger.error("Failed to derive addresses");
+    return { error: "Failed to derive addresses" };
   }
 
   // Get existing monitor settings or use system defaults
@@ -61,7 +62,7 @@ export const editExtendedKey = async ({ data, io }) => {
     monitor: {
       ...monitor,
     },
-    addresses: allAddressesResult.data.map((addr) => ({
+    addresses: addresses.map((addr) => ({
       address: addr.address,
       name: `${data.name} ${addr.index}`,
       index: addr.index,

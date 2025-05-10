@@ -58,12 +58,13 @@ export const addExtendedKey = async ({ data, io }) => {
   };
 
   // Derive initial addresses
-  const addresses = await deriveExtendedKeyAddresses(
-    { key: key.key, skip: key.skip || 0 },
-    0,
-    key.initialAddresses || 10,
-    key.derivationPath
-  );
+  const addresses = await deriveExtendedKeyAddresses({
+    key: key.key,
+    skip: key.skip || 0,
+    startIndex: 0,
+    count: key.initialAddresses || 10,
+    derivationPath: key.derivationPath,
+  });
 
   if (!addresses) {
     logger.error("Failed to derive addresses");
@@ -103,25 +104,25 @@ export const addExtendedKey = async ({ data, io }) => {
   collection.extendedKeys.push(key);
 
   // Debug log the collection before saving
-  const debugCollection = {
-    name: collection.name,
-    addresses: collection.addresses,
-    extendedKeys: collection.extendedKeys.map((k) => ({
-      name: k.name,
-      key: k.key,
-      derivationPath: k.derivationPath,
-      gapLimit: k.gapLimit,
-      skip: k.skip,
-      initialAddresses: k.initialAddresses,
-      monitor: k.monitor,
-      addresses: k.addresses,
-    })),
-    descriptors: collection.descriptors,
-  };
-  logger.debug(
-    `Collection structure:`,
-    JSON.stringify(debugCollection, null, 2)
-  );
+  // const debugCollection = {
+  //   name: collection.name,
+  //   addresses: collection.addresses,
+  //   extendedKeys: collection.extendedKeys.map((k) => ({
+  //     name: k.name,
+  //     key: k.key,
+  //     derivationPath: k.derivationPath,
+  //     gapLimit: k.gapLimit,
+  //     skip: k.skip,
+  //     initialAddresses: k.initialAddresses,
+  //     monitor: k.monitor,
+  //     addresses: k.addresses,
+  //   })),
+  //   descriptors: collection.descriptors,
+  // };
+  // logger.debug(
+  //   `Collection structure:`,
+  //   JSON.stringify(debugCollection, null, 2)
+  // );
 
   const saveResult = memory.saveDb();
   if (!saveResult) {

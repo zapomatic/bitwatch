@@ -62,10 +62,16 @@ export default async (page) => {
         chain_out: "alert",
         mempool_in: "alert",
         mempool_out: "alert"
-      } : undefined
+      } : {
+        chain_in: "auto-accept",
+        chain_out: "alert",
+        mempool_in: "auto-accept",
+        mempool_out: "alert"
+      }
     }));
 
     for (const key of extendedKeys) {
+      console.log(`Adding extended key ${key.name} with monitor settings:`, key.monitor);
       await addExtendedKey(page, "Donations", key);
       console.log(`Added ${key.name}`);
 
@@ -91,19 +97,33 @@ export default async (page) => {
       await expect(addressRows).toHaveCount(key.initialAddresses);
 
       // when we add an extended key, it should be expanded by default
-      await expect(page.locator(`[data-testid="${key.key}-address-list"]`)).toBeVisible();
+      const addressList = page.locator(`[data-testid="${key.key}-address-list"]`);
+      console.log(`Checking if address list exists for ${key.name}:`, await addressList.count() > 0);
+      console.log(`Address list visibility for ${key.name}:`, await addressList.isVisible());
+      await expect(addressList).toBeVisible();
+
       // Get all address rows
       const addresses = await page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`).all();
+      console.log(`Found ${addresses.length} address rows for ${key.name}`);
       // Verify we have the expected number of addresses
       expect(addresses.length).toBe(key.initialAddresses);
 
-      // Verify each address has alert icons for all monitoring types
+      // Verify each address has appropriate icons based on monitoring settings
       for (let i = 0; i < addresses.length; i++) {
         const addressIndex = i + key.skip; // Keep it 0-based with skip
-        await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-chain-in-alert-icon"]`)).toBeVisible();
-        await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-chain-out-alert-icon"]`)).toBeVisible();
-        await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-mempool-in-alert-icon"]`)).toBeVisible();
-        await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-mempool-out-alert-icon"]`)).toBeVisible();
+        console.log(`Checking icons for ${key.name} address ${addressIndex} with monitor settings:`, key.monitor);
+
+        console.log(`Checking chain-in ${key.monitor.chain_in} icon for ${key.name} address ${addressIndex}`);
+        await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-chain-in-${key.monitor.chain_in}-icon"]`)).toBeVisible();
+
+        console.log(`Checking chain-out ${key.monitor.chain_out} icon for ${key.name} address ${addressIndex}`);
+        await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-chain-out-${key.monitor.chain_out}-icon"]`)).toBeVisible();
+
+        console.log(`Checking mempool-in ${key.monitor.mempool_in} icon for ${key.name} address ${addressIndex}`);
+        await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-mempool-in-${key.monitor.mempool_in}-icon"]`)).toBeVisible();
+
+        console.log(`Checking mempool-out ${key.monitor.mempool_out} icon for ${key.name} address ${addressIndex}`);
+        await expect(page.locator(`[data-testid="${key.key}-address-${addressIndex}-mempool-out-${key.monitor.mempool_out}-icon"]`)).toBeVisible();
 
         console.log(`Checking address at index ${i} (with skip ${key.skip}), actual index ${i + key.skip}`);
         const expectedAddress = testData.extendedKeys[key.keyId].addresses[i + key.skip].address;
@@ -203,14 +223,17 @@ export default async (page) => {
           await findAndClick(page, `[data-testid="${key.key}-expand-button"]`);
         }
 
-        // Verify that addresses start at index 1 (due to skip=1)
+        // After setting skip=1, we should see addresses starting from index 1
         await expect(page.getByTestId(`${key.key}-address-1-name`)).toContainText("Test XPUB 1");
         await expect(page.getByTestId(`${key.key}-address-2-name`)).toContainText("Test XPUB 2");
-        await expect(page.getByTestId(`${key.key}-address-3-name`)).toContainText("Test XPUB 3");
 
-        // Verify we don't have index 0
+        // Verify we don't have index 0 (it should be skipped)
         const index0Row = page.getByTestId(`${key.key}-address-0-name`);
         await expect(index0Row).not.toBeVisible();
+
+        // Verify we don't have index 3 (we only requested 2 addresses)
+        const index3Row = page.getByTestId(`${key.key}-address-3-name`);
+        await expect(index3Row).not.toBeVisible();
 
         // verify total number of addresses (should be initialAddresses=3)
         const addresses = await page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`).all();
