@@ -1,6 +1,6 @@
 import { expect } from "@playwright/test";
-import { findAndClick } from "../test-environment.js";
 import testDb from "../../../server/db.test.json" with { type: 'json' };
+import findAndClick from "../lib/findAndClick.js";
 export default async (page) => {
   // Click the settings button
   await findAndClick(page, '[data-testid="settings-button"]');

@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { findAndClick } from "../test-environment.js";
+import findAndClick from "../lib/findAndClick.js";
 
 export default async (page) => {
   // Navigate to integrations

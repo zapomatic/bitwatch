@@ -1,5 +1,5 @@
 import { expect } from "@playwright/test";
-import { findAndClick } from "../test-environment.js";
+import findAndClick from "../lib/findAndClick.js";
 
 const addCollection = async (page, name) => {
   await findAndClick(page, '[aria-label="New Collection"]');

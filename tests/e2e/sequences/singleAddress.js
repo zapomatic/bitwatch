@@ -1,10 +1,71 @@
 import { expect } from "@playwright/test";
-import {
-  findAndClick,
-  addAddress,
-  refreshAddressBalance,
-} from "../test-environment.js";
+import refreshBalance from "../lib/refreshBalance.js";
+import findAndClick from "../lib/findAndClick.js";
 import testData from "../../../test-data/keys.json" with { type: "json" };
+
+
+const addAddress = async (
+  page,
+  collection,
+  { name, address, monitor }
+) => {
+  await findAndClick(page, `[data-testid="${collection}-add-address"]`);
+
+  // Wait for dialog to be visible
+  await page.waitForSelector('[data-testid="address-dialog"]', {
+    state: "visible",
+    timeout: 2000,
+  });
+
+  // Fill in the form fields
+  await page.getByTestId("address-name-input").fill(name);
+  await page.getByTestId("address-input").fill(address);
+
+  // Set monitoring options if provided
+  if (monitor) {
+    // Helper function to handle dropdown selection
+    const selectMonitorOption = async (field, value) => {
+      // Click the select dropdown
+      const select = page.getByTestId(`address-monitor-${field}`);
+      await select.waitFor({ state: "visible" });
+      await page.waitForTimeout(100); // Small delay before clicking
+      await select.click({ force: true });
+
+      // Wait for the menu to be visible
+      await page.waitForSelector('[role="listbox"]', { state: "visible" });
+      await page.waitForTimeout(100); // Small delay before selecting option
+
+      // Click the option
+      const option = page.getByTestId(`address-monitor-${field}-${value}`);
+      await option.waitFor({ state: "visible" });
+      await option.click({ force: true });
+
+      // Wait for the menu to close
+      await page.waitForSelector('[role="listbox"]', { state: "hidden" });
+      await page.waitForTimeout(100); // Small delay after selection
+    };
+
+    // Set each monitoring option
+    await selectMonitorOption("chain-in", monitor.chain_in);
+    await selectMonitorOption("chain-out", monitor.chain_out);
+    await selectMonitorOption("mempool-in", monitor.mempool_in);
+    await selectMonitorOption("mempool-out", monitor.mempool_out);
+  }
+
+  await page.waitForTimeout(100);
+
+  // Click the save button - allow clicking in overlay since it's in a dialog
+  await findAndClick(page, '[data-testid="address-dialog-save"]', {
+    allowOverlay: true,
+    force: true, // Force the click in case there are still invisible overlays
+  });
+
+  // Wait for the dialog to disappear
+  await page.waitForSelector('[data-testid="address-dialog"]', {
+    state: "hidden",
+    timeout: 2000,
+  });
+};
 
 export default async (page) => {
   // Add single address
@@ -32,7 +93,7 @@ export default async (page) => {
   console.log("Testing refresh balance functionality for all states");
 
   // Initial state (all zeros)
-  await refreshAddressBalance(
+  await refreshBalance(
     page,
     testData.plain.zapomatic,
     {
@@ -46,7 +107,7 @@ export default async (page) => {
   console.log("Initial zero balance state verified");
 
   // Refresh to get mempool input state
-  await refreshAddressBalance(
+  await refreshBalance(
     page,
     testData.plain.zapomatic,
     {
@@ -60,7 +121,7 @@ export default async (page) => {
   console.log("Mempool input state verified");
 
   // Refresh to get chain input state
-  await refreshAddressBalance(
+  await refreshBalance(
     page,
     testData.plain.zapomatic,
     {
@@ -74,7 +135,7 @@ export default async (page) => {
   console.log("Chain input state verified");
 
   // Refresh to get mempool output state
-  await refreshAddressBalance(
+  await refreshBalance(
     page,
     testData.plain.zapomatic,
     {
@@ -99,7 +160,7 @@ export default async (page) => {
   console.log("Mempool output state verified");
 
   // Refresh to get chain output state
-  await refreshAddressBalance(
+  await refreshBalance(
     page,
     testData.plain.zapomatic,
     {
@@ -133,7 +194,7 @@ export default async (page) => {
   ).not.toBeVisible();
 
   // Final refresh to verify all states are stable
-  await refreshAddressBalance(
+  await refreshBalance(
     page,
     testData.plain.zapomatic,
     {
