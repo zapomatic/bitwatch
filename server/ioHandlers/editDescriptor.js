@@ -1,6 +1,7 @@
 import memory from "../memory.js";
 import logger, { getMonitorLog } from "../logger.js";
 import { deriveAddresses, deriveAddress } from "../descriptors.js";
+import { descriptorExtractPaths } from "../descriptorExtractPaths.js";
 
 export const editDescriptor = async ({ data, io }) => {
   logger.info(
@@ -69,6 +70,7 @@ export const editDescriptor = async ({ data, io }) => {
   collection.descriptors[descriptorIndex] = {
     ...existingDescriptor,
     ...data,
+    derivationPath: descriptorExtractPaths(data.descriptor),
     monitor: {
       ...monitor,
     },

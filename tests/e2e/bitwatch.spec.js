@@ -49,6 +49,10 @@ test.describe("Bitwatch", () => {
     );
     console.log("Monitor settings updated");
 
+    // Wait for and close the notification before proceeding
+    // await page.getByTestId("config-notification").getByRole("button").click();
+    await expect(page.getByTestId("config-notification")).not.toBeVisible();
+
     // Navigate back to addresses page
     await findAndClick(page, '[data-testid="watch-list-button"]');
     console.log("Navigated to addresses page");
