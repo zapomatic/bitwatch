@@ -110,7 +110,7 @@ const CollectionRow = ({
     }
 
     onRenameCollection(collection.name, newName);
-    setNewName(collection.name);
+    setIsEditing(false);
   };
 
   const totals = calculateCollectionTotals(collection);
@@ -149,6 +149,7 @@ const CollectionRow = ({
                   }}
                   autoFocus
                   className="crystal-input"
+                  data-testid={`${collection.name}-edit-input`}
                   style={{
                     flex: 1,
                     marginRight: "8px",
@@ -158,6 +159,7 @@ const CollectionRow = ({
                   icon={<CheckBoxIcon />}
                   onClick={handleRenameCollection}
                   tooltip="Save"
+                  data-testid={`${collection.name}-save`}
                 />
               </Box>
             ) : (
@@ -169,11 +171,17 @@ const CollectionRow = ({
                   width: "100%",
                 }}
               >
-                <Typography variant="body2">{collection.name}</Typography>
+                <Typography
+                  variant="body2"
+                  data-testid={`${collection.name}-name`}
+                >
+                  {collection.name}
+                </Typography>
                 <IconButtonStyled
                   icon={<EditIcon />}
                   onClick={() => setIsEditing(true)}
                   tooltip="Rename collection"
+                  data-testid={`${collection.name}-edit`}
                 />
               </Box>
             )}

@@ -391,12 +391,18 @@ export default function Addresses() {
   }, [deleteDialog]);
 
   const handleRenameCollection = useCallback((oldName, newName) => {
-    socketIO.emit("renameCollection", { oldName, newName }, (response) => {
+    socketIO.emit("editCollection", { oldName, newName }, (response) => {
       if (response.error) {
         setNotification({
           open: true,
           message: response.error,
           severity: "error",
+        });
+      } else {
+        setNotification({
+          open: true,
+          message: "Collection renamed successfully",
+          severity: "success",
         });
       }
     });
@@ -875,6 +881,14 @@ export default function Addresses() {
                   className="crystal-table-header"
                   onClick={() => handleSort("name")}
                   sx={{ cursor: "pointer" }}
+                  data-testid="sort-by-name"
+                  aria-label={`Sort by name ${
+                    sortConfig.field === "name"
+                      ? sortConfig.direction === "asc"
+                        ? "descending"
+                        : "ascending"
+                      : "ascending"
+                  }`}
                 >
                   <Box className="crystal-flex crystal-flex-start crystal-gap-1">
                     Collection
@@ -887,6 +901,14 @@ export default function Addresses() {
                   className="crystal-table-header"
                   onClick={() => handleSort("addresses")}
                   sx={{ cursor: "pointer" }}
+                  data-testid="sort-by-addresses"
+                  aria-label={`Sort by addresses ${
+                    sortConfig.field === "addresses"
+                      ? sortConfig.direction === "asc"
+                        ? "descending"
+                        : "ascending"
+                      : "ascending"
+                  }`}
                 >
                   <Box className="crystal-flex crystal-flex-start crystal-gap-1">
                     Addresses
@@ -899,6 +921,14 @@ export default function Addresses() {
                   className="crystal-table-header"
                   onClick={() => handleSort("chain_in")}
                   sx={{ cursor: "pointer" }}
+                  data-testid="sort-by-chain"
+                  aria-label={`Sort by chain balance ${
+                    sortConfig.field === "chain_in"
+                      ? sortConfig.direction === "asc"
+                        ? "descending"
+                        : "ascending"
+                      : "ascending"
+                  }`}
                 >
                   <Box className="crystal-flex crystal-flex-start crystal-gap-1">
                     On-Chain
@@ -911,6 +941,14 @@ export default function Addresses() {
                   className="crystal-table-header"
                   onClick={() => handleSort("mempool_in")}
                   sx={{ cursor: "pointer" }}
+                  data-testid="sort-by-mempool"
+                  aria-label={`Sort by mempool balance ${
+                    sortConfig.field === "mempool_in"
+                      ? sortConfig.direction === "asc"
+                        ? "descending"
+                        : "ascending"
+                      : "ascending"
+                  }`}
                 >
                   <Box className="crystal-flex crystal-flex-start crystal-gap-1">
                     Mempool

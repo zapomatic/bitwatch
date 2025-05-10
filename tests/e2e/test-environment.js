@@ -1,61 +1,4 @@
 import { test as base, expect } from "@playwright/test";
-import fs from "fs";
-import path from "path";
-
-// Helper functions for database management
-const backupDatabase = () => {
-  const dbPath = path.join(process.cwd(), "server", "data", "db.json");
-  const backupPath = path.join(process.cwd(), "server", "data", "db.backup");
-
-  console.log("Backing up database...");
-  console.log("DB path:", dbPath);
-  console.log("Backup path:", backupPath);
-
-  try {
-    if (fs.existsSync(dbPath)) {
-      console.log("Existing db.json found, creating backup...");
-      fs.copyFileSync(dbPath, backupPath);
-      fs.unlinkSync(dbPath);
-      console.log("Backup created and original removed");
-    } else {
-      console.log("No existing db.json found");
-    }
-  } catch (error) {
-    console.error("Error during database backup:", error);
-    throw error;
-  }
-};
-
-const restoreDatabase = () => {
-  const dbPath = path.join(process.cwd(), "server", "data", "db.json");
-  const backupPath = path.join(process.cwd(), "server", "data", "db.backup");
-
-  console.log("Restoring database...");
-  console.log("DB path:", dbPath);
-  console.log("Backup path:", backupPath);
-
-  try {
-    // First restore from backup if it exists
-    if (fs.existsSync(backupPath)) {
-      console.log("Backup found, restoring...");
-      fs.copyFileSync(backupPath, dbPath);
-      fs.unlinkSync(backupPath);
-      console.log("Database restored and backup removed");
-    } else {
-      console.log("No backup found");
-    }
-
-    // Always clean up the test database
-    if (fs.existsSync(dbPath)) {
-      console.log("Cleaning up test database...");
-      fs.unlinkSync(dbPath);
-      console.log("Test database removed");
-    }
-  } catch (error) {
-    console.error("Error during database restore:", error);
-    throw error;
-  }
-};
 
 // Create a custom test fixture with our mocks
 const test = base.extend({
@@ -115,7 +58,7 @@ const test = base.extend({
   },
 });
 
-export { test, expect, backupDatabase, restoreDatabase };
+export { test, expect };
 
 // Helper functions for finding and interacting with elements
 export const findAndClick = async (page, selector, options = {}) => {

@@ -1,240 +1,23 @@
 import { test, expect } from "./test-environment.js";
 import testData from "../../test-data/keys.json" with { type: 'json' };
-import testDb from "../../server/db.test.json" with { type: 'json' };
-import { addCollection, addAddress, addExtendedKey, addDescriptor, findAndClick } from "./test-environment.js";
+import { addExtendedKey, addDescriptor, findAndClick } from "./test-environment.js";
 import { refreshAddressBalance, verifyAddressBalance } from "./test-environment.js";
+import loadApp from "./sequences/loadApp.js";
+import configurationPage from "./sequences/configurationPage.js";
+import integrationsPage from "./sequences/integrationsPage.js";
+import manageCollections from "./sequences/manageCollections.js";
+import singleAddress from "./sequences/singleAddress.js";
 
 test.describe("Bitwatch", () => {
   // NOTE: we put all of the sequences of events in a single test to make the tests faster
   // we don't need to load the page fresh, we want to navigate around it like a real user
+  // otherwise we might be masking issues that happen when we move around the app
   test("Bitwatch full test suite", async ({ page }) => {
-    // Navigate to the app and wait for it to load
-    console.log("Navigating to app...");
-    await page.goto("/");
-    console.log("Waiting for network idle...");
-    await page.waitForLoadState("networkidle");
-    await page.waitForSelector("text=bitwatch");
-    console.log("Page loaded");
-
-    // Small delay to ensure page is fully loaded
-    await page.waitForTimeout(1000);
-
-    // Wait for status indicators to be present
-    console.log("Waiting for status indicators...");
-    await page.waitForSelector('[data-testid="bitwatch-socket-status"]');
-    await page.waitForSelector('[data-testid="mempool-socket-status"]');
-
-    // Verify the states
-    const serverState = await page.evaluate(() => {
-      const statusElement = document.querySelector('[data-testid="bitwatch-socket-status"]');
-      return statusElement.textContent;
-    });
-    expect(serverState).toBe("Bitwatch Socket");
-    console.log("Server connected");
-
-    const websocketState = await page.evaluate(() => {
-      const statusElement = document.querySelector('[data-testid="mempool-socket-status"]');
-      return statusElement.textContent;
-    });
-    expect(websocketState).toBe("Mempool Socket");
-    console.log("Mempool Socket connected");
-
-    // Click the settings button
-    await findAndClick(page, '[data-testid="settings-button"]');
-    console.log("Settings opened");
-
-    // Verify default test values first
-    await expect(page.getByTestId("config-api")).toHaveValue(testDb.api);
-    await expect(page.getByTestId("config-interval")).toHaveValue(testDb.interval.toString());
-    await expect(page.getByTestId("config-apiDelay")).toHaveValue(testDb.apiDelay.toString());
-    await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue(testDb.apiParallelLimit.toString());
-    await expect(page.getByTestId("config-debugLogging")).not.toBeChecked();
-
-    // Switch to public mode and verify public settings
-    await findAndClick(page, '[data-testid="use-public-api"]');
-    console.log("Switched to public mode");
-    await expect(page.getByTestId("config-api")).toHaveValue("https://mempool.space");
-    await expect(page.getByTestId("config-interval")).toHaveValue("600000");
-    await expect(page.getByTestId("config-apiDelay")).toHaveValue("2000");
-    await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue("1");
-
-    // Switch to private mode and verify private settings
-    await findAndClick(page, '[data-testid="use-local-node"]');
-    console.log("Switched to private mode");
-    await expect(page.getByTestId("config-api")).toHaveValue("http://10.21.21.26:3006");
-    await expect(page.getByTestId("config-interval")).toHaveValue("60000");
-    await expect(page.getByTestId("config-apiDelay")).toHaveValue("100");
-    await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue("100"); 
-    await findAndClick(page, '[data-testid="config-debugLogging"]');
-    await expect(page.getByTestId("config-debugLogging")).toBeChecked();
-
-    // Return to test settings
-    await page.getByTestId("config-api").fill(testDb.api);
-    await page.getByTestId("config-interval").fill(testDb.interval.toString());
-    await page.getByTestId("config-apiDelay").fill(testDb.apiDelay.toString());
-    await page.getByTestId("config-apiParallelLimit").fill(testDb.apiParallelLimit.toString());
-    await findAndClick(page, '[data-testid="config-debugLogging"]');
-    await expect(page.getByTestId("config-debugLogging")).not.toBeChecked();
-    console.log("Restored test settings");
-
-    // Save configuration
-    await findAndClick(page, '[data-testid="save-configuration"]');
-    console.log("Saved configuration");
-
-    // Verify success notification
-    const configNotification = page.getByTestId("config-notification");
-    await expect(configNotification).toBeVisible();
-    await expect(configNotification).toContainText(
-      "Configuration saved successfully"
-    );
-    // Dismiss the notification
-    await findAndClick(page, '[data-testid="config-notification"] button', { allowOverlay: true });
-    console.log("Verified success notification");
-
-    // Navigate to integrations
-    await findAndClick(page, '[data-testid="integrations-button"]');
-    console.log("Integrations opened");
-    // Fill in Telegram configuration
-    await page.fill(
-      "#telegram-token",
-      "123456789:ABCdefGHIjklMNOpqrsTUVwxyz123456789"
-    );
-    await page.fill("#telegram-chatid", "test-chat-id");
-    console.log("Telegram config filled");
-
-    // Save the configuration
-    await findAndClick(page, '[data-testid="save-integrations"]');
-    console.log("Integrations saved");
-
-    // Wait for the success notification
-    const notification = page.getByRole("alert");
-    await expect(notification).toBeVisible();
-    await expect(notification).toContainText("Integrations saved successfully");
-    await expect(notification).toHaveClass(/MuiAlert-standardSuccess/);
-    // Dismiss the notification
-    await findAndClick(page, '[role="alert"] button', { allowOverlay: true });
-    console.log("Success notification verified");
-
-    // Navigate to addresses page
-    await findAndClick(page, '[data-testid="watch-list-button"]');
-    console.log("Navigated to addresses page");
-
-    // Add a new collection
-    await addCollection(page, "Donations");
-    console.log("Added test collection");
-
-    // Add single address
-    await addAddress(page, "Donations", {
-      name: "zapomatic",
-      address: testData.plain.zapomatic,
-      monitor: {
-        chain_in: "auto-accept",
-        chain_out: "alert",
-        mempool_in: "auto-accept",
-        mempool_out: "alert"
-      }
-    });
-    console.log("Added single address");
-
-    // Verify address is visible in the expanded table
-    await expect(page.getByText("Single Addresses")).toBeVisible();
-    await expect(page.locator('table.address-subtable')).toBeVisible();
-    await expect(page.locator(`text=${testData.plain.zapomatic.slice(0, 15)}...`)).toBeVisible();
-    console.log("Verified address table is visible");
-
-    // Test refresh balance functionality for each state transition
-    console.log("Testing refresh balance functionality for all states");
-
-    // Initial state (all zeros)
-    await refreshAddressBalance(page, testData.plain.zapomatic, {
-      chain_in: "0.00000000 ₿",
-      chain_out: "0.00000000 ₿",
-      mempool_in: "0.00000000 ₿",
-      mempool_out: "0.00000000 ₿"
-    }, 0);
-    console.log("Initial zero balance state verified");
-
-    // Refresh to get mempool input state
-    await refreshAddressBalance(page, testData.plain.zapomatic, {
-      chain_in: "0.00000000 ₿",
-      chain_out: "0.00000000 ₿",
-      mempool_in: "0.00010000 ₿",
-      mempool_out: "0.00000000 ₿"
-    }, 0);
-    console.log("Mempool input state verified");
-
-    // Refresh to get chain input state
-    await refreshAddressBalance(page, testData.plain.zapomatic, {
-      chain_in: "0.00010000 ₿",
-      chain_out: "0.00000000 ₿",
-      mempool_in: "0.00000000 ₿",
-      mempool_out: "0.00000000 ₿"
-    }, 0);
-    console.log("Chain input state verified");
-
-    // Refresh to get mempool output state
-    await refreshAddressBalance(page, testData.plain.zapomatic, {
-      chain_in: "0.00010000 ₿",
-      chain_out: "0.00000000 ₿",
-      mempool_in: "0.00000000 ₿",
-      mempool_out: "0.00001000 ₿"
-    }, 0);
-    // Wait for the diff to appear and have the correct value
-    await expect(page.getByTestId(`${testData.plain.zapomatic}-mempool-out-diff`)).toBeVisible();
-    await expect(page.getByTestId(`${testData.plain.zapomatic}-mempool-out-diff`)).toHaveText("(+0.00001000 ₿)");
-    // Verify accept button for address change state
-    await expect(page.getByTestId(`${testData.plain.zapomatic}-accept-button`)).toBeVisible();
-    console.log("Mempool output state verified");
-    
-    // Refresh to get chain output state
-    await refreshAddressBalance(page, testData.plain.zapomatic, {
-      chain_in: "0.00010000 ₿",
-      chain_out: "0.00001000 ₿",
-      mempool_in: "0.00000000 ₿",
-      mempool_out: "0.00000000 ₿"
-    }, 0);
-    const testId = testData.plain.zapomatic;
-    await expect(page.getByTestId(`${testId}-chain-out-diff`)).toBeVisible();
-    await expect(page.getByTestId(`${testId}-chain-out-diff`)).toHaveText("(+0.00001000 ₿)");
-    // Verify alert icon and accept button for chain-out
-    await expect(page.getByTestId(`${testId}-chain-out-alert-icon`)).toBeVisible();
-    await expect(page.getByTestId(`${testId}-accept-button`)).toBeVisible();
-    console.log("Chain output state verified");
-
-    // Accept the chain-out change
-    await findAndClick(page, `[data-testid="${testData.plain.zapomatic}-accept-button"]`);
-    // verify that the change took (no longer showing a diff)
-    await expect(page.getByTestId(`${testData.plain.zapomatic}-chain-out-diff`)).not.toBeVisible();
-
-    // Final refresh to verify all states are stable
-    await refreshAddressBalance(page, testData.plain.zapomatic, {
-      chain_in: "0.00010000 ₿",
-      chain_out: "0.00001000 ₿",
-      mempool_in: "0.00000000 ₿",
-      mempool_out: "0.00000000 ₿"
-    }, 0);
-    console.log("Final stable state verified");
-
-    // Verify collection balance totals
-    const donationsRow = page.locator('tr.collection-row', { has: page.getByText('Donations') });
-    await expect(donationsRow.locator('td', { hasText: '0.00009000 ₿' }).first()).toBeVisible();
-    await expect(donationsRow.locator('td', { hasText: '0.00000000 ₿' }).first()).toBeVisible();
-
-    // Test editing the single address
-    await findAndClick(page, `[data-testid="${testData.plain.zapomatic}-edit-button"]`);
-    await expect(page.locator('[data-testid="address-dialog"]')).toBeVisible();
-    await expect(page.getByTestId("address-name-input")).toHaveValue("zapomatic");
-    await expect(page.getByTestId("address-input")).toHaveValue(testData.plain.zapomatic);
-    
-    // Change the name
-    await page.getByTestId("address-name-input").fill("test rename");
-    await findAndClick(page, '[data-testid="address-dialog-save"]', { allowOverlay: true });
-    
-    // Verify the dialog closed and name was updated
-    await page.waitForSelector('[data-testid="address-dialog"]', { state: "hidden", timeout: 2000 });
-    await expect(page.getByText("Address updated successfully")).toBeVisible();
-    await expect(page.getByText("test rename")).toBeVisible();
-    console.log("Address rename verified");
+    await loadApp(page);
+    await configurationPage(page);
+    await integrationsPage(page);
+    await manageCollections(page);
+    await singleAddress(page);
 
     // basic settings for extended keys and descriptors
     // we will test editiing these fields after we create them all with these
@@ -356,7 +139,7 @@ test.describe("Bitwatch", () => {
         
         // Wait for the dialog to be visible
         await expect(page.locator('[data-testid="address-dialog"]')).toBeVisible();
-        await expect(page.getByTestId("address-name-input")).toHaveValue(`${key.name} 0`);
+        await expect(page.getByTestId("address-name-input")).toHaveValue(`${key.name} ${firstAddressIndex}`);
         
         // Change the name
         await page.getByTestId("address-name-input").fill(`${key.name} 2 Edited`);
@@ -367,6 +150,50 @@ test.describe("Bitwatch", () => {
         await expect(page.getByText("Address updated successfully")).toBeVisible();
         await expect(page.getByTestId(`${key.key}-address-${firstAddressIndex}-name`)).toContainText(`${key.name} 2 Edited`);
         console.log(`Edited address name in ${key.name}`);
+
+        // Now test editing the extended key itself
+        await findAndClick(page, `[data-testid="${key.key}-edit-button"]`);
+        
+        // Wait for the dialog to be visible
+        await expect(page.locator('[data-testid="extended-key-dialog"]')).toBeVisible();
+        
+        // Verify the dialog shows the correct values
+        await expect(page.getByTestId("extended-key-name-input")).toHaveValue(key.name);
+        await expect(page.getByTestId("extended-key-key-input")).toHaveValue(key.key);
+        await expect(page.getByTestId("extended-key-skip-input")).toHaveValue("0");
+        await expect(page.getByTestId("extended-key-initial-input")).toHaveValue("3");
+        
+        // Update the skip value to 1
+        await page.getByTestId("extended-key-skip-input").fill("1");
+        
+        // Save the changes
+        await findAndClick(page, '[data-testid="extended-key-submit-button"]');
+        
+        // Wait for the dialog to close
+        await expect(page.locator('[data-testid="extended-key-dialog"]')).not.toBeVisible();
+        
+        // Wait for success notification
+        await expect(page.getByText("Extended key updated successfully")).toBeVisible();
+        
+        // Expand the section if it's collapsed
+        if (!await page.locator(`[data-testid="${key.key}-address-list"]`).isVisible()) {
+          await findAndClick(page, `[data-testid="${key.key}-expand-button"]`);
+        }
+
+        // Verify that addresses start at index 1 (due to skip=1)
+        await expect(page.getByTestId(`${key.key}-address-1-name`)).toContainText("Test XPUB 1");
+        await expect(page.getByTestId(`${key.key}-address-2-name`)).toContainText("Test XPUB 2");
+        await expect(page.getByTestId(`${key.key}-address-3-name`)).toContainText("Test XPUB 3");
+
+        // Verify we don't have index 0
+        const index0Row = page.getByTestId(`${key.key}-address-0-name`);
+        await expect(index0Row).not.toBeVisible();
+
+        // verify total number of addresses (should be initialAddresses=3)
+        const addresses = await page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`).all();
+        expect(addresses.length).toBe(key.initialAddresses);
+
+        console.log("Verified extended key edit with skip=1");
       }
 
       // Collapse the extended key section after testing
@@ -390,7 +217,9 @@ test.describe("Bitwatch", () => {
 
     for (const descriptor of descriptors) {
       await addDescriptor(page, "Donations", descriptor);
-      console.log(`Added ${descriptor.name}`);
+
+      const firstAddressIndex = descriptor.skip ? descriptor.skip-1 : 0;
+      console.log(`Added ${descriptor.name} with first address index ${firstAddressIndex}`);
 
       // Verify the key-derived addresses section is visible
       await expect(page.getByText("Key-Derived Addresses")).toBeVisible();
@@ -463,51 +292,51 @@ test.describe("Bitwatch", () => {
         const newAddresses = await page.locator(`[data-testid="${descriptor.descriptor}-address-list"] tr.address-row`).all();
 
         // Test refreshing a single descriptor address using helper
-        await refreshAddressBalance(page, descriptor.descriptor, {}, 0, descriptor.descriptor);
-        console.log(`Verified initial zero balance for ${descriptor.name} address 0`);
+        await refreshAddressBalance(page, descriptor.descriptor, {}, firstAddressIndex, descriptor.descriptor);
+        console.log(`Verified initial zero balance for ${descriptor.name} address ${firstAddressIndex}`);
 
         // Test mempool input state
         await refreshAddressBalance(page, descriptor.descriptor, {
           mempool_in: "0.00010000 ₿"
-        }, 0, descriptor.descriptor);
-        console.log(`Verified mempool input for ${descriptor.name} address 0`);
+        }, firstAddressIndex, descriptor.descriptor);
+        console.log(`Verified mempool input for ${descriptor.name} address ${firstAddressIndex}`);
 
         // Test chain input state
         await refreshAddressBalance(page, descriptor.descriptor, {
           chain_in: "0.00010000 ₿"
-        }, 0, descriptor.descriptor);
-        console.log(`Verified chain input for ${descriptor.name} address 0`);
+        }, firstAddressIndex, descriptor.descriptor);
+        console.log(`Verified chain input for ${descriptor.name} address ${firstAddressIndex}`);
 
         // Test mempool output state
         await refreshAddressBalance(page, descriptor.descriptor, {
           mempool_out: "0.00001000 ₿"
-        }, 0, descriptor.descriptor);
-        console.log(`Verified mempool output for ${descriptor.name} address 0`);
+        }, firstAddressIndex, descriptor.descriptor);
+        console.log(`Verified mempool output for ${descriptor.name} address ${firstAddressIndex}`);
 
         // Test chain output state
         await refreshAddressBalance(page, descriptor.descriptor, {
           chain_out: "0.00001000 ₿"
-        }, 0, descriptor.descriptor);
-        console.log(`Verified chain output for ${descriptor.name} address 0`);
+        }, firstAddressIndex, descriptor.descriptor);
+        console.log(`Verified chain output for ${descriptor.name} address ${firstAddressIndex}`);
 
         // Accept the chain-out change
-        await findAndClick(page, `[data-testid="${descriptor.descriptor}-address-0-accept-button"]`);
-        await expect(page.getByTestId(`${descriptor.descriptor}-address-0-chain-out-diff`)).not.toBeVisible();
-        console.log(`Accepted balance changes for ${descriptor.name} address 0`);
+        await findAndClick(page, `[data-testid="${descriptor.descriptor}-address-${firstAddressIndex}-accept-button"]`);
+        await expect(page.getByTestId(`${descriptor.descriptor}-address-${firstAddressIndex}-chain-out-diff`)).not.toBeVisible();
+        console.log(`Accepted balance changes for ${descriptor.name} address ${firstAddressIndex}`);
 
         // Final refresh to verify all states are stable
         await refreshAddressBalance(page, descriptor.descriptor, {
           chain_in: "0.00010000 ₿",
           chain_out: "0.00001000 ₿"
-        }, 0, descriptor.descriptor);
-        console.log(`Verified final stable state for ${descriptor.name} address 0`);
+        }, firstAddressIndex, descriptor.descriptor);
+        console.log(`Verified final stable state for ${descriptor.name} address ${firstAddressIndex}`);
 
         // Edit the first derived address
-        await findAndClick(page, `[data-testid="${descriptor.descriptor}-address-0-edit-button"]`);
+        await findAndClick(page, `[data-testid="${descriptor.descriptor}-address-${firstAddressIndex}-edit-button"]`);
         
         // Wait for the dialog to be visible
         await expect(page.locator('[data-testid="address-dialog"]')).toBeVisible();
-        await expect(page.getByTestId("address-name-input")).toHaveValue(`${descriptor.name} 0`);
+        await expect(page.getByTestId("address-name-input")).toHaveValue(`${descriptor.name} ${firstAddressIndex}`);
         
         // Change the name
         await page.getByTestId("address-name-input").fill(`${descriptor.name} 0 Edited`);
@@ -516,7 +345,7 @@ test.describe("Bitwatch", () => {
         // Verify the dialog closed and name was updated
         await page.waitForSelector('[data-testid="address-dialog"]', { state: "hidden", timeout: 2000 });
         await expect(page.getByText("Address updated successfully")).toBeVisible();
-        await expect(page.getByTestId(`${descriptor.descriptor}-address-0-name`)).toContainText(`${descriptor.name} 0 Edited`);
+        await expect(page.getByTestId(`${descriptor.descriptor}-address-${firstAddressIndex}-name`)).toContainText(`${descriptor.name} 0 Edited`);
         console.log(`Edited address name in ${descriptor.name}`);
       }
 
@@ -535,10 +364,10 @@ test.describe("Bitwatch", () => {
         // Verify the dialog shows the correct values
         await expect(page.getByTestId("descriptor-name-input")).toHaveValue(descriptor.name);
         await expect(page.getByTestId("descriptor-input")).toHaveValue(descriptor.descriptor);
-        await expect(page.getByTestId("descriptor-skip-input")).toHaveValue(0);
+        await expect(page.getByTestId("descriptor-skip-input")).toHaveValue("0");
         
         // Update the skip value to 1
-        await page.getByTestId("descriptor-skip-input").fill(1);
+        await page.getByTestId("descriptor-skip-input").fill("1");
         
         // Save the changes
         await findAndClick(page, '[data-testid="descriptor-submit-button"]');
@@ -590,11 +419,11 @@ test.describe("Bitwatch", () => {
     console.log("Navigated to addresses page");
 
     // Verify single address monitor settings
-    const singleAddress = testData.plain.zapomatic;
-    await expect(page.locator(`[data-testid="${singleAddress}-chain-in-alert-icon"]`)).toBeVisible();
-    await expect(page.locator(`[data-testid="${singleAddress}-chain-out-alert-icon"]`)).toBeVisible();
-    await expect(page.locator(`[data-testid="${singleAddress}-mempool-in-alert-icon"]`)).toBeVisible();
-    await expect(page.locator(`[data-testid="${singleAddress}-mempool-out-alert-icon"]`)).toBeVisible();
+    const zapAddress = testData.plain.zapomatic;
+    await expect(page.locator(`[data-testid="${zapAddress}-chain-in-alert-icon"]`)).toBeVisible();
+    await expect(page.locator(`[data-testid="${zapAddress}-chain-out-alert-icon"]`)).toBeVisible();
+    await expect(page.locator(`[data-testid="${zapAddress}-mempool-in-alert-icon"]`)).toBeVisible();
+    await expect(page.locator(`[data-testid="${zapAddress}-mempool-out-alert-icon"]`)).toBeVisible();
     console.log("Single address monitor settings verified");
 
     // Verify extended key address monitor settings (using the first extended key from earlier)

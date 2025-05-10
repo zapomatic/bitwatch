@@ -1,26 +1,19 @@
 import memory from "../memory.js";
 import logger, { getMonitorLog } from "../logger.js";
-import { deriveAddresses, validateDescriptor } from "../descriptors.js";
-import { descriptorExtractPaths } from "../descriptorExtractPaths.js";
-export const addDescriptor = async ({ data, io }) => {
-  if (!data.collection || !data.name || !data.descriptor) {
-    logger.error("Missing required fields");
-    return { error: "Missing required fields" };
-  }
+import { deriveAddresses, parseDescriptor } from "../descriptors.js";
 
+export const addDescriptor = async ({ data, io }) => {
   logger.info(
     `Adding descriptor ${data.collection}/${data.name}, gap: ${
       data.gapLimit
-    }, skip: ${data.skip}, initial: ${data.initialAddresses}, ${getMonitorLog(
-      data.monitor
-    )}`
+    }, skip: ${data.skip}, initial: ${
+      data.initialAddresses
+    }, monitor:${getMonitorLog(data.monitor)}`
   );
 
-  // Validate descriptor
-  const validation = validateDescriptor(data.descriptor);
-  if (!validation.success) {
-    logger.error(validation.error);
-    return { error: validation.error };
+  if (!data.collection || !data.name || !data.descriptor) {
+    logger.error("Missing required fields");
+    return { error: "Missing required fields" };
   }
 
   // Create collection if it doesn't exist
@@ -32,69 +25,67 @@ export const addDescriptor = async ({ data, io }) => {
     };
   }
 
-  // Ensure descriptors array exists
-  const collection = memory.db.collections[data.collection];
-  if (!collection.descriptors) {
-    collection.descriptors = [];
-  }
-
   // Check if descriptor already exists
-  if (collection.descriptors.some((d) => d.name === data.name)) {
-    logger.error("Descriptor with this name already exists");
-    return { error: "Descriptor with this name already exists" };
+  const collection = memory.db.collections[data.collection];
+  if (
+    collection.descriptors.some(
+      (d) => d.name === data.name || d.descriptor === data.descriptor
+    )
+  ) {
+    logger.error("Descriptor with this name or key already exists");
+    return { error: "Descriptor with this name or key already exists" };
   }
 
-  // Set default values if not provided
-  const desc = {
-    ...data,
-    derivationPath: descriptorExtractPaths(data.descriptor),
-    addresses: [],
-  };
+  // Parse and validate descriptor
+  const parseResult = parseDescriptor(data.descriptor);
+  if (!parseResult.success) {
+    logger.error(`Invalid descriptor: ${parseResult.error}`);
+    return { error: parseResult.error };
+  }
 
-  // Derive initial addresses
-  const addresses = deriveAddresses(
-    desc.descriptor,
-    0, // startIndex
-    desc.initialAddresses || 5, // count
-    desc.skip || 0 // skip
+  // Get all addresses in one batch
+  const allAddressesResult = await deriveAddresses(
+    data.descriptor,
+    0,
+    data.initialAddresses || 5,
+    data.skip || 0
   );
 
-  // Check if address derivation failed
-  if (!addresses || addresses.length === 0) {
-    logger.error("Failed to derive addresses from descriptor");
-    return {
-      error:
-        "Failed to derive addresses from descriptor. Please check the descriptor format and keys.",
-    };
+  if (!allAddressesResult.success) {
+    logger.error(`Failed to derive addresses: ${allAddressesResult.error}`);
+    return { error: allAddressesResult.error };
   }
 
-  // Add monitor settings to each address
-  desc.addresses = addresses.map((address) => ({
-    ...address,
-    name: `${desc.name} ${address.index}`,
-    index: address.index,
-    expect: {
-      chain_in: 0,
-      chain_out: 0,
-      mempool_in: 0,
-      mempool_out: 0,
-    },
-    monitor: {
-      ...desc.monitor,
-    },
-    actual: null,
-    error: false,
-    errorMessage: null,
-  }));
+  // Create descriptor object
+  const desc = {
+    name: data.name,
+    descriptor: data.descriptor,
+    derivationPath: data.derivationPath || "m/0",
+    gapLimit: data.gapLimit || 2,
+    skip: data.skip || 0,
+    initialAddresses: data.initialAddresses || 5,
+    monitor: { ...data.monitor },
+    addresses: allAddressesResult.data.map((addr) => ({
+      address: addr.address,
+      name: `${data.name} ${addr.index}`,
+      index: addr.index,
+      expect: {
+        chain_in: 0,
+        chain_out: 0,
+        mempool_in: 0,
+        mempool_out: 0,
+      },
+      monitor: { ...data.monitor },
+      actual: null,
+      error: false,
+      errorMessage: null,
+    })),
+  };
 
-  // Add the descriptor to the collection
+  // Add descriptor to collection
   collection.descriptors.push(desc);
 
-  // Save the database
   memory.saveDb();
-
-  // Emit the updated state
   io.emit("updateState", { collections: memory.db.collections });
-
   return { success: true };
 };

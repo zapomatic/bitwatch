@@ -5,6 +5,7 @@ import { addExtendedKey } from "./addExtendedKey.js";
 import { client } from "./client.js";
 import { deleteHandler } from "./delete.js";
 import { editAddress } from "./editAddress.js";
+import { editCollection } from "./editCollection.js";
 import { editDescriptor } from "./editDescriptor.js";
 import { editExtendedKey } from "./editExtendedKey.js";
 import { getConfig } from "./getConfig.js";
@@ -25,6 +26,7 @@ export default {
   client,
   delete: deleteHandler,
   editAddress,
+  editCollection,
   editDescriptor,
   editExtendedKey,
   getConfig,

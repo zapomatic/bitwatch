@@ -339,18 +339,3 @@ export const deriveAddress = (descriptor, index) => {
     return null;
   }
 };
-
-// Validate a descriptor
-export const validateDescriptor = (descriptor) => {
-  const result = parseDescriptor(descriptor);
-  if (!result.success) {
-    logger.error(`Invalid descriptor: ${result.error}`);
-    return {
-      success: false,
-      error: result.error,
-    };
-  }
-  return {
-    success: true,
-  };
-};
