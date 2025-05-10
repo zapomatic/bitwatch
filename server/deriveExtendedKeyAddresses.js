@@ -20,7 +20,7 @@ export const deriveExtendedKeyAddresses = (
   const skipValue = typeof extendedKey === "object" ? extendedKey.skip || 0 : 0;
 
   logger.scan(
-    `Deriving ${count} addresses starting from index ${startIndex} with skip ${skipValue}`
+    `Deriving ${count} addresses starting from index ${startIndex} with skip ${skipValue}, using path: ${derivationPath}`
   );
 
   // Get network for the key
@@ -40,7 +40,7 @@ export const deriveExtendedKeyAddresses = (
   }
 
   // Parse derivation path and get the base node
-  const pathParts = derivationPath.split("/").slice(1); // Remove 'm'
+  const pathParts = (derivationPath || "m/0").split("/").slice(1); // Remove 'm' and provide default
   let baseNode = node;
   for (const part of pathParts) {
     const isHardened = part.endsWith("'") || part.endsWith("h");
