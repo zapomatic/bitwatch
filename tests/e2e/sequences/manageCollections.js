@@ -2,7 +2,7 @@ import { expect } from "@playwright/test";
 import findAndClick from "../lib/findAndClick.js";
 
 const addCollection = async (page, name) => {
-  await findAndClick(page, '[aria-label="New Collection"]');
+  await findAndClick(page, '[data-testid="new-collection-button"]');
   const input = page.locator('.crystal-input[aria-label="Collection Name"]');
   await expect(input).toBeVisible();
   await input.fill(name);

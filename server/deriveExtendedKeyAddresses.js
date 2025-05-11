@@ -73,7 +73,22 @@ export const deriveExtendedKeyAddresses = ({
 
     // Use appropriate address type based on key prefix
     let address;
-    if (addressType === "p2wpkh") {
+    if (addressType === "p2wsh") {
+      // Native segwit (P2WSH)
+      const p2wpkh = bitcoin.payments.p2wpkh({
+        pubkey: child.publicKey,
+        network,
+      });
+      address = bitcoin.payments.p2wsh({ redeem: p2wpkh, network }).address;
+    } else if (addressType === "p2sh-p2wsh") {
+      // P2SH-wrapped segwit (P2SH-P2WSH)
+      const p2wpkh = bitcoin.payments.p2wpkh({
+        pubkey: child.publicKey,
+        network,
+      });
+      const p2wsh = bitcoin.payments.p2wsh({ redeem: p2wpkh, network });
+      address = bitcoin.payments.p2sh({ redeem: p2wsh, network }).address;
+    } else if (addressType === "p2wpkh") {
       // Native segwit (P2WPKH)
       address = bitcoin.payments.p2wpkh({
         pubkey: child.publicKey,

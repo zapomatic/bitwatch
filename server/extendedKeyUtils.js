@@ -69,17 +69,38 @@ export const convertExtendedKey = (key) => {
 
 // Get network for a key
 export const getKeyNetwork = (key) => {
-  const keyLower = key.toLowerCase();
-  if (keyLower.startsWith("zpub")) return NETWORK_TYPES.zpub;
-  if (keyLower.startsWith("ypub")) return NETWORK_TYPES.ypub;
-  if (keyLower.startsWith("xpub")) return NETWORK_TYPES.xpub;
+  // 1) Try to detect by version bytes first
+  try {
+    const data = bs58check.decode(key);
+    if (data.length >= 4) {
+      const version =
+        (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
+      for (const [__type, net] of Object.entries(NETWORK_TYPES)) {
+        if (net.bip32.public === version) return net;
+      }
+    }
+  } catch (e) {
+    console.error("Error getting key network:", e);
+    return null;
+  }
+
+  // 2) Fallback to explicit prefix checks
+  if (key.startsWith("Ypub")) return NETWORK_TYPES.Ypub;
+  if (key.startsWith("Zpub")) return NETWORK_TYPES.Zpub;
+  const lk = key.toLowerCase();
+  if (lk.startsWith("ypub")) return NETWORK_TYPES.ypub;
+  if (lk.startsWith("zpub")) return NETWORK_TYPES.zpub;
+  if (lk.startsWith("xpub")) return NETWORK_TYPES.xpub;
+
   return null;
 };
 
 // Get address type for a key
 export const getAddressType = (key) => {
-  const keyLower = key.toLowerCase();
-  if (keyLower.startsWith("zpub")) return "p2wpkh";
-  if (keyLower.startsWith("ypub")) return "p2sh-p2wpkh";
+  if (key.startsWith("Ypub")) return "p2sh-p2wsh";
+  if (key.startsWith("Zpub")) return "p2wsh";
+  const lk = key.toLowerCase();
+  if (lk.startsWith("zpub")) return "p2wpkh";
+  if (lk.startsWith("ypub")) return "p2sh-p2wpkh";
   return "p2pkh";
 };

@@ -7,7 +7,7 @@ services:
       APP_PORT: 3117
 
   web:
-    image: ghcr.io/zapomatic/bitwatch:v1.6.2@sha256:9842365054549aa94d2980f2ba77693f683a0e69bae467a4f73ae5110a7b3b7a
+    image: ghcr.io/zapomatic/bitwatch:v1.6.3@sha256:99b8d76be203d7cd78414105c516eb998ff61e26b28ddb98be16c600409f24e8
     user: "1000:1000"
     restart: on-failure
     stop_grace_period: 1m

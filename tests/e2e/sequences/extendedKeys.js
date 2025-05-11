@@ -58,7 +58,7 @@ const addExtendedKey = async (
 
 export default async (page) => {
     const extendedKeys = Object.entries(testData.extendedKeys).map(([id, key]) => ({
-      name: `Test ${key.type.toUpperCase()}`,  // Base name, index will be added by server
+      name: `Test ${key.type}`,  // Base name, index will be added by server
       key: key.key,
       keyId: id,
       derivationPath: key.derivationPath,
@@ -87,8 +87,9 @@ export default async (page) => {
       await expect(page.getByText("Key-Derived Addresses")).toBeVisible();
 
       // Find the extended key row
-      const keyRow = page.locator('tr.crystal-table-row', { has: page.getByText(key.name) });
-      
+      const keyRow = page.getByTestId(`${key.key}-row`);
+      // scroll to the key row
+      await keyRow.scrollIntoViewIfNeeded();
       // Verify extended key information
       await expect(keyRow.locator('td').nth(0)).toContainText(key.name);
       await expect(keyRow.locator('td').nth(1)).toContainText(key.key.slice(0, 15));

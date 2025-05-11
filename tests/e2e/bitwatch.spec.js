@@ -94,7 +94,7 @@ test.describe("Bitwatch", () => {
     console.log("Single address monitor settings verified");
 
     const extKeys = Object.entries(testData.extendedKeys).map(([id, key]) => ({
-      name: `Test ${key.type.toUpperCase()}`,  // Base name, index will be added by server
+      name: `Test ${key.type}`,  // Base name, index will be added by server
       key: key.key,
       keyId: id,
       derivationPath: key.derivationPath,
@@ -178,6 +178,9 @@ test.describe("Bitwatch", () => {
     const firstExtendedKey = extKeys[0];
     await findAndClick(page, `[data-testid="${firstExtendedKey.key}-expand-button"]`);
     console.log(`Expanded ${firstExtendedKey.name} section for deletion`);
+    // get the second address row and scroll it into view
+    const secondAddressRow = page.getByTestId(`${firstExtendedKey.key}-address-2-row`);
+    await secondAddressRow.scrollIntoViewIfNeeded();
     await findAndClick(page, `[data-testid="${firstExtendedKey.key}-address-2-delete-button"]`);
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
     await expect(page.getByText("Remove this address from the extended key set?")).toBeVisible();

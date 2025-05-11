@@ -22,7 +22,5 @@ export default async (page) => {
   await expect(notification).toBeVisible();
   await expect(notification).toContainText("Integrations saved successfully");
   await expect(notification).toHaveClass(/MuiAlert-standardSuccess/);
-  // Dismiss the notification
-  await findAndClick(page, '[role="alert"] button', { allowOverlay: true });
   console.log("Success notification verified");
 };

@@ -853,6 +853,7 @@ export default function Addresses() {
                 className="crystal-button crystal-button-primary"
                 onClick={() => setNewCollection({ name: "" })}
                 startIcon={<AddIcon />}
+                data-testid="new-collection-button"
                 aria-label="New Collection"
               >
                 New Collection
