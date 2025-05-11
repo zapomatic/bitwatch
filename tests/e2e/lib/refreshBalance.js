@@ -95,15 +95,45 @@ export default async (
   // Find and verify the refresh button exists and is visible
   const refreshButton = page.getByTestId(`${testIdPrefix}-refresh-button`);
   await expect(refreshButton).toBeVisible();
+
+  // Click the refresh button and wait for loading state
   await findAndClick(page, `[data-testid="${testIdPrefix}-refresh-button"]`, {
     force: true,
   });
 
-  // Wait for the notification to appear with a longer timeout
+  // Wait for the notification to appear
   const notification = page.getByTestId("notification");
   await expect(notification).toBeVisible();
+
   // Verify it's a success notification
   await expect(notification).toHaveClass(/MuiAlert-standardSuccess/);
 
+  // Try to close the notification if it has a close button
+  const closeButton = notification.locator('button[aria-label="Close"]');
+  if (await closeButton.isVisible()) {
+    await closeButton.click();
+  }
+
+  // Wait for the notification to disappear
+  await page
+    .waitForSelector('[data-testid="notification"]', {
+      state: "hidden",
+      timeout: 5000,
+    })
+    .catch(async () => {
+      // If notification doesn't disappear, try clicking the close button again
+      if (await closeButton.isVisible()) {
+        await closeButton.click();
+        await page.waitForSelector('[data-testid="notification"]', {
+          state: "hidden",
+          timeout: 5000,
+        });
+      }
+    });
+
+  // Add a small delay to ensure all state updates are complete
+  await page.waitForTimeout(500);
+
+  // Now verify the balances
   verifyBalance(page, address, expectedBalances, index, parentKey);
 };

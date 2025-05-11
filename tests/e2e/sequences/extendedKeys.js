@@ -194,6 +194,21 @@ export default async (page) => {
         await expect(page.getByTestId(`${key.key}-address-${firstAddressIndex}-name`)).toContainText(`${key.name} 2 Edited`);
         console.log(`Edited address name in ${key.name}`);
 
+        // Trigger update on second address so we the backend has a reason
+        // to derive more addresses (to ensure the gap is respected)
+        await refreshBalance(page, key.key, {
+          chain_in: "0.00000000 ₿",
+          chain_out: "0.00000000 ₿",
+          mempool_in: "0.00010000 ₿",
+          mempool_out: "0.00000000 ₿"
+        }, firstAddressIndex + 1, key.key);
+        console.log(`trigger activity update for ${key.name} address ${firstAddressIndex + 1}`);
+        // wait for the new addresses to be visible
+        await page.waitForTimeout(1000);
+        // verify number of addresses
+        const newAddressList = await page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`).all();
+        expect(newAddressList.length).toBe(key.initialAddresses+1);
+
         // Now test editing the extended key itself
         await findAndClick(page, `[data-testid="${key.key}-edit-button"]`);
         

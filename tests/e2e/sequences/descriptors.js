@@ -15,9 +15,12 @@ const addDescriptor = async (
     gapLimit,
     initialAddresses,
     monitor,
-    derivationPath,
   }
 ) => {
+  // scroll to the top of the page
+  await page.evaluate(() => {
+    window.scrollTo(0, 0);
+  });
   await findAndClick(page, `[data-testid="${collection}-add-descriptor"]`);
 
   // Wait for dialog to be visible
@@ -137,20 +140,10 @@ export default async (page) => {
         const nameCell = page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-name"]`);
         await expect(nameCell).toContainText(`${descriptor.name} ${addressIndex}`);
       }
-      // For the first descriptor, verify all addresses have alert settings
+      // for the first descriptor, we will trigger a balance changes and edit to triggger more key derivation
       if (descriptor.name === "xpubSingle") {
-        // Trigger a balance change to generate new addresses
-        await refreshBalance(page, descriptor.descriptor, {
-          chain_in: "0.00010000 ₿"
-        }, 0, descriptor.descriptor);
 
-        // Wait for the new addresses to be visible
-        await page.waitForTimeout(1000);
-
-        // Get the new list of addresses after derivation
-        const newAddresses = await page.locator(`[data-testid="${descriptor.descriptor}-address-list"] tr.address-row`).all();
-
-        // Test refreshing a single descriptor address using helper
+        // initial refresh to get 0 balance
         await refreshBalance(page, descriptor.descriptor, {}, firstAddressIndex, descriptor.descriptor);
         console.log(`Verified initial zero balance for ${descriptor.name} address ${firstAddressIndex}`);
 
@@ -168,12 +161,14 @@ export default async (page) => {
 
         // Test mempool output state
         await refreshBalance(page, descriptor.descriptor, {
+          chain_in: "0.00010000 ₿",
           mempool_out: "0.00001000 ₿"
         }, firstAddressIndex, descriptor.descriptor);
         console.log(`Verified mempool output for ${descriptor.name} address ${firstAddressIndex}`);
 
         // Test chain output state
         await refreshBalance(page, descriptor.descriptor, {
+          chain_in: "0.00010000 ₿",
           chain_out: "0.00001000 ₿"
         }, firstAddressIndex, descriptor.descriptor);
         console.log(`Verified chain output for ${descriptor.name} address ${firstAddressIndex}`);
@@ -183,12 +178,23 @@ export default async (page) => {
         await expect(page.getByTestId(`${descriptor.descriptor}-address-${firstAddressIndex}-chain-out-diff`)).not.toBeVisible();
         console.log(`Accepted balance changes for ${descriptor.name} address ${firstAddressIndex}`);
 
-        // Final refresh to verify all states are stable
+        // Trigger update on second address so we the backend has a reason
+        // to derive more addresses (to ensure the gap is respected)
+        await refreshBalance(page, descriptor.descriptor, {}, firstAddressIndex + 1, descriptor.descriptor);
+        console.log(`trigger zero update for ${descriptor.name} address ${firstAddressIndex + 1}`);
         await refreshBalance(page, descriptor.descriptor, {
-          chain_in: "0.00010000 ₿",
-          chain_out: "0.00001000 ₿"
-        }, firstAddressIndex, descriptor.descriptor);
-        console.log(`Verified final stable state for ${descriptor.name} address ${firstAddressIndex}`);
+          chain_in: "0.00000000 ₿",
+          chain_out: "0.00000000 ₿",
+          mempool_in: "0.00010000 ₿",
+          mempool_out: "0.00000000 ₿"
+        }, firstAddressIndex + 1, descriptor.descriptor);
+        console.log(`trigger activity update for ${descriptor.name} address ${firstAddressIndex + 1}`);
+
+        // wait for the new addresses to be visible
+        await page.waitForTimeout(1000);
+        // verify number of addresses
+        const newAddressList = await page.locator(`[data-testid="${descriptor.descriptor}-address-list"] tr.address-row`).all();
+        expect(newAddressList.length).toBe(descriptor.initialAddresses+1);
 
         // Edit the first derived address
         await findAndClick(page, `[data-testid="${descriptor.descriptor}-address-${firstAddressIndex}-edit-button"]`);
@@ -206,10 +212,7 @@ export default async (page) => {
         await expect(page.getByText("Address updated successfully")).toBeVisible();
         await expect(page.getByTestId(`${descriptor.descriptor}-address-${firstAddressIndex}-name`)).toContainText(`${descriptor.name} 0 Edited`);
         console.log(`Edited address name in ${descriptor.name}`);
-      }
 
-      // Test editing the descriptor itself
-      if (descriptor.name === "xpubSingle") {
         // Click the edit button on the descriptor row
         await findAndClick(page, `[data-testid="${descriptor.descriptor}-edit-button"]`);
         
