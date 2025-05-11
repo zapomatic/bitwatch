@@ -63,18 +63,8 @@ const checkAndUpdateGapLimit = (item) => {
     return false;
   }
 
-  // Only generate addresses if we have less than gapLimit empty addresses
-  // AND we're not already at our maximum address count
-  const maxAddresses = item.initialAddresses + item.gapLimit;
-  if (item.addresses.length >= maxAddresses) {
-    return false;
-  }
-
-  // Calculate how many more addresses we need, but don't exceed maxAddresses
-  const addressesNeeded = Math.min(
-    item.gapLimit - emptyCount,
-    maxAddresses - item.addresses.length
-  );
+  // Calculate how many more addresses we need to maintain the gap limit
+  const addressesNeeded = item.gapLimit - emptyCount;
 
   // If we need more addresses, emit an event to trigger address generation
   logger.info(
@@ -359,7 +349,8 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
           errorMessage: null,
         }));
 
-        parentItem.addresses = [...parentItem.addresses, ...newAddressRecords];
+        // Add new addresses and sort by index to maintain order
+        parentItem.addresses = [...parentItem.addresses, ...newAddressRecords].sort((a, b) => a.index - b.index);
         logger.debug(`Added ${newAddressRecords.length} new addresses to ${isDescriptorAddress ? 'descriptor' : 'extended key'}`);
 
         // Immediately check balances for new addresses
