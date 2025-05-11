@@ -157,32 +157,32 @@
     },
     "vpub1": {
       "key": "vpub5ZBV5v2s8VFvDEe3HesMr81GvkgE3MUGyrFGF2aR8CQAF8wVQhHs1TBP3xEu1ZsouezYThXGCZbRwbKYJCQ8qa2BBeQFmRnKFQr4ub17HCe",
-      "type": "xpub",
-      "derivationPath": "m/44/0/0",
+      "type": "vpub",
+      "derivationPath": "m/86/0/0",
       "addresses": [
         {
           "index": 0,
-          "address": "13wVA2463EqW55QM5YsPVCuBah5g2VQpZZ"
+          "address": "bc1pdk2w3uxetlnxz56qpvvyjnt6sjgu5yf96ymxv3yd8zuy92sy2p3shclfhz"
         },
         {
           "index": 1,
-          "address": "1AtpX2cWrLUM2kWdZVcRibyn6Nw3YppnB1"
+          "address": "bc1pech0fd6vuz7aswnhj2adnxjdx83p7zep9f3e4nf8x8anmakw26tqnw4amr"
         },
         {
           "index": 2,
-          "address": "1PztcF39SkmQxqGGcHyycUE3qhPd7Pyn7R"
+          "address": "bc1purvkypspyjwk8236r35axn5m36guhjfpsu4psjpan0u9m2dzy0wqngm79v"
         },
         {
           "index": 3,
-          "address": "1hiGraUYfDnwTw7AeAsM89RKGQvcm74XJ"
+          "address": "bc1pv30e4djepshwkpmejalspdfp7xu24me25dapv53n88nt25ya0qmq93sfz6"
         },
         {
           "index": 4,
-          "address": "1sxAxydfJLoR9o2tGJhQawkWxVKu1i3TM"
+          "address": "bc1p7nyjmrnrevj8f6qc7ltf5r60hafzf0ahla92zgn98u79y7dgdmmq7n4l3p"
         },
         {
           "index": 5,
-          "address": "1P2qC3ndAh6p2YWwWGhQxifB428hLusP7Z"
+          "address": "bc1p5wynz64l2vv04n3vcs60llnpujwaruya4k97ag3pps9uqan0y9esajfa0k"
         }
       ]
     }

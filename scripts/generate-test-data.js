@@ -260,12 +260,36 @@ function generateTestKeys() {
 
   // derivation paths
   const derivationPaths = {
-    xpub: { receive: "m/44/0/0", change: "m/44/0/1", test: "m/44/0/2" },
-    ypub: { receive: "m/49/0/0", change: "m/49/0/1", test: "m/49/0/2" },
-    Ypub: { receive: "m/49/0/0", change: "m/49/0/1", test: "m/49/0/2" },
-    zpub: { receive: "m/84/0/0", change: "m/84/0/1", test: "m/84/0/2" },
-    Zpub: { receive: "m/84/0/0", change: "m/84/0/1", test: "m/84/0/2" },
-    vpub: { receive: "m/86/0/0", change: "m/86/0/1", test: "m/86/0/2" },
+    xpub: {
+      receive: "m/44/0/0",
+      change: "m/44/0/1",
+      test: "m/44/0/2",
+    },
+    ypub: {
+      receive: "m/49/0/0",
+      change: "m/49/0/1",
+      test: "m/49/0/2",
+    },
+    zpub: {
+      receive: "m/84/0/0",
+      change: "m/84/0/1",
+      test: "m/84/0/2",
+    },
+    vpub: {
+      receive: "m/86/0/0",
+      change: "m/86/0/1",
+      test: "m/86/0/2",
+    },
+    Ypub: {
+      receive: "m/49/0/0",
+      change: "m/49/0/1",
+      test: "m/49/0/2",
+    },
+    Zpub: {
+      receive: "m/84/0/0",
+      change: "m/84/0/1",
+      test: "m/84/0/2",
+    },
   };
 
   // neuter & toBase58
@@ -381,6 +405,8 @@ function generateTestData() {
       ? "ypub"
       : name.startsWith("zpub")
       ? "zpub"
+      : name.startsWith("vpub")
+      ? "vpub"
       : "xpub";
 
     const derivationPath = keys.derivationPaths[keyType].receive;
@@ -396,6 +422,8 @@ function generateTestData() {
         ? `sh(wsh(${val}/${base}/*))`
         : keyType === "Zpub"
         ? `wsh(${val}/${base}/*)`
+        : keyType === "vpub"
+        ? `tr(${val}/${base}/*)`
         : `wpkh(${val}/${base}/*)`;
 
     out.extendedKeys[name] = {
