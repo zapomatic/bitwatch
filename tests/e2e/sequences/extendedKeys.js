@@ -286,6 +286,39 @@ export default async (page) => {
 
         console.log("Verified gap limit behavior after finding activity");
 
+        // Test raw extended key handling
+        console.log("Testing raw extended key handling");
+        
+        // Add a raw zpub key without descriptor wrapper
+        await addExtendedKey(page, "Donations", {
+          name: "Raw ZPUB Test",
+          key: testData.extendedKeys.zpub1.key,
+          derivationPath: testData.extendedKeys.zpub1.derivationPath,
+          skip: 0,
+          gapLimit: 2,
+          initialAddresses: 3,
+          monitor: {
+            chain_in: "auto-accept",
+            chain_out: "alert",
+            mempool_in: "auto-accept",
+            mempool_out: "alert"
+          }
+        });
+
+        // Verify the key was properly wrapped in wpkh() format
+        const rawZpubRow = page.getByTestId(`${testData.extendedKeys.zpub1.key}-row`);
+        await expect(rawZpubRow).toBeVisible();
+        
+        // Verify addresses were derived correctly
+        const rawZpubAddresses = page.locator(`[data-testid="${testData.extendedKeys.zpub1.key}-address-list"] tr.address-row`);
+        await expect(rawZpubAddresses).toHaveCount(3);
+
+        // Verify first address matches expected native segwit address
+        const firstAddress = page.locator(`[data-testid="${testData.extendedKeys.zpub1.key}-address-0-row"] td:nth-child(2)`);
+        await expect(firstAddress).toContainText(testData.extendedKeys.zpub1.addresses[0].address.slice(0, 15));
+
+        console.log("Verified raw extended key handling");
+
         console.log("Verified extended key edit with skip=50");
       }
 
