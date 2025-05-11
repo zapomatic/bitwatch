@@ -306,19 +306,6 @@ const CollectionRow = ({
               {(collection.extendedKeys?.length > 0 ||
                 collection.descriptors?.length > 0) && (
                 <Box sx={{ mb: 1 }}>
-                  {/* <Typography
-                    variant="subtitle1"
-                    sx={{
-                      mt: 2,
-                      mb: 1,
-                      color: "var(--theme-secondary)",
-                      fontWeight: "bold",
-                      borderBottom: "1px solid var(--theme-secondary)",
-                      paddingBottom: "8px",
-                    }}
-                  >
-                    Key-Derived Addresses
-                  </Typography> */}
                   <Table
                     size="small"
                     className="crystal-table address-subtable"

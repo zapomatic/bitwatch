@@ -199,6 +199,7 @@ ${collection}/${name} (<a href="https://mempool.space/address/${address}">${addr
 ${changeMessages.join("\n")}
 `;
 
+  logger.telegram(message);
   return await sendMessage(message);
 };
 

@@ -83,9 +83,6 @@ export default async (page) => {
 
       const firstAddressIndex = key.skip ? key.skip-1 : 0;
 
-      // Verify the key-derived addresses section is visible
-      await expect(page.getByText("Key-Derived Addresses")).toBeVisible();
-
       // Find the extended key row
       const keyRow = page.getByTestId(`${key.key}-row`);
       // scroll to the key row

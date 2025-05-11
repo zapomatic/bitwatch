@@ -83,9 +83,6 @@ export default async (page) => {
       const firstAddressIndex = descriptor.skip ? descriptor.skip-1 : 0;
       console.log(`Added ${descriptor.name} with first address index ${firstAddressIndex}`);
 
-      // Verify the key-derived addresses section is visible
-      await expect(page.getByText("Key-Derived Addresses")).toBeVisible();
-
       // Wait for the descriptor row to be visible
       await expect(page.getByTestId(`${descriptor.descriptor}-descriptor-row`)).toBeVisible();
 

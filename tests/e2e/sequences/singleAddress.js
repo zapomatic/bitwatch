@@ -82,7 +82,6 @@ export default async (page) => {
   console.log("Added single address");
 
   // Verify address is visible in the expanded table
-  await expect(page.getByText("Single Addresses")).toBeVisible();
   await expect(page.locator("table.address-subtable")).toBeVisible();
   await expect(
     page.locator(`text=${testData.plain.zapomatic.slice(0, 15)}...`)
