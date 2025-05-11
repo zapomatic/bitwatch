@@ -329,7 +329,7 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
       const newAddresses = isExtendedKeyAddress
         ? deriveExtendedKeyAddresses({
             key: parentItem.key,
-            skip: parentItem.skip || 0,
+            skip: 0,
             startIndex: nextIndex,
             count: addressesNeeded,
             derivationPath: parentItem.derivationPath
@@ -338,7 +338,7 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
             parentItem.descriptor,
             nextIndex,
             addressesNeeded,
-            parentItem.skip || 0
+            0
           );
 
       if (isExtendedKeyAddress ? newAddresses : newAddresses?.success) {

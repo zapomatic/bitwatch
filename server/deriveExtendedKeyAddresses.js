@@ -67,7 +67,8 @@ export const deriveExtendedKeyAddresses = ({
 
   // Derive addresses starting from the actual start index
   for (let i = 0; i < count; i++) {
-    const derivationIndex = actualStartIndex + i;
+    // For the initial set, use actualStartIndex, then continue sequentially
+    const derivationIndex = i === 0 ? actualStartIndex : actualStartIndex + i;
     const child = baseNode.derive(derivationIndex);
     if (!child) {
       logger.error(`Failed to derive child at index ${derivationIndex}`);

@@ -192,7 +192,7 @@ export default async (page) => {
         await expect(page.getByTestId("address-name-input")).toHaveValue(`${key.name} ${firstAddressIndex}`);
         
         // Change the name
-        await page.getByTestId("address-name-input").fill(`${key.name} 2 Edited`);
+        await page.getByTestId("address-name-input").fill(`${key.name} ${firstAddressIndex} Edited`);
         await findAndClick(page, "address-dialog-save", { allowOverlay: true });
         
         // Verify the dialog closed and name was updated
@@ -228,8 +228,8 @@ export default async (page) => {
         await expect(page.getByTestId("extended-key-skip-input")).toHaveValue(key.skip.toString());
         await expect(page.getByTestId("extended-key-initial-input")).toHaveValue(key.initialAddresses.toString());
         
-        // Update the skip value to 1
-        await page.getByTestId("extended-key-skip-input").fill("1");
+        // Update the skip value to 50
+        await page.getByTestId("extended-key-skip-input").fill("50");
         
         // Save the changes
         await findAndClick(page, "extended-key-submit-button", { allowOverlay: true });
@@ -245,23 +245,48 @@ export default async (page) => {
           await findAndClick(page, `${key.key}-expand-button`);
         }
 
-        // After setting skip=1, we should see addresses starting from index 1
-        await expect(page.getByTestId(`${key.key}-address-1-name`)).toContainText("Test XPUB 1");
-        await expect(page.getByTestId(`${key.key}-address-2-name`)).toContainText("Test XPUB 2");
+        // After setting skip=50, we should see addresses starting from index 50
+        await expect(page.getByTestId(`${key.key}-address-50-name`)).toContainText("Test XPUB 50");
+        await expect(page.getByTestId(`${key.key}-address-51-name`)).toContainText("Test XPUB 51");
 
         // Verify we don't have index 0 (it should be skipped)
         const index0Row = page.getByTestId(`${key.key}-address-0-name`);
         await expect(index0Row).not.toBeVisible();
 
-        // Verify we don't have index 3 (we only requested 2 addresses)
-        const index3Row = page.getByTestId(`${key.key}-address-3-name`);
+        // Verify we don't have index 52 (we only requested 2 addresses)
+        const index3Row = page.getByTestId(`${key.key}-address-52-name`);
         await expect(index3Row).not.toBeVisible();
 
         // verify total number of addresses (should be initialAddresses=3)
         const addresses = await page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`).all();
         expect(addresses.length).toBe(key.initialAddresses);
 
-        console.log("Verified extended key edit with skip=1");
+        // Test gap limit behavior after finding activity
+        console.log("Testing gap limit behavior after finding activity");
+        
+        // Trigger activity on address 54
+        await refreshBalance(page, key.key, {
+          chain_in: "0.00010000 ₿",
+          chain_out: "0.00000000 ₿",
+          mempool_in: "0.00000000 ₿",
+          mempool_out: "0.00000000 ₿"
+        }, 54, key.key);
+        console.log("Triggered activity on address 54");
+
+        // Wait for the new address to be derived
+        await page.waitForTimeout(1000);
+
+        // Verify that address 55 was derived (not 105)
+        await expect(page.getByTestId(`${key.key}-address-55-name`)).toBeVisible();
+        await expect(page.getByTestId(`${key.key}-address-55-name`)).toContainText("Test XPUB 55");
+
+        // Verify that address 105 was NOT derived
+        const index105Row = page.getByTestId(`${key.key}-address-105-name`);
+        await expect(index105Row).not.toBeVisible();
+
+        console.log("Verified gap limit behavior after finding activity");
+
+        console.log("Verified extended key edit with skip=50");
       }
 
       // Collapse the extended key section after testing
