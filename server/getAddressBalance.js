@@ -327,6 +327,15 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
             addr.errorMessage = balance.message;
             logger.debug(`Error checking balance for address ${addr.address} at index ${addr.index}: ${balance.message}`);
           } else {
+            // Store old balance for comparison
+            const oldBalance = addr.actual || {
+              chain_in: 0,
+              chain_out: 0,
+              mempool_in: 0,
+              mempool_out: 0
+            };
+
+            // Update the address with new balance
             addr.actual = {
               chain_in: balance.actual?.chain_in ?? 0,
               chain_out: balance.actual?.chain_out ?? 0,
@@ -335,7 +344,34 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
             };
             addr.error = false;
             addr.errorMessage = null;
-            logger.debug(`Balance for address ${addr.address} at index ${addr.index}: chain_in=${addr.actual.chain_in}, chain_out=${addr.actual.chain_out}, mempool_in=${addr.actual.mempool_in}, mempool_out=${addr.actual.mempool_out}`);
+
+            // Check if balance changed
+            const balanceChanged =
+              oldBalance.chain_in !== addr.actual.chain_in ||
+              oldBalance.chain_out !== addr.actual.chain_out ||
+              oldBalance.mempool_in !== addr.actual.mempool_in ||
+              oldBalance.mempool_out !== addr.actual.mempool_out;
+
+            if (balanceChanged) {
+              logger.debug(`Balance changed for address ${addr.address} at index ${addr.index}: chain_in=${addr.actual.chain_in}, chain_out=${addr.actual.chain_out}, mempool_in=${addr.actual.mempool_in}, mempool_out=${addr.actual.mempool_out}`);
+              
+              // Check for notifications
+              const changes = detectBalanceChanges(
+                addr.address,
+                addr.actual,
+                collectionName,
+                addr.name
+              );
+              if (changes) {
+                // Notify via telegram if needed
+                telegram.notifyBalanceChange(
+                  addr.address,
+                  changes,
+                  collectionName,
+                  addr.name
+                );
+              }
+            }
           }
         })
       );
@@ -398,7 +434,7 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
     await checkBalancesAndDeriveMore();
   }
 
-  // If balance changed, check for notifications
+  // If balance changed, check for notifications for the original address
   if (balanceChanged) {
     const changes = detectBalanceChanges(
       address,
@@ -417,15 +453,10 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
     }
   }
 
-  // Save state if there were changes
-  if (balanceChanged) {
-    logger.debug(`Saving state changes to database`);
-    memory.saveDb();
-    // Emit state update to all clients
-    socketIO.io.emit("updateState", { collections: memory.db.collections });
-  }
+  // Save the database if changes were detected
+  memory.saveDb();
 
-  return { success: true, balanceChanged, addr };
+  return { success: true };
 };
 
 const attemptCall = async (addr) => {
