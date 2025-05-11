@@ -207,8 +207,11 @@ test.describe("Bitwatch", () => {
     console.log(`Expanded ${firstDescriptor.name} section`);
 
     // 3. Delete a single address from the first descriptor
-    await findAndClick(page, `[data-testid="${firstDescriptor.descriptor}-expand-button"]`);
-    console.log(`Expanded ${firstDescriptor.name} section for deletion`);
+    // scroll first descriptor address row into view
+    const descriptorRow = page.getByTestId(`${firstDescriptor.descriptor}-descriptor-row`);
+    await descriptorRow.scrollIntoViewIfNeeded();
+    // await findAndClick(page, `[data-testid="${firstDescriptor.descriptor}-expand-button"]`);
+    // console.log(`Expanded ${firstDescriptor.name} section for deletion`);
     await findAndClick(page, `[data-testid="${firstDescriptor.descriptor}-address-1-delete-button"]`);
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
     await expect(page.getByText("Remove this address from the descriptor set?")).toBeVisible();

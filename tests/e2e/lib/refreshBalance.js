@@ -132,7 +132,7 @@ export default async (
     });
 
   // Add a small delay to ensure all state updates are complete
-  await page.waitForTimeout(500);
+  // await page.waitForTimeout(500);
 
   // Now verify the balances
   verifyBalance(page, address, expectedBalances, index, parentKey);

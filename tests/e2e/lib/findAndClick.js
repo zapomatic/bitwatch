@@ -54,4 +54,5 @@ export default async (page, selector, options = {}) => {
   } else {
     await locator.click({ timeout, force });
   }
+  await page.waitForTimeout(350);
 };

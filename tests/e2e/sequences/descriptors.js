@@ -113,6 +113,9 @@ export default async (page) => {
       const descriptorAddressRows = page.locator(`[data-testid="${descriptor.descriptor}-address-list"] tr.address-row`);
       await expect(descriptorAddressRows).toHaveCount(descriptor.initialAddresses);
 
+      // scroll to the descriptor row
+      await descriptorRow.scrollIntoViewIfNeeded();
+
       // when we add a descriptor, it should be expanded by default
       await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-list"]`)).toBeVisible();
       
