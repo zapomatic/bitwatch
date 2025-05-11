@@ -83,15 +83,8 @@ const ExtendedKeyDialog = ({
       };
 
       if (field === "key" && value && !prev.derivationPath) {
-        const key = value.toLowerCase();
-        if (
-          key.startsWith("zpub") ||
-          key.startsWith("ypub") ||
-          key.startsWith("xpub")
-        ) {
-          // m/0 = external addresses relative to account-level xpub/ypub/zpub
-          newData.derivationPath = "m/0";
-        }
+        // default to "m/0"
+        newData.derivationPath = "m/0";
       }
 
       console.log("New form data:", newData);
