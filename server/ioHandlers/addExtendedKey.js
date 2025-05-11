@@ -12,9 +12,13 @@ export const addExtendedKey = async ({ data, io }) => {
     JSON.stringify(debugData, null, 2)
   );
 
-  if (!data.collection || !data.name || !data.key) {
-    logger.error("Missing required fields");
-    return { error: "Missing required fields" };
+  // Validate required fields
+  const requiredFields = ["collection", "name", "key", "derivationPath"];
+  const missingFields = requiredFields.filter((field) => !data[field]);
+
+  if (missingFields.length > 0) {
+    logger.error(`Missing required fields: ${missingFields.join(", ")}`);
+    return { error: `Missing required fields: ${missingFields.join(", ")}` };
   }
 
   logger.info(

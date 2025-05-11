@@ -4,9 +4,9 @@ import { deriveExtendedKeyAddresses } from "../deriveExtendedKeyAddresses.js";
 
 export const editExtendedKey = async ({ data, io }) => {
   logger.info(
-    `editExtendedKey: ${data.collection}/${data.name}, gap ${
-      data.gapLimit
-    }, initialAddresses ${data.initialAddresses}, skip ${
+    `editExtendedKey: ${data.collection}/${data.name}, path: ${
+      data.derivationPath
+    }, gap: ${data.gapLimit}, initialAddresses ${data.initialAddresses}, skip ${
       data.skip
     } with ${getMonitorLog(data.monitor)}`
   );

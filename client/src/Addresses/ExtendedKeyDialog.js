@@ -16,14 +16,22 @@ import MonitorSettings from "../components/MonitorSettings";
 import { DEFAULT_EXTENDED_KEY_FORM } from "../config";
 
 const DERIVATION_PATH_OPTIONS = [
-  { path: "m/84/0/0", label: 'P2WPKH (native SegWit "bc1q…") recieve' },
-  { path: "m/84/0/1", label: 'P2WPKH (native SegWit "bc1q…") change' },
-  { path: "m/86/0/0", label: 'P2TR (native Taproot "bc1p...") recieve' },
-  { path: "m/86/0/1", label: 'P2TR (native Taproot "bc1p...") change' },
-  { path: "m/49/0/0", label: 'P2SH‑WPKH (wrapped SegWit "3…") recieve' },
-  { path: "m/49/0/1", label: 'P2SH‑WPKH (wrapped SegWit "3…") change' },
-  { path: "m/44/0/0", label: 'P2PKH (legacy "1…" addresses) recieve' },
-  { path: "m/44/0/1", label: 'P2PKH (legacy "1…" addresses) change' },
+  // RELATIVE paths – for zpub/ypub/xpub already at m/84'/0'/0' or similar
+  { path: "m/0", label: "Relative path: external (m/0/*)" },
+  { path: "m/1", label: "Relative path: internal/change (m/1/*)" },
+
+  // ABSOLUTE BIP paths – for xprv or root keys, or to document intent
+  { path: "m/84/0/0", label: 'BIP84 P2WPKH (native SegWit "bc1q…" external)' },
+  { path: "m/84/0/1", label: 'BIP84 P2WPKH (native SegWit "bc1q…" change)' },
+  { path: "m/86/0/0", label: 'BIP86 P2TR (Taproot "bc1p…" external)' },
+  { path: "m/86/0/1", label: 'BIP86 P2TR (Taproot "bc1p…" change)' },
+  {
+    path: "m/49/0/0",
+    label: 'BIP49 P2SH‑P2WPKH (wrapped SegWit "3…" external)',
+  },
+  { path: "m/49/0/1", label: 'BIP49 P2SH‑P2WPKH (wrapped SegWit "3…" change)' },
+  { path: "m/44/0/0", label: 'BIP44 P2PKH (legacy "1…" external)' },
+  { path: "m/44/0/1", label: 'BIP44 P2PKH (legacy "1…" change)' },
 ];
 
 const ExtendedKeyDialog = ({
@@ -50,25 +58,62 @@ const ExtendedKeyDialog = ({
         },
       });
     } else {
+      // Reset form to empty state
       setFormData({
-        ...DEFAULT_EXTENDED_KEY_FORM,
+        name: "",
+        key: "",
+        derivationPath: "",
+        gapLimit: DEFAULT_EXTENDED_KEY_FORM.gapLimit,
+        initialAddresses: DEFAULT_EXTENDED_KEY_FORM.initialAddresses,
+        skip: DEFAULT_EXTENDED_KEY_FORM.skip,
         monitor: { ...DEFAULT_EXTENDED_KEY_FORM.monitor },
       });
     }
   }, [extendedKey]);
 
   const handleChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]:
-        field === "name" || field === "key" || field === "derivationPath"
-          ? value
-          : Number(value),
-    }));
+    console.log(`handleChange called for ${field} with value:`, value);
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        [field]:
+          field === "name" || field === "key" || field === "derivationPath"
+            ? value
+            : Number(value),
+      };
+
+      if (field === "key" && value && !prev.derivationPath) {
+        const key = value.toLowerCase();
+        if (
+          key.startsWith("zpub") ||
+          key.startsWith("ypub") ||
+          key.startsWith("xpub")
+        ) {
+          // m/0 = external addresses relative to account-level xpub/ypub/zpub
+          newData.derivationPath = "m/0";
+        }
+      }
+
+      console.log("New form data:", newData);
+      return newData;
+    });
     setError("");
   };
 
   const handleSubmit = async () => {
+    console.log("Form data at submit:", formData);
+    // Ensure all required fields are present
+    if (!formData.name || !formData.key || !formData.derivationPath) {
+      console.log("Missing fields:", {
+        name: formData.name,
+        key: formData.key,
+        derivationPath: formData.derivationPath,
+      });
+      setError("Name, key, and derivation path are required");
+      return;
+    }
+
+    console.log("Submitting extended key with data:", formData);
     const result = await onSave(collection, formData);
     if (result?.error) {
       setError(result.error.toString());
@@ -138,19 +183,21 @@ const ExtendedKeyDialog = ({
             <Grid item>
               <Autocomplete
                 options={DERIVATION_PATH_OPTIONS}
-                value={
-                  DERIVATION_PATH_OPTIONS.find(
-                    (opt) => opt.path === formData.derivationPath
-                  ) || null
-                }
+                value={formData.derivationPath}
                 onChange={(event, newValue) => {
-                  if (typeof newValue === "string") {
-                    handleChange("derivationPath", newValue);
-                  } else if (newValue?.path) {
-                    handleChange("derivationPath", newValue.path);
-                  } else {
-                    handleChange("derivationPath", formData.derivationPath);
-                  }
+                  console.log("Autocomplete onChange event:", event);
+                  console.log("Autocomplete onChange newValue:", newValue);
+                  // Handle both string input and option selection
+                  const path =
+                    typeof newValue === "string"
+                      ? newValue
+                      : newValue?.path || "";
+                  console.log("Setting path to:", path);
+                  handleChange("derivationPath", path);
+                }}
+                onInputChange={(event, newInputValue) => {
+                  console.log("Autocomplete onInputChange:", newInputValue);
+                  handleChange("derivationPath", newInputValue);
                 }}
                 freeSolo
                 getOptionLabel={(option) => {
@@ -171,7 +218,7 @@ const ExtendedKeyDialog = ({
                   <TextField
                     {...params}
                     label="Derivation Path"
-                    helperText="segwit, taproot, legacy, etc."
+                    helperText="Enter any valid derivation path (e.g. m/0, m/84/0/0)"
                     fullWidth
                     inputProps={{
                       ...params.inputProps,

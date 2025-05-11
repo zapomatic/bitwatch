@@ -55,7 +55,7 @@ export const DEFAULT_EXTENDED_KEY_FORM = {
   key: "",
   gapLimit: DEFAULT_GAP_LIMIT,
   initialAddresses: DEFAULT_INITIAL_ADDRESSES,
-  derivationPath: "m/84/0/0",
+  derivationPath: "",
   skip: DEFAULT_SKIP_ADDRESSES,
   monitor: defaultMonitorSettings,
 };
