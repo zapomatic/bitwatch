@@ -65,9 +65,20 @@ const DescriptorInfo = ({
   const handleCopy = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    navigator.clipboard.writeText(descriptor.descriptor);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
+    const textarea = document.createElement("textarea");
+    textarea.value = descriptor.descriptor;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+
+    textarea.select();
+    const successful = document.execCommand("copy");
+    if (successful) {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    }
+
+    document.body.removeChild(textarea);
   };
 
   const handleRefreshAll = async (e) => {
