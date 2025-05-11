@@ -11,6 +11,8 @@ import bs58 from "bs58";
 import logger from "../server/logger.js";
 import { descriptorExtractPaths } from "../server/descriptorExtractPaths.js";
 
+bitcoin.initEccLib(ecc);
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const bip32 = BIP32Factory(ecc);
 
@@ -37,6 +39,10 @@ const networks = {
     ...bitcoin.networks.bitcoin,
     bip32: { public: 0x02aa7ed3, private: 0x02aa7a99 },
   },
+  vpub: {
+    ...bitcoin.networks.bitcoin,
+    bip32: { public: 0x045f1cf6, private: 0x045f18bc },
+  },
 };
 
 // Improved getKeyNetwork: version-bytes first, then prefix
@@ -57,6 +63,7 @@ const getKeyNetwork = (key) => {
   const lk = key.toLowerCase();
   if (lk.startsWith("ypub")) return networks.ypub;
   if (lk.startsWith("zpub")) return networks.zpub;
+  if (lk.startsWith("vpub")) return networks.vpub;
   if (lk.startsWith("xpub")) return networks.xpub;
 
   // Default
@@ -157,6 +164,9 @@ function deriveAddresses(descriptor, start = 0, count = 6, skip = 0) {
       const p2wpkh = bitcoin.payments.p2wpkh({ pubkey: pubs[0] });
       const p2wsh = bitcoin.payments.p2wsh({ redeem: p2wpkh });
       payment = bitcoin.payments.p2sh({ redeem: p2wsh });
+    } else if (wrappers[0] === "tr") {
+      // Taproot (BIP86) expects x-only pubkey (32 bytes)
+      payment = bitcoin.payments.p2tr({ pubkey: pubs[0].subarray(1, 33) });
     } else {
       throw new Error("Unsupported descriptor type: " + descriptor);
     }
@@ -197,6 +207,10 @@ function generateTestKeys() {
       "88898a8b8c8d8e8f909192939495969798999a9b9c9d9e9fa0a1a2a3a4a5a6a7",
       "hex"
     ),
+    vpub: Buffer.from(
+      "333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f5051",
+      "hex"
+    ),
     desc_xpub: Buffer.from(
       "333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f5051",
       "hex"
@@ -221,6 +235,10 @@ function generateTestKeys() {
       "aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899",
       "hex"
     ),
+    desc_vpub: Buffer.from(
+      "bbccddeeff00112233445566778899aabbccddeeff00112233445566778899aa",
+      "hex"
+    ),
   };
 
   // roots
@@ -230,12 +248,14 @@ function generateTestKeys() {
     Ypub: bip32.fromSeed(seeds.Ypub, networks.Ypub),
     zpub: bip32.fromSeed(seeds.zpub, networks.zpub),
     Zpub: bip32.fromSeed(seeds.Zpub, networks.Zpub),
+    vpub: bip32.fromSeed(seeds.vpub, networks.vpub),
     desc_xpub: bip32.fromSeed(seeds.desc_xpub, networks.xpub),
     desc_xpub2: bip32.fromSeed(seeds.desc_xpub2, networks.xpub),
     desc_ypub: bip32.fromSeed(seeds.desc_ypub, networks.ypub),
     desc_Ypub: bip32.fromSeed(seeds.desc_Ypub, networks.Ypub),
     desc_zpub: bip32.fromSeed(seeds.desc_zpub, networks.zpub),
     desc_Zpub: bip32.fromSeed(seeds.desc_Zpub, networks.Zpub),
+    desc_vpub: bip32.fromSeed(seeds.desc_vpub, networks.vpub),
   };
 
   // derivation paths
@@ -245,6 +265,7 @@ function generateTestKeys() {
     Ypub: { receive: "m/49/0/0", change: "m/49/0/1", test: "m/49/0/2" },
     zpub: { receive: "m/84/0/0", change: "m/84/0/1", test: "m/84/0/2" },
     Zpub: { receive: "m/84/0/0", change: "m/84/0/1", test: "m/84/0/2" },
+    vpub: { receive: "m/86/0/0", change: "m/86/0/1", test: "m/86/0/2" },
   };
 
   // neuter & toBase58
@@ -264,6 +285,10 @@ function generateTestKeys() {
     .neutered()
     .toBase58();
   const Zpub1 = roots.Zpub.derivePath(derivationPaths.Zpub.receive)
+    .neutered()
+    .toBase58();
+  const vpub1 = roots.vpub
+    .derivePath(derivationPaths.vpub.receive)
     .neutered()
     .toBase58();
   const desc_x = roots.desc_xpub
@@ -290,6 +315,10 @@ function generateTestKeys() {
     .derivePath(derivationPaths.Zpub.receive)
     .neutered()
     .toBase58();
+  const desc_v = roots.desc_vpub
+    .derivePath(derivationPaths.vpub.receive)
+    .neutered()
+    .toBase58();
 
   return {
     xpub1,
@@ -297,12 +326,14 @@ function generateTestKeys() {
     Ypub1,
     zpub1,
     Zpub1,
+    vpub1,
     desc_xpub: desc_x,
     desc_xpub2: desc_x2,
     desc_ypub: desc_y,
     desc_Ypub: desc_Y,
     desc_zpub: desc_z,
     desc_Zpub: desc_Z,
+    desc_vpub: desc_v,
     derivationPaths,
   };
 }
@@ -315,6 +346,7 @@ function generateTestDescriptors(keys) {
     YpubSingle: `sh(wsh(${M.desc_Ypub}/0/*))`,
     zpubSingle: `wpkh(${M.desc_zpub}/0/*)`,
     ZpubSingle: `wsh(${M.desc_Zpub}/0/*)`,
+    vpubSingle: `tr(${M.desc_vpub}/0/*)`,
     multiSig: `wsh(multi(2,${M.desc_xpub}/0/*,${M.desc_xpub}/1/*))`,
     sortedMulti: `wsh(sortedmulti(2,${M.desc_xpub2}/0/*,${M.desc_xpub}/0/*))`,
     mixedKeys: `wsh(multi(2,${M.desc_ypub}/0/*,${M.desc_zpub}/0/*))`,

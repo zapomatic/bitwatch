@@ -132,9 +132,9 @@ export const parseSingleKeyDescriptor = (descriptor) => {
   // Remove whitespace
   const cleanDesc = descriptor.replace(/\s+/g, "");
 
-  // Match pkh(), wpkh(), wsh(), sh(wpkh()), or sh(wsh()) format with proper nesting
+  // Match pkh(), wpkh(), wsh(), sh(wpkh()), sh(wsh()), or tr() format with proper nesting
   const match = cleanDesc.match(
-    /^(?:pkh|wpkh|wsh|sh\(wpkh|sh\(wsh)\(([^)]+)\)(\))?$/
+    /^(?:pkh|wpkh|wsh|sh\(wpkh|sh\(wsh|tr)\(([^)]+)\)(\))?$/
   );
   if (!match) {
     logger.error("Invalid single-key descriptor format");
@@ -153,6 +153,8 @@ export const parseSingleKeyDescriptor = (descriptor) => {
     ? "sh_wpkh"
     : cleanDesc.startsWith("wpkh")
     ? "wpkh"
+    : cleanDesc.startsWith("tr")
+    ? "tr"
     : "pkh";
 
   const keyResult = parseKey(key);
@@ -310,6 +312,9 @@ export const deriveAddress = (descriptor, index) => {
     // wsh(single-key) → wrap P2WPKH in P2WSH
     const p2wpkh = bitcoin.payments.p2wpkh({ pubkey: pubs[0] });
     payment = bitcoin.payments.p2wsh({ redeem: p2wpkh });
+  } else if (wrappers[0] === "tr") {
+    // Taproot (BIP86)
+    payment = bitcoin.payments.p2tr({ pubkey: pubs[0] });
   } else {
     throw new Error("Unsupported descriptor type: " + descriptor);
   }

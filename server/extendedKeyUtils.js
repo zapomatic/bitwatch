@@ -2,7 +2,7 @@ import * as bitcoin from "bitcoinjs-lib";
 import bs58check from "bs58check";
 
 // Define networks according to SLIP-132
-export const NETWORK_TYPES = {
+const networks = {
   xpub: {
     ...bitcoin.networks.bitcoin,
     bip32: {
@@ -38,6 +38,13 @@ export const NETWORK_TYPES = {
       private: 0x02aa7a99,
     },
   },
+  vpub: {
+    ...bitcoin.networks.bitcoin,
+    bip32: {
+      public: 0x045f1cf6,
+      private: 0x045f18bc,
+    },
+  },
 };
 
 // Convert between extended public key formats
@@ -69,30 +76,27 @@ export const convertExtendedKey = (key) => {
 
 // Get network for a key
 export const getKeyNetwork = (key) => {
-  // 1) Try to detect by version bytes first
-  try {
-    const data = bs58check.decode(key);
-    if (data.length >= 4) {
-      const version =
-        (data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3];
-      for (const [__type, net] of Object.entries(NETWORK_TYPES)) {
-        if (net.bip32.public === version) return net;
-      }
+  // 1) Try to detect by version bytes
+  const decoded = bs58check.decode(key);
+  if (decoded.length >= 4) {
+    const version =
+      (decoded[0] << 24) | (decoded[1] << 16) | (decoded[2] << 8) | decoded[3];
+    for (const net of Object.values(networks)) {
+      if (net.bip32.public === version) return net;
     }
-  } catch (e) {
-    console.error("Error getting key network:", e);
-    return null;
   }
 
   // 2) Fallback to explicit prefix checks
-  if (key.startsWith("Ypub")) return NETWORK_TYPES.Ypub;
-  if (key.startsWith("Zpub")) return NETWORK_TYPES.Zpub;
+  if (key.startsWith("Ypub")) return networks.Ypub;
+  if (key.startsWith("Zpub")) return networks.Zpub;
   const lk = key.toLowerCase();
-  if (lk.startsWith("ypub")) return NETWORK_TYPES.ypub;
-  if (lk.startsWith("zpub")) return NETWORK_TYPES.zpub;
-  if (lk.startsWith("xpub")) return NETWORK_TYPES.xpub;
+  if (lk.startsWith("ypub")) return networks.ypub;
+  if (lk.startsWith("zpub")) return networks.zpub;
+  if (lk.startsWith("vpub")) return networks.vpub;
+  if (lk.startsWith("xpub")) return networks.xpub;
 
-  return null;
+  // Default
+  return networks.xpub;
 };
 
 // Get address type for a key

@@ -154,6 +154,37 @@
           "address": "bc1qkzk6vuls734wdqdlc9k9pqgaq996f02q3yuzn7mfdmyu332yh4ysckany5"
         }
       ]
+    },
+    "vpub1": {
+      "key": "vpub5ZBV5v2s8VFvDEe3HesMr81GvkgE3MUGyrFGF2aR8CQAF8wVQhHs1TBP3xEu1ZsouezYThXGCZbRwbKYJCQ8qa2BBeQFmRnKFQr4ub17HCe",
+      "type": "xpub",
+      "derivationPath": "m/44/0/0",
+      "addresses": [
+        {
+          "index": 0,
+          "address": "13wVA2463EqW55QM5YsPVCuBah5g2VQpZZ"
+        },
+        {
+          "index": 1,
+          "address": "1AtpX2cWrLUM2kWdZVcRibyn6Nw3YppnB1"
+        },
+        {
+          "index": 2,
+          "address": "1PztcF39SkmQxqGGcHyycUE3qhPd7Pyn7R"
+        },
+        {
+          "index": 3,
+          "address": "1hiGraUYfDnwTw7AeAsM89RKGQvcm74XJ"
+        },
+        {
+          "index": 4,
+          "address": "1sxAxydfJLoR9o2tGJhQawkWxVKu1i3TM"
+        },
+        {
+          "index": 5,
+          "address": "1P2qC3ndAh6p2YWwWGhQxifB428hLusP7Z"
+        }
+      ]
     }
   },
   "descriptors": {
@@ -304,6 +335,36 @@
         {
           "index": 5,
           "address": "bc1q5ja6aptmaw2qdgfuer02a54ndldxgrw3gjt0kr33nedf59564v6scq2az7"
+        }
+      ]
+    },
+    "vpubSingle": {
+      "key": "tr(vpub5Z4cza6NtnczfQjK5Ybe8Nasr35WGNnE3iTqNqSi6c8NRkKMHUs5MoeC6YtsWVkb9At41vj95ipSWDfNwGoJhs7L2Dpw6SsnJQyGmrQbL2Z/0/*)",
+      "derivationPath": "m/0",
+      "addresses": [
+        {
+          "index": 0,
+          "address": "bc1p9x7fgetk70p8f50xektc3atwkzuc4m2fzcapux9ucr8qpu2znvdsc5uet3"
+        },
+        {
+          "index": 1,
+          "address": "bc1pvyn0rc7f89zznmf7ga9fdgdmpdu8jzhj3rzqw6l8j6snuznlanfssdyy5z"
+        },
+        {
+          "index": 2,
+          "address": "bc1pvvre8edcf5t9lp292hsamqwszk2cpp5ahk9qhd8jsp8jk5sa9d9qs2zrme"
+        },
+        {
+          "index": 3,
+          "address": "bc1pp8cmrkt94szdh0jjmerqn8a206hm0e73wpk3lyg74z3wpykxa65s6urtv3"
+        },
+        {
+          "index": 4,
+          "address": "bc1pedf9sy904u7rxaakgh69vcyd8wlch0pypr0xmkfw0xufrqe5jkeqcu7sdm"
+        },
+        {
+          "index": 5,
+          "address": "bc1pyrqw5fwh9z7m35akwcgxe6fq5ap0d895gwkhx5h6yffh5a6afpwqvm0qte"
         }
       ]
     },
