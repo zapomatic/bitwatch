@@ -48,9 +48,30 @@ export const addDescriptor = async ({ data, io }) => {
     return { error: "Invalid descriptor: Could not derive address" };
   }
 
+  // If the descriptor is just an extended key, wrap it in the appropriate format
+  let descriptor = data.descriptor;
+  if (descriptor.match(/^[xyz]pub/i)) {
+    const keyType = descriptor.toLowerCase().slice(0, 4);
+    switch (keyType) {
+      case "xpub":
+        descriptor = `pkh(${descriptor}/0/*)`;
+        break;
+      case "ypub":
+        descriptor = `sh(wpkh(${descriptor}/0/*))`;
+        break;
+      case "zpub":
+        descriptor = `wpkh(${descriptor}/0/*)`;
+        break;
+      case "vpub":
+        descriptor = `tr(${descriptor}/0/*)`;
+        break;
+    }
+    logger.info(`Wrapped extended key in descriptor format: ${descriptor}`);
+  }
+
   // Get all addresses in one batch
   const allAddressesResult = await deriveAddresses(
-    data.descriptor,
+    descriptor,
     0,
     data.initialAddresses || 5,
     data.skip || 0
