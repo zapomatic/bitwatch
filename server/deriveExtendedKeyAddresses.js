@@ -4,6 +4,9 @@ import * as ecc from "tiny-secp256k1";
 import logger from "./logger.js";
 import { getKeyNetwork, getAddressType } from "./extendedKeyUtils.js";
 
+// Initialize ECC library for Taproot support
+bitcoin.initEccLib(ecc);
+
 const bip32 = BIP32Factory(ecc);
 
 export const deriveExtendedKeyAddresses = ({
@@ -101,6 +104,12 @@ export const deriveExtendedKeyAddresses = ({
         network,
       });
       address = bitcoin.payments.p2sh({ redeem: p2wpkh, network }).address;
+    } else if (addressType === "p2tr") {
+      // Taproot (BIP86)
+      address = bitcoin.payments.p2tr({
+        pubkey: child.publicKey.subarray(1, 33), // x-only pubkey
+        network,
+      }).address;
     } else {
       // Legacy (P2PKH)
       address = bitcoin.payments.p2pkh({

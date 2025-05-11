@@ -313,8 +313,18 @@ export const deriveAddress = (descriptor, index) => {
     const p2wpkh = bitcoin.payments.p2wpkh({ pubkey: pubs[0] });
     payment = bitcoin.payments.p2wsh({ redeem: p2wpkh });
   } else if (wrappers[0] === "tr") {
-    // Taproot (BIP86)
-    payment = bitcoin.payments.p2tr({ pubkey: pubs[0] });
+    // Taproot (BIP86) expects x-only pubkey (32 bytes)
+    // Extract the original extended key from the descriptor
+    const keyMatch = inner.match(
+      /^(\[.*\])?([A-Za-z0-9]+[1-9A-HJ-NP-Za-km-z]+)(\/.*)?$/
+    );
+    if (!keyMatch) throw new Error("Invalid key format in Taproot descriptor");
+    const xpub = keyMatch[2];
+    const network = getKeyNetwork(xpub);
+    payment = bitcoin.payments.p2tr({
+      pubkey: pubs[0].subarray(1, 33), // Convert 33-byte pubkey to 32-byte x-only
+      network,
+    });
   } else {
     throw new Error("Unsupported descriptor type: " + descriptor);
   }

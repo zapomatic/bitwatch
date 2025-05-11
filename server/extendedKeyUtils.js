@@ -106,5 +106,6 @@ export const getAddressType = (key) => {
   const lk = key.toLowerCase();
   if (lk.startsWith("zpub")) return "p2wpkh";
   if (lk.startsWith("ypub")) return "p2sh-p2wpkh";
+  if (lk.startsWith("vpub")) return "p2tr";
   return "p2pkh";
 };
