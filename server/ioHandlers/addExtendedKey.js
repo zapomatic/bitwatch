@@ -48,10 +48,6 @@ export const addExtendedKey = async ({ data, io }) => {
   // Set default values if not provided
   const key = {
     ...data,
-    derivationPath: data.derivationPath || "m/0",
-    gapLimit: data.gapLimit || 2,
-    skip: data.skip || 0,
-    initialAddresses: data.initialAddresses || 5,
     addresses: [],
     // Use provided monitor settings or get from database
     monitor: { ...data.monitor },
@@ -60,9 +56,9 @@ export const addExtendedKey = async ({ data, io }) => {
   // Derive initial addresses
   const addresses = await deriveExtendedKeyAddresses({
     key: key.key,
-    skip: key.skip || 0,
+    skip: key.skip,
     startIndex: 0,
-    count: key.initialAddresses || 10,
+    count: key.initialAddresses,
     derivationPath: key.derivationPath,
   });
 

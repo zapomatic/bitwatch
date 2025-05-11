@@ -22,7 +22,13 @@ const addExtendedKey = async (
   // Fill in the form fields
   await page.fill('[data-testid="extended-key-name-input"]', name);
   await page.fill('[data-testid="extended-key-key-input"]', key);
-  await page.fill('[data-testid="extended-key-path-input"]', derivationPath);
+  
+  // Handle derivation path with Autocomplete
+  const pathInput = page.getByTestId("extended-key-path-input");
+  await pathInput.click();
+  await pathInput.fill(derivationPath);
+  await page.keyboard.press('Enter');
+  
   await page.fill('[data-testid="extended-key-skip-input"]', skip.toString());
   await page.fill(
     '[data-testid="extended-key-gap-input"]',

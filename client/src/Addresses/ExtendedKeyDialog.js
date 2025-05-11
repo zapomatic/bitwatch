@@ -9,9 +9,22 @@ import {
   Box,
   Alert,
   Grid,
+  Autocomplete,
+  Typography,
 } from "@mui/material";
 import MonitorSettings from "../components/MonitorSettings";
 import { DEFAULT_EXTENDED_KEY_FORM } from "../config";
+
+const DERIVATION_PATH_OPTIONS = [
+  { path: "m/84/0/0", label: 'P2WPKH (native SegWit "bc1q…") recieve' },
+  { path: "m/84/0/1", label: 'P2WPKH (native SegWit "bc1q…") change' },
+  { path: "m/86/0/0", label: 'P2TR (native Taproot "bc1p...") recieve' },
+  { path: "m/86/0/1", label: 'P2TR (native Taproot "bc1p...") change' },
+  { path: "m/49/0/0", label: 'P2SH‑WPKH (wrapped SegWit "3…") recieve' },
+  { path: "m/49/0/1", label: 'P2SH‑WPKH (wrapped SegWit "3…") change' },
+  { path: "m/44/0/0", label: 'P2PKH (legacy "1…" addresses) recieve' },
+  { path: "m/44/0/1", label: 'P2PKH (legacy "1…" addresses) change' },
+];
 
 const ExtendedKeyDialog = ({
   open,
@@ -123,17 +136,50 @@ const ExtendedKeyDialog = ({
             }}
           >
             <Grid item>
-              <TextField
-                label="Derivation Path"
-                name="derivationPath"
-                value={formData.derivationPath}
-                onChange={(e) => handleChange("derivationPath", e.target.value)}
-                helperText="The derivation path (e.g., m/0)"
-                fullWidth
-                inputProps={{
-                  "data-testid": "extended-key-path-input",
-                  "aria-label": "Derivation path",
+              <Autocomplete
+                options={DERIVATION_PATH_OPTIONS}
+                value={
+                  DERIVATION_PATH_OPTIONS.find(
+                    (opt) => opt.path === formData.derivationPath
+                  ) || null
+                }
+                onChange={(event, newValue) => {
+                  if (typeof newValue === "string") {
+                    handleChange("derivationPath", newValue);
+                  } else if (newValue?.path) {
+                    handleChange("derivationPath", newValue.path);
+                  } else {
+                    handleChange("derivationPath", formData.derivationPath);
+                  }
                 }}
+                freeSolo
+                getOptionLabel={(option) => {
+                  if (typeof option === "string") return option;
+                  return option.path;
+                }}
+                renderOption={(props, option) => (
+                  <li {...props}>
+                    <Box sx={{ display: "flex", flexDirection: "column" }}>
+                      <Typography variant="body1">{option.path}</Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        {option.label}
+                      </Typography>
+                    </Box>
+                  </li>
+                )}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label="Derivation Path"
+                    helperText="segwit, taproot, legacy, etc."
+                    fullWidth
+                    inputProps={{
+                      ...params.inputProps,
+                      "data-testid": "extended-key-path-input",
+                      "aria-label": "Derivation path",
+                    }}
+                  />
+                )}
               />
             </Grid>
             <Grid item>
