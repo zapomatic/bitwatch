@@ -37,44 +37,69 @@ export default async (
   // Then verify all balance values match expected values
   const errors = [];
 
+  // Wait for and verify chain-in balance
   if (expectedBalances.chain_in) {
     console.log(`Verifying chain-in matches ${expectedBalances.chain_in}`);
-    const actualChainIn = await chainInSelector.textContent();
-    if (actualChainIn !== expectedBalances.chain_in) {
+    try {
+      await expect(chainInSelector).toHaveText(expectedBalances.chain_in, {
+        timeout: 5000,
+      });
+    } catch (error) {
       errors.push(
-        `Chain-in balance mismatch. Expected: ${expectedBalances.chain_in}, Got: ${actualChainIn}`
+        `Chain-in balance mismatch. Expected: ${
+          expectedBalances.chain_in
+        }, Got: ${await chainInSelector.textContent()}`
       );
     }
   }
 
+  // Wait for and verify chain-out balance
   if (expectedBalances.chain_out) {
     console.log(`Verifying chain-out matches ${expectedBalances.chain_out}`);
-    const actualChainOut = await chainOutSelector.textContent();
-    if (actualChainOut !== expectedBalances.chain_out) {
+    try {
+      await expect(chainOutSelector).toHaveText(expectedBalances.chain_out, {
+        timeout: 5000,
+      });
+    } catch (error) {
       errors.push(
-        `Chain-out balance mismatch. Expected: ${expectedBalances.chain_out}, Got: ${actualChainOut}`
+        `Chain-out balance mismatch. Expected: ${
+          expectedBalances.chain_out
+        }, Got: ${await chainOutSelector.textContent()}`
       );
     }
   }
 
+  // Wait for and verify mempool-in balance
   if (expectedBalances.mempool_in) {
     console.log(`Verifying mempool-in matches ${expectedBalances.mempool_in}`);
-    const actualMempoolIn = await mempoolInSelector.textContent();
-    if (actualMempoolIn !== expectedBalances.mempool_in) {
+    try {
+      await expect(mempoolInSelector).toHaveText(expectedBalances.mempool_in, {
+        timeout: 5000,
+      });
+    } catch (error) {
       errors.push(
-        `Mempool-in balance mismatch. Expected: ${expectedBalances.mempool_in}, Got: ${actualMempoolIn}`
+        `Mempool-in balance mismatch. Expected: ${
+          expectedBalances.mempool_in
+        }, Got: ${await mempoolInSelector.textContent()}`
       );
     }
   }
 
+  // Wait for and verify mempool-out balance
   if (expectedBalances.mempool_out) {
     console.log(
       `Verifying mempool-out matches ${expectedBalances.mempool_out}`
     );
-    const actualMempoolOut = await mempoolOutSelector.textContent();
-    if (actualMempoolOut !== expectedBalances.mempool_out) {
+    try {
+      await expect(mempoolOutSelector).toHaveText(
+        expectedBalances.mempool_out,
+        { timeout: 5000 }
+      );
+    } catch (error) {
       errors.push(
-        `Mempool-out balance mismatch. Expected: ${expectedBalances.mempool_out}, Got: ${actualMempoolOut}`
+        `Mempool-out balance mismatch. Expected: ${
+          expectedBalances.mempool_out
+        }, Got: ${await mempoolOutSelector.textContent()}`
       );
     }
   }

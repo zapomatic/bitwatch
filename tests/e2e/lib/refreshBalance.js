@@ -100,5 +100,5 @@ export default async (
     });
 
   // Now verify the balances
-  verifyBalance(page, address, expectedBalances, index, parentKey);
+  await verifyBalance(page, address, expectedBalances, index, parentKey);
 };

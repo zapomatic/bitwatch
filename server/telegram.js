@@ -179,7 +179,12 @@ const formatSats = (sats) => {
 };
 
 const notifyBalanceChange = async (address, changes, collection, name) => {
-  if (!bot || !memory.db.telegram?.chatId) return false;
+  if (!bot || !memory.db.telegram?.chatId) {
+    logger.warning(
+      `Balance changed on ${collection}/${name} (${address}) but Telegram not configured - missing token or chat ID`
+    );
+    return false;
+  }
 
   const changeMessages = [];
   if (changes.chain_in)
