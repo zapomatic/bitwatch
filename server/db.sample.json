@@ -62,8 +62,8 @@
           "address": "bc1q67csgqm9muhynyd864tj2p48g8gachyg2nwara",
           "name": "zapomatic",
           "expect": {
-            "chain_in": 0,
-            "chain_out": 0,
+            "chain_in": 600000,
+            "chain_out": 600000,
             "mempool_in": 0,
             "mempool_out": 0
           },
@@ -80,22 +80,6 @@
       "descriptors": [],
       "extendedKeys": [],
       "addresses": [
-        {
-          "address": "1MVDYgVaSN6iKKEsbzRUAYFrYJadLYZvvZ",
-          "name": "68",
-          "expect": {
-            "chain_in": 680015167,
-            "chain_out": 0,
-            "mempool_in": 0,
-            "mempool_out": 0
-          },
-          "monitor": {
-            "chain_in": "auto-accept",
-            "chain_out": "alert",
-            "mempool_in": "auto-accept",
-            "mempool_out": "alert"
-          }
-        },
         {
           "address": "19vkiEajfhuZ8bs8Zu2jgmC6oqZbWqhxhG",
           "name": "69",

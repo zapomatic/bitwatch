@@ -256,23 +256,22 @@ const CollectionRow = ({
       <TableRow>
         <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={5}>
           <Collapse in={isExpanded} timeout="auto" unmountOnExit>
-            <Box sx={{ margin: 1 }}>
+            <Box sx={{ margin: 0 }}>
               {/* Single Addresses Table */}
               {collection.addresses?.length > 0 && (
-                <Box sx={{ mb: 3 }}>
-                  <Typography
+                <Box sx={{ mb: 1 }}>
+                  {/* <Typography
                     variant="subtitle1"
                     sx={{
                       mt: 2,
                       mb: 1,
                       color: "var(--theme-secondary)",
                       fontWeight: "bold",
-                      borderBottom: "1px solid var(--theme-secondary)",
                       paddingBottom: "8px",
                     }}
                   >
                     Single Addresses
-                  </Typography>
+                  </Typography> */}
                   <Table
                     size="small"
                     className="crystal-table address-subtable"
@@ -306,8 +305,8 @@ const CollectionRow = ({
               {/* Extended Keys and Descriptors Table */}
               {(collection.extendedKeys?.length > 0 ||
                 collection.descriptors?.length > 0) && (
-                <Box sx={{ mb: 3 }}>
-                  <Typography
+                <Box sx={{ mb: 1 }}>
+                  {/* <Typography
                     variant="subtitle1"
                     sx={{
                       mt: 2,
@@ -319,7 +318,7 @@ const CollectionRow = ({
                     }}
                   >
                     Key-Derived Addresses
-                  </Typography>
+                  </Typography> */}
                   <Table
                     size="small"
                     className="crystal-table address-subtable"
