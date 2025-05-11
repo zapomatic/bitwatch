@@ -1,16 +1,20 @@
-export default async (page, selector, options = {}) => {
+export default async (page, testId, options = {}) => {
   const {
     timeout = 10000,
     exact = false,
     allowOverlay = false,
     force = false,
   } = options;
-  const locator = page.locator(selector);
 
-  console.log(`Waiting for selector: ${selector}`);
+  console.log(`Waiting for element with testId: ${testId}`);
 
-  // Wait for any matching element to be visible
-  await page.waitForSelector(selector, { state: "visible", timeout });
+  // Get the element using data-testid
+  const element = page.getByTestId(testId);
+
+  // Wait for the element to be visible
+  await element.waitFor({ state: "visible", timeout });
+
+  await element.scrollIntoViewIfNeeded();
 
   // Only check for overlays if we're not trying to click something in a dialog
   if (!allowOverlay) {
@@ -29,13 +33,13 @@ export default async (page, selector, options = {}) => {
   while (retries > 0) {
     try {
       await page.waitForFunction(
-        (sel) => {
-          const element = document.querySelector(sel);
+        (id) => {
+          const element = document.querySelector(`[data-testid="${id}"]`);
           if (!element) return false;
           const rect = element.getBoundingClientRect();
           return rect.width > 0 && rect.height > 0;
         },
-        selector,
+        testId,
         { timeout: timeout / 3 }
       );
       break;
@@ -47,12 +51,15 @@ export default async (page, selector, options = {}) => {
     }
   }
 
+  // Scroll element into view if needed
+  await element.scrollIntoViewIfNeeded();
+
   // Click with stability checks
-  console.log(`Clicking element: ${selector}`);
+  console.log(`Clicking element with testId: ${testId}`);
   if (exact) {
-    await locator.first().click({ timeout, force });
+    await element.first().click({ timeout, force });
   } else {
-    await locator.click({ timeout, force });
+    await element.click({ timeout, force });
   }
   await page.waitForTimeout(350);
 };

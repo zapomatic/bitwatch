@@ -9,7 +9,7 @@ const addAddress = async (
   collection,
   { name, address, monitor }
 ) => {
-  await findAndClick(page, `[data-testid="${collection}-add-address"]`);
+  await findAndClick(page, `${collection}-add-address`);
 
   // Wait for dialog to be visible
   await page.waitForSelector('[data-testid="address-dialog"]', {
@@ -55,7 +55,7 @@ const addAddress = async (
   await page.waitForTimeout(100);
 
   // Click the save button - allow clicking in overlay since it's in a dialog
-  await findAndClick(page, '[data-testid="address-dialog-save"]', {
+  await findAndClick(page, "address-dialog-save", {
     allowOverlay: true,
     force: true, // Force the click in case there are still invisible overlays
   });
@@ -186,7 +186,7 @@ export default async (page) => {
   // Accept the chain-out change
   await findAndClick(
     page,
-    `[data-testid="${testData.plain.zapomatic}-accept-button"]`
+    `${testData.plain.zapomatic}-accept-button`
   );
   // verify that the change took (no longer showing a diff)
   await expect(
@@ -221,7 +221,7 @@ export default async (page) => {
   // Test editing the single address
   await findAndClick(
     page,
-    `[data-testid="${testData.plain.zapomatic}-edit-button"]`
+    `${testData.plain.zapomatic}-edit-button`
   );
   await expect(page.locator('[data-testid="address-dialog"]')).toBeVisible();
   await expect(page.getByTestId("address-name-input")).toHaveValue("zapomatic");
@@ -231,7 +231,7 @@ export default async (page) => {
 
   // Change the name
   await page.getByTestId("address-name-input").fill("test rename");
-  await findAndClick(page, '[data-testid="address-dialog-save"]', {
+  await findAndClick(page, "address-dialog-save", {
     allowOverlay: true,
   });
 

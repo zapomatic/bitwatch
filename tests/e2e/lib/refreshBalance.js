@@ -21,21 +21,8 @@ export default async (
     // Only expand if explicitly collapsed (aria-expanded="false")
     // If it's null or "true", we want to leave it as is
     if (expandedState === "false") {
-      await findAndClick(page, `[data-testid="${parentKey}-expand-button"]`);
+      await findAndClick(page, `${parentKey}-expand-button`);
     }
-
-    // Log all data-testid attributes on the page to see what's available
-    // console.log("Logging all data-testid elements on page:");
-    // const allTestIds = await page.evaluate(() => {
-    //   const elements = document.querySelectorAll("[data-testid]");
-    //   return Array.from(elements).map((el) => ({
-    //     testId: el.getAttribute("data-testid"),
-    //     tagName: el.tagName,
-    //     className: el.className,
-    //     isVisible: el.offsetParent !== null,
-    //   }));
-    // });
-    // console.log(JSON.stringify(allTestIds, null, 2));
 
     // Check if this is a descriptor (starts with pkh, sh, wpkh, etc) or an extended key
     const isDescriptor =
@@ -64,26 +51,7 @@ export default async (
     if (exists) {
       const isVisible = await addressList.isVisible();
       console.log(`Address list is visible: ${isVisible}`);
-      // const html = await addressList.evaluate((el) => el.outerHTML);
-      // console.log(`Address list HTML: ${html}`);
     }
-
-    // Log the parent container state
-    // const parentContainer = await page.evaluate((selector) => {
-    //   const el = document.querySelector(selector);
-    //   if (el) {
-    //     const parent = el.closest(".MuiCollapse-root");
-    //     return parent
-    //       ? {
-    //           className: parent.className,
-    //           style: parent.getAttribute("style"),
-    //           isVisible: window.getComputedStyle(parent).display !== "none",
-    //         }
-    //       : null;
-    //   }
-    //   return null;
-    // }, addressListSelector);
-    // console.log("Parent container state:", parentContainer);
 
     await expect(addressList).toBeVisible();
 
@@ -97,7 +65,7 @@ export default async (
   await expect(refreshButton).toBeVisible();
 
   // Click the refresh button and wait for loading state
-  await findAndClick(page, `[data-testid="${testIdPrefix}-refresh-button"]`, {
+  await findAndClick(page, `${testIdPrefix}-refresh-button`, {
     force: true,
   });
 
@@ -130,9 +98,6 @@ export default async (
         });
       }
     });
-
-  // Add a small delay to ensure all state updates are complete
-  // await page.waitForTimeout(500);
 
   // Now verify the balances
   verifyBalance(page, address, expectedBalances, index, parentKey);

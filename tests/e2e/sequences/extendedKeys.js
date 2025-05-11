@@ -11,7 +11,7 @@ const addExtendedKey = async (
   collection,
   { name, key, derivationPath, skip, gapLimit, initialAddresses, monitor }
 ) => {
-  await findAndClick(page, `[data-testid="${collection}-add-extended-key"]`);
+  await findAndClick(page, `${collection}-add-extended-key`);
 
   // Wait for dialog to be visible
   await page.waitForSelector('[data-testid="extended-key-dialog"]', {
@@ -45,7 +45,7 @@ const addExtendedKey = async (
   }
 
   // Click the Add button - allow clicking in overlay since it's in a dialog
-  await findAndClick(page, '[data-testid="extended-key-submit-button"]', {
+  await findAndClick(page, "extended-key-submit-button", {
     allowOverlay: true,
   });
 
@@ -162,7 +162,7 @@ export default async (page) => {
         console.log(`Verified mempool input for ${key.name} address ${firstAddressIndex}`);
 
         // Then test full row refresh
-        await findAndClick(page, `[data-testid="${key.key}-refresh-all-button"]`);
+        await findAndClick(page, `${key.key}-refresh-all-button`);
         console.log("Clicked refresh button for extended key");
 
         // Verify we have the expected number of addresses (just initial addresses)
@@ -185,7 +185,7 @@ export default async (page) => {
           }, i, key.key);
         }
         // Edit the first derived address
-        await findAndClick(page, `[data-testid="${key.key}-address-${firstAddressIndex}-edit-button"]`);
+        await findAndClick(page, `${key.key}-address-${firstAddressIndex}-edit-button`);
         
         // Wait for the dialog to be visible
         await expect(page.locator('[data-testid="address-dialog"]')).toBeVisible();
@@ -193,7 +193,7 @@ export default async (page) => {
         
         // Change the name
         await page.getByTestId("address-name-input").fill(`${key.name} 2 Edited`);
-        await findAndClick(page, '[data-testid="address-dialog-save"]', { allowOverlay: true });
+        await findAndClick(page, "address-dialog-save", { allowOverlay: true });
         
         // Verify the dialog closed and name was updated
         await page.waitForSelector('[data-testid="address-dialog"]', { state: "hidden", timeout: 2000 });
@@ -217,7 +217,7 @@ export default async (page) => {
         expect(newAddressList.length).toBe(key.initialAddresses+1);
 
         // Now test editing the extended key itself
-        await findAndClick(page, `[data-testid="${key.key}-edit-button"]`);
+        await findAndClick(page, `${key.key}-edit-button`);
         
         // Wait for the dialog to be visible
         await expect(page.locator('[data-testid="extended-key-dialog"]')).toBeVisible();
@@ -232,7 +232,7 @@ export default async (page) => {
         await page.getByTestId("extended-key-skip-input").fill("1");
         
         // Save the changes
-        await findAndClick(page, '[data-testid="extended-key-submit-button"]', { allowOverlay: true });
+        await findAndClick(page, "extended-key-submit-button", { allowOverlay: true });
         
         // Wait for the dialog to close
         await expect(page.locator('[data-testid="extended-key-dialog"]')).not.toBeVisible();
@@ -242,7 +242,7 @@ export default async (page) => {
         
         // Expand the section if it's collapsed
         if (!await page.locator(`[data-testid="${key.key}-address-list"]`).isVisible()) {
-          await findAndClick(page, `[data-testid="${key.key}-expand-button"]`);
+          await findAndClick(page, `${key.key}-expand-button`);
         }
 
         // After setting skip=1, we should see addresses starting from index 1
@@ -265,7 +265,7 @@ export default async (page) => {
       }
 
       // Collapse the extended key section after testing
-      await findAndClick(page, `[data-testid="${key.key}-expand-button"]`);
+      await findAndClick(page, `${key.key}-expand-button`);
       console.log(`Collapsed ${key.name} section`);
     }
 };

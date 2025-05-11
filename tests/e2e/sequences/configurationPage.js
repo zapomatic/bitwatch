@@ -3,7 +3,7 @@ import testDb from "../../../server/db.test.json" with { type: 'json' };
 import findAndClick from "../lib/findAndClick.js";
 export default async (page) => {
   // Click the settings button
-  await findAndClick(page, '[data-testid="settings-button"]');
+  await findAndClick(page, "settings-button");
   console.log("Settings opened");
 
   // Verify default test values first
@@ -20,7 +20,7 @@ export default async (page) => {
   await expect(page.getByTestId("config-debugLogging")).not.toBeChecked();
 
   // Switch to public mode and verify public settings
-  await findAndClick(page, '[data-testid="use-public-api"]');
+  await findAndClick(page, "use-public-api");
   console.log("Switched to public mode");
   await expect(page.getByTestId("config-api")).toHaveValue(
     "https://mempool.space"
@@ -30,7 +30,7 @@ export default async (page) => {
   await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue("1");
 
   // Switch to private mode and verify private settings
-  await findAndClick(page, '[data-testid="use-local-node"]');
+  await findAndClick(page, "use-local-node");
   console.log("Switched to private mode");
   await expect(page.getByTestId("config-api")).toHaveValue(
     "http://10.21.21.26:3006"
@@ -38,7 +38,7 @@ export default async (page) => {
   await expect(page.getByTestId("config-interval")).toHaveValue("60000");
   await expect(page.getByTestId("config-apiDelay")).toHaveValue("100");
   await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue("100");
-  await findAndClick(page, '[data-testid="config-debugLogging"]');
+  await findAndClick(page, "config-debugLogging");
   await expect(page.getByTestId("config-debugLogging")).toBeChecked();
 
   // Return to test settings
@@ -48,12 +48,12 @@ export default async (page) => {
   await page
     .getByTestId("config-apiParallelLimit")
     .fill(testDb.apiParallelLimit.toString());
-  await findAndClick(page, '[data-testid="config-debugLogging"]');
+  await findAndClick(page, "config-debugLogging");
   await expect(page.getByTestId("config-debugLogging")).not.toBeChecked();
   console.log("Restored test settings");
 
   // Save configuration
-  await findAndClick(page, '[data-testid="save-configuration"]');
+  await findAndClick(page, "save-configuration");
   console.log("Saved configuration");
 
   // Verify success notification
@@ -63,7 +63,7 @@ export default async (page) => {
     "Configuration saved successfully"
   );
   // Dismiss the notification
-  await findAndClick(page, '[data-testid="config-notification"] button', {
+  await findAndClick(page, "config-notification", {
     allowOverlay: true,
   });
   console.log("Verified success notification");

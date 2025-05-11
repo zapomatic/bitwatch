@@ -21,7 +21,7 @@ const addDescriptor = async (
   await page.evaluate(() => {
     window.scrollTo(0, 0);
   });
-  await findAndClick(page, `[data-testid="${collection}-add-descriptor"]`);
+  await findAndClick(page, `${collection}-add-descriptor`);
 
   // Wait for dialog to be visible
   await page.waitForSelector('[data-testid="descriptor-dialog"]', {
@@ -45,7 +45,7 @@ const addDescriptor = async (
   }
 
   // Click the Add button - allow clicking in overlay since it's in a dialog
-  await findAndClick(page, '[data-testid="descriptor-submit-button"]', {
+  await findAndClick(page, "descriptor-submit-button", {
     allowOverlay: true,
   });
 
@@ -177,7 +177,7 @@ export default async (page) => {
         console.log(`Verified chain output for ${descriptor.name} address ${firstAddressIndex}`);
 
         // Accept the chain-out change
-        await findAndClick(page, `[data-testid="${descriptor.descriptor}-address-${firstAddressIndex}-accept-button"]`);
+        await findAndClick(page, `${descriptor.descriptor}-address-${firstAddressIndex}-accept-button`);
         await expect(page.getByTestId(`${descriptor.descriptor}-address-${firstAddressIndex}-chain-out-diff`)).not.toBeVisible();
         console.log(`Accepted balance changes for ${descriptor.name} address ${firstAddressIndex}`);
 
@@ -200,7 +200,7 @@ export default async (page) => {
         expect(newAddressList.length).toBe(descriptor.initialAddresses+1);
 
         // Edit the first derived address
-        await findAndClick(page, `[data-testid="${descriptor.descriptor}-address-${firstAddressIndex}-edit-button"]`);
+        await findAndClick(page, `${descriptor.descriptor}-address-${firstAddressIndex}-edit-button`);
         
         // Wait for the dialog to be visible
         await expect(page.locator('[data-testid="address-dialog"]')).toBeVisible();
@@ -208,7 +208,7 @@ export default async (page) => {
         
         // Change the name
         await page.getByTestId("address-name-input").fill(`${descriptor.name} 0 Edited`);
-        await findAndClick(page, '[data-testid="address-dialog-save"]', { allowOverlay: true });
+        await findAndClick(page, "address-dialog-save", { allowOverlay: true });
         
         // Verify the dialog closed and name was updated
         await page.waitForSelector('[data-testid="address-dialog"]', { state: "hidden", timeout: 2000 });
@@ -217,7 +217,7 @@ export default async (page) => {
         console.log(`Edited address name in ${descriptor.name}`);
 
         // Click the edit button on the descriptor row
-        await findAndClick(page, `[data-testid="${descriptor.descriptor}-edit-button"]`);
+        await findAndClick(page, `${descriptor.descriptor}-edit-button`);
         
         // Wait for the descriptor dialog to be visible
         await expect(page.locator('[data-testid="descriptor-dialog"]')).toBeVisible();
@@ -235,7 +235,7 @@ export default async (page) => {
         
         // Save the changes
         console.log("Attempting to save descriptor changes");
-        await findAndClick(page, '[data-testid="descriptor-submit-button"]', { allowOverlay: true });
+        await findAndClick(page, "descriptor-submit-button", { allowOverlay: true });
         
         // Wait for the dialog to close with longer timeout and debug info
         console.log("Waiting for descriptor dialog to close...");
@@ -261,7 +261,7 @@ export default async (page) => {
         expect(addresses.length).toBe(descriptor.initialAddresses + descriptor.skip);
       }
 
-      await findAndClick(page, `[data-testid="${descriptor.descriptor}-expand-button"]`);
+      await findAndClick(page, `${descriptor.descriptor}-expand-button`);
       console.log(`Collapsed ${descriptor.name} section`);
     }
 

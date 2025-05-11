@@ -3,7 +3,7 @@ import findAndClick from "../lib/findAndClick.js";
 
 export default async (page) => {
   // Navigate to integrations
-  await findAndClick(page, '[data-testid="integrations-button"]');
+  await findAndClick(page, "integrations-button");
   console.log("Integrations opened");
   // Fill in Telegram configuration
   await page.fill(
@@ -14,7 +14,7 @@ export default async (page) => {
   console.log("Telegram config filled");
 
   // Save the configuration
-  await findAndClick(page, '[data-testid="save-integrations"]');
+  await findAndClick(page, "save-integrations");
   console.log("Integrations saved");
 
   // Wait for the success notification

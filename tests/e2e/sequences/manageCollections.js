@@ -2,7 +2,7 @@ import { expect } from "@playwright/test";
 import findAndClick from "../lib/findAndClick.js";
 
 const addCollection = async (page, name) => {
-  await findAndClick(page, '[data-testid="new-collection-button"]');
+  await findAndClick(page, "new-collection-button");
   const input = page.locator('.crystal-input[aria-label="Collection Name"]');
   await expect(input).toBeVisible();
   await input.fill(name);
@@ -23,7 +23,7 @@ const getCollectionNames = async (page) => {
 
 export default async (page) => {
   // Navigate to addresses page
-  await findAndClick(page, '[data-testid="watch-list-button"]');
+  await findAndClick(page, "watch-list-button");
   console.log("Navigated to addresses page");
 
   // Add first collection
@@ -41,7 +41,7 @@ export default async (page) => {
   await expect(page.getByTestId("Test 2-name")).toBeVisible();
 
   // Test sorting by name ascending (need to click twice since it starts descending)
-  await findAndClick(page, '[data-testid="sort-by-name"]');
+  await findAndClick(page, "sort-by-name");
   console.log("Clicked sort by name first time (descending)");
 
   // Verify descending sort order first
@@ -50,7 +50,7 @@ export default async (page) => {
   console.log("Verified descending sort order");
 
   // Click again for ascending
-  await findAndClick(page, '[data-testid="sort-by-name"]');
+  await findAndClick(page, "sort-by-name");
   console.log("Clicked sort by name second time (ascending)");
 
   // Verify ascending sort order
@@ -59,7 +59,7 @@ export default async (page) => {
   console.log("Verified ascending sort order");
 
   // Test sorting by name back to descending
-  await findAndClick(page, '[data-testid="sort-by-name"]');
+  await findAndClick(page, "sort-by-name");
   console.log("Clicked sort by name third time (back to descending)");
 
   // Verify back to descending sort order
@@ -68,22 +68,22 @@ export default async (page) => {
   console.log("Verified back to descending sort order");
 
   // Delete Test 42 collection
-  await findAndClick(page, '[data-testid="Test 42-delete"]');
+  await findAndClick(page, "Test 42-delete");
   await expect(
     page.locator('[data-testid="delete-confirmation-dialog"]')
   ).toBeVisible();
-  await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', {
+  await findAndClick(page, "delete-confirmation-confirm", {
     allowOverlay: true,
   });
   await expect(page.getByTestId("Test 42-name")).not.toBeVisible();
   console.log("Deleted Test 42 collection");
 
   // Delete Test 2 collection
-  await findAndClick(page, '[data-testid="Test 2-delete"]');
+  await findAndClick(page, "Test 2-delete");
   await expect(
     page.locator('[data-testid="delete-confirmation-dialog"]')
   ).toBeVisible();
-  await findAndClick(page, '[data-testid="delete-confirmation-confirm"]', {
+  await findAndClick(page, "delete-confirmation-confirm", {
     allowOverlay: true,
   });
   await expect(page.getByTestId("Test 2-name")).not.toBeVisible();
@@ -96,7 +96,7 @@ export default async (page) => {
   console.log("Verified only Donations Collection remains");
 
   // Edit the remaining collection name using the save button first
-  await findAndClick(page, '[data-testid="Donations Collection-edit"]');
+  await findAndClick(page, "Donations Collection-edit");
   console.log("Clicked edit collection button");
 
   // Wait for the edit input to be visible and fill in new name
@@ -106,7 +106,7 @@ export default async (page) => {
   console.log("Filled in new collection name: Donations Clicked");
 
   // Click the save button and wait for the notification
-  await findAndClick(page, '[data-testid="Donations Collection-save"]');
+  await findAndClick(page, "Donations Collection-save");
   console.log("Clicked save button");
 
   // Wait for success notification
@@ -121,7 +121,7 @@ export default async (page) => {
   console.log("Verified collection was renamed to: Donations Clicked");
 
   // Now edit again and use Enter key
-  await findAndClick(page, '[data-testid="Donations Clicked-edit"]');
+  await findAndClick(page, "Donations Clicked-edit");
   console.log("Clicked edit collection button again");
 
   // Wait for the edit input and fill in final name
