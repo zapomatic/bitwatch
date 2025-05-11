@@ -1,6 +1,7 @@
 {
   "collections": {
     "Satoshi": {
+      "descriptors": [],
       "extendedKeys": [],
       "addresses": [
         {
@@ -54,6 +55,7 @@
       ]
     },
     "Donations": {
+      "descriptors": [],
       "extendedKeys": [],
       "addresses": [
         {
@@ -75,6 +77,7 @@
       ]
     },
     "Puzzle": {
+      "descriptors": [],
       "extendedKeys": [],
       "addresses": [
         {

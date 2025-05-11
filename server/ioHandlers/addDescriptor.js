@@ -28,6 +28,10 @@ export const addDescriptor = async ({ data, io }) => {
 
   // Check if descriptor already exists
   const collection = memory.db.collections[data.collection];
+  // upgrade old db versions
+  if (!collection.descriptors) {
+    collection.descriptors = [];
+  }
   if (
     collection.descriptors.some(
       (d) => d.name === data.name || d.descriptor === data.descriptor

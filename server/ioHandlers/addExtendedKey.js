@@ -36,6 +36,9 @@ export const addExtendedKey = async ({ data, io }) => {
 
   // Check if extended key already exists
   const collection = memory.db.collections[data.collection];
+  if (!collection.extendedKeys) {
+    collection.extendedKeys = [];
+  }
   const existingKey = collection.extendedKeys.find(
     (k) => k.name === data.name || k.key === data.key
   );
