@@ -80,12 +80,18 @@ body {
   align-items: center;
 }
 
+.crystal-flex-right {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
 .crystal-gap-1 {
-  gap: 8px;
+  gap: 4px;
 }
 
 .crystal-gap-2 {
-  gap: 16px;
+  gap: 8px;
 }
 
 /* Header Navigation Icons */
@@ -147,15 +153,15 @@ body {
 }
 
 .crystal-table th {
+  padding: 2px 8px;
   color: var(--theme-secondary);
   font-weight: normal;
-  padding: 12px;
   text-align: left;
   border-bottom: 1px solid rgba(77, 244, 255, 0.2);
 }
 
 .crystal-table td {
-  padding: 12px;
+  padding: 6px 8px;
   background: rgba(42, 27, 80, 0.5);
   border-top: 1px solid rgba(77, 244, 255, 0.1);
   border-bottom: 1px solid rgba(77, 244, 255, 0.1);
@@ -219,7 +225,7 @@ body {
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 1px;
-  box-shadow: 0 0 15px rgba(77, 244, 255, 0.2);
+  box-shadow: 0 0 12px rgba(77, 244, 255, 0.2);
   cursor: pointer;
 }
 
@@ -322,7 +328,7 @@ body {
 
 .data-item:hover {
   border-color: rgba(77, 244, 255, 0.3);
-  box-shadow: 0 0 15px rgba(77, 244, 255, 0.1);
+  box-shadow: 0 0 12px rgba(77, 244, 255, 0.1);
   transform: translateY(-1px);
 }
 
@@ -369,7 +375,7 @@ body {
     var(--theme-secondary),
     var(--theme-primary)
   );
-  box-shadow: 0 0 15px var(--theme-glow-secondary);
+  box-shadow: 0 0 12px var(--theme-glow-secondary);
 }
 
 ::-webkit-scrollbar-corner {
@@ -408,7 +414,7 @@ body {
       var(--theme-secondary),
       var(--theme-primary)
     );
-    box-shadow: 0 0 15px var(--theme-glow-secondary);
+    box-shadow: 0 0 12px var(--theme-glow-secondary);
   }
 }
 
@@ -492,7 +498,7 @@ body {
 
 .crystal-button-danger:hover {
   background: linear-gradient(135deg, var(--theme-warning), var(--theme-danger));
-  box-shadow: 0 0 15px var(--theme-glow-primary);
+  box-shadow: 0 0 12px var(--theme-glow-primary);
 }
 
 .crystal-button-surface {
@@ -640,19 +646,19 @@ body {
 
 .crystal-action-button-success:hover {
   background: rgba(123, 255, 160, 0.1);
-  box-shadow: 0 0 15px var(--theme-glow-success);
+  box-shadow: 0 0 12px var(--theme-glow-success);
   border-color: rgba(123, 255, 160, 0.5);
 }
 
 .crystal-action-button-danger {
   color: var(--theme-danger);
-  border-color: rgba(255, 87, 87, 0.3);
+  border-color: rgba(234, 103, 246, 0.686);
 }
 
 .crystal-action-button-danger:hover {
   background: rgba(255, 87, 87, 0.1);
-  box-shadow: 0 0 15px rgba(255, 87, 87, 0.3);
-  border-color: rgba(255, 87, 87, 0.5);
+  box-shadow: 0 0 12px rgba(255, 87, 87, 0.3);
+  border-color: rgba(191, 123, 233, 0.5);
 }
 
 .crystal-action-button svg {

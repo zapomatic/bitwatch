@@ -280,7 +280,7 @@ const AddressRow = ({
         </Box>
       </TableCell>
       <TableCell>
-        <Box className="crystal-flex crystal-flex-center crystal-gap-1">
+        <Box className="crystal-flex crystal-flex-right crystal-gap-1">
           <IconButtonStyled
             size="small"
             onClick={handleRefresh}

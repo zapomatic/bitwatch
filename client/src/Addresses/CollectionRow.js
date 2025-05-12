@@ -221,11 +221,12 @@ const CollectionRow = ({
             />
           </Box>
         </TableCell>
-        <TableCell>
-          <Box sx={{ display: "flex", gap: 1 }}>
+        <TableCell align="right">
+          <Box className="crystal-flex crystal-flex-right crystal-gap-1">
             <IconButtonStyled
               onClick={handleAddClick}
               icon={<VpnKeyIcon />}
+              size="small"
               title="Add Address"
               data-testid={`${collection.name}-add-address`}
               aria-label="Add address to collection"
@@ -233,6 +234,7 @@ const CollectionRow = ({
             <IconButtonStyled
               onClick={handleAddExtendedKey}
               icon={<KeyIcon />}
+              size="small"
               title="Add Extended Key"
               data-testid={`${collection.name}-add-extended-key`}
               aria-label="Add extended key to collection"
@@ -240,6 +242,7 @@ const CollectionRow = ({
             <IconButtonStyled
               onClick={handleAddDescriptor}
               icon={<GroupsIcon />}
+              size="small"
               title="Add Descriptor"
               data-testid={`${collection.name}-add-descriptor`}
               aria-label="Add descriptor to collection"
@@ -247,6 +250,8 @@ const CollectionRow = ({
             <IconButtonStyled
               onClick={() => onDelete({ collection: collection.name })}
               icon={<DeleteIcon />}
+              size="small"
+              variant="danger"
               title="Delete Collection"
               data-testid={`${collection.name}-delete`}
               aria-label="Delete collection"

@@ -863,7 +863,7 @@ export default function Addresses() {
                 data-testid="new-collection-button"
                 aria-label="New Collection"
               >
-                New Collection
+                Collection
               </Button>
             </Box>
           </Toolbar>

@@ -9,7 +9,7 @@ const IconButtonStyled = React.forwardRef(
       title,
       variant = "default",
       className,
-      size = "medium",
+      size = "small",
       ...props
     },
     ref
