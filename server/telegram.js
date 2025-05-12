@@ -210,8 +210,18 @@ ${changeMessages.join("\n")}
   return await sendMessage(message);
 };
 
+const cleanup = async () => {
+  if (bot) {
+    logger.info("Cleaning up Telegram bot instance");
+    bot.stopPolling();
+    bot = null;
+  }
+  return true;
+};
+
 export default {
   init,
   sendMessage,
   notifyBalanceChange,
+  cleanup,
 };

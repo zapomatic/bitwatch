@@ -87,16 +87,27 @@ function Integrations() {
                   </a>
                   )
                 </Typography>
-                <input
-                  id="telegram-token"
-                  className="crystal-input"
-                  value={config.telegram?.token || ""}
-                  onChange={(e) =>
-                    handleChange("telegram", "token", e.target.value)
-                  }
-                  placeholder="Enter your Telegram bot token"
-                  style={{ width: "100%" }}
-                />
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <input
+                    id="telegram-token"
+                    className="crystal-input"
+                    value={config.telegram?.token || ""}
+                    onChange={(e) =>
+                      handleChange("telegram", "token", e.target.value)
+                    }
+                    placeholder="Enter your Telegram bot token"
+                    style={{ flex: 1 }}
+                  />
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => handleChange("telegram", "token", "")}
+                    disabled={!config.telegram?.token}
+                    className="crystal-button"
+                  >
+                    Clear
+                  </Button>
+                </div>
               </div>
 
               <div>
@@ -116,16 +127,27 @@ function Integrations() {
                   </a>
                   )
                 </Typography>
-                <input
-                  id="telegram-chatid"
-                  className="crystal-input"
-                  value={config.telegram?.chatId || ""}
-                  onChange={(e) =>
-                    handleChange("telegram", "chatId", e.target.value)
-                  }
-                  placeholder="Enter your Telegram chat ID"
-                  style={{ width: "100%" }}
-                />
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <input
+                    id="telegram-chatid"
+                    className="crystal-input"
+                    value={config.telegram?.chatId || ""}
+                    onChange={(e) =>
+                      handleChange("telegram", "chatId", e.target.value)
+                    }
+                    placeholder="Enter your Telegram chat ID"
+                    style={{ flex: 1 }}
+                  />
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => handleChange("telegram", "chatId", "")}
+                    disabled={!config.telegram?.chatId}
+                    className="crystal-button"
+                  >
+                    Clear
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
