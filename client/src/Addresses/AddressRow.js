@@ -270,7 +270,7 @@ const AddressRow = ({
                 <span
                   role="img"
                   aria-label="WebSocket tracking disabled"
-                  style={{ color: "#F44336" }}
+                  style={{ color: "#AAA" }}
                 >
                   ●
                 </span>
