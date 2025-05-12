@@ -181,7 +181,9 @@ const formatSats = (sats) => {
 const notifyBalanceChange = async (address, changes, collection, name) => {
   if (!bot || !memory.db.telegram?.chatId) {
     logger.warning(
-      `Balance changed on ${collection}/${name} (${address}) but Telegram not configured - missing token or chat ID`
+      `Balance changed on ${collection}/${name} (${address}) but Telegram not configured - ${
+        !bot ? "bot not initialized" : "missing token or chat ID"
+      }`
     );
     return false;
   }
@@ -204,7 +206,7 @@ ${collection}/${name} (<a href="https://mempool.space/address/${address}">${addr
 ${changeMessages.join("\n")}
 `;
 
-  logger.telegram(message);
+  logger.telegram(`Telegram Alert Send: ${collection}/${name} (${address})`);
   return await sendMessage(message);
 };
 
