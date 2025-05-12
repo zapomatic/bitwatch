@@ -1,5 +1,4 @@
 import { enqueueAddresses } from "./balanceQueue.js";
-import socketIO from "./io.js";
 import memory from "./memory.js";
 import logger from "./logger.js";
 
@@ -46,9 +45,6 @@ const engine = async () => {
 
   // Add all addresses to the queue
   enqueueAddresses(allAddresses);
-
-  // Schedule next update
-  setTimeout(engine, memory.db.interval);
 };
 
 export default engine;

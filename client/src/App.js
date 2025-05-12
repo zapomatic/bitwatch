@@ -183,8 +183,7 @@ function AppContent() {
       case "CONNECTED":
       case "GOOD":
         return "var(--theme-success)";
-      case "CONNECTING":
-      case "CHECKING":
+      case "BACKOFF":
         return "var(--theme-warning)";
       case "ERROR":
       case "FAILED":
@@ -197,7 +196,7 @@ function AppContent() {
 
   const StatusIndicator = ({ label, state }) => {
     const color = getStatusColor(state);
-    const isConnecting = state === "CONNECTING" || state === "CHECKING";
+    const isBackoff = state === "BACKOFF";
 
     return (
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -209,7 +208,7 @@ function AppContent() {
               height: 8,
               borderRadius: "50%",
               backgroundColor: color,
-              animation: isConnecting ? "pulse 1.5s infinite" : "none",
+              animation: isBackoff ? "pulse 1.5s infinite" : "none",
               "@keyframes pulse": {
                 "0%": {
                   boxShadow: `0 0 0 0 ${color}80`,
@@ -358,58 +357,45 @@ function AppContent() {
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <StatusIndicator label="Bitwatch Socket" state={serverState} />
           <StatusIndicator label="Mempool Socket" state={websocketState} />
-          <StatusIndicator label="Mempool API" state={apiState} />
-          {queueStatus.queueSize > 0 && (
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Typography
-                variant="body2"
-                sx={{
-                  color: "text.secondary",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                }}
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "text.secondary",
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+              }}
+            >
+              <Tooltip
+                title={`API Status: ${apiState}, Queue (${queueStatus.queueSize})`}
+                arrow
               >
                 <Box
                   sx={{
                     width: "8px",
                     height: "8px",
                     borderRadius: "50%",
-                    backgroundColor: queueStatus.isProcessing
-                      ? "var(--theme-success)"
-                      : "var(--theme-warning)",
-                    animation: queueStatus.isProcessing
-                      ? "pulse 1.5s infinite"
-                      : "none",
+                    backgroundColor: getStatusColor(apiState),
+                    animation:
+                      apiState === "BACKOFF" ? "pulse 1.5s infinite" : "none",
                     "@keyframes pulse": {
                       "0%": {
-                        boxShadow: `0 0 0 0 ${
-                          queueStatus.isProcessing
-                            ? "var(--theme-success)"
-                            : "var(--theme-warning)"
-                        }80`,
+                        boxShadow: `0 0 0 0 ${getStatusColor(apiState)}80`,
                       },
                       "70%": {
-                        boxShadow: `0 0 0 6px ${
-                          queueStatus.isProcessing
-                            ? "var(--theme-success)"
-                            : "var(--theme-warning)"
-                        }00`,
+                        boxShadow: `0 0 0 6px ${getStatusColor(apiState)}00`,
                       },
                       "100%": {
-                        boxShadow: `0 0 0 0 ${
-                          queueStatus.isProcessing
-                            ? "var(--theme-success)"
-                            : "var(--theme-warning)"
-                        }00`,
+                        boxShadow: `0 0 0 0 ${getStatusColor(apiState)}00`,
                       },
                     },
                   }}
                 />
-                Queue: {queueStatus.queueSize}
-              </Typography>
-            </Box>
-          )}
+              </Tooltip>
+              API {queueStatus.queueSize > 0 && `(${queueStatus.queueSize})`}
+            </Typography>
+          </Box>
         </Box>
         <Typography
           variant="caption"

@@ -88,12 +88,7 @@ const processQueue = async () => {
   if (isProcessing || queue.length === 0) return;
 
   isProcessing = true;
-  memory.state.apiState = "CHECKING";
-  socketIO.io.emit("updateState", {
-    collections: memory.db.collections,
-    apiState: memory.state.apiState,
-    queueStatus: getQueueStatus(),
-  });
+  emitQueueStatus();
 
   logger.processing(
     `Processing balance queue with ${queue.length} addresses (${memory.db.apiParallelLimit} concurrent, ${memory.db.apiDelay}ms delay)`
@@ -109,7 +104,14 @@ const processQueue = async () => {
       );
     }
 
-    const balance = await getAddressBalance(addr.address);
+    const balance = await getAddressBalance(
+      addr.address,
+      (delay, retryCount, maxRetries) => {
+        // Update state to BACKOFF when rate limited
+        memory.state.apiState = "BACKOFF";
+        emitQueueStatus();
+      }
+    );
     lastProcessedTime = Date.now();
 
     if (balance.error) {
@@ -119,9 +121,17 @@ const processQueue = async () => {
       addr.error = true;
       addr.errorMessage = balance.message;
       addr.actual = null;
+      // Only set ERROR state if it's not a rate limit error
+      if (
+        !balance.message?.includes("429") &&
+        !balance.message?.includes("Too Many Requests")
+      ) {
+        memory.state.apiState = "ERROR";
+      }
     } else {
       // Use centralized balance update handler
       await handleBalanceUpdate(addr.address, balance, addr.collection);
+      memory.state.apiState = "GOOD";
     }
 
     // Remove the processed address from the queue
@@ -138,19 +148,19 @@ const processQueue = async () => {
 
   // Save state and emit update
   memory.saveDb();
-  socketIO.io.emit("updateState", {
-    collections: memory.db.collections,
-    apiState: "GOOD",
-    queueStatus: getQueueStatus(),
-  });
+  emitQueueStatus();
 
   isProcessing = false;
 
-  // If queue is empty, re-queue all watched addresses
+  // If queue is empty, wait for the configured delay before re-queueing
   if (queue.length === 0) {
-    logger.info("Queue empty, re-queueing all watched addresses");
-    const allAddresses = getAllWatchedAddresses();
-    enqueueAddresses(allAddresses);
+    logger.info(
+      `Queue empty, waiting ${memory.db.apiDelay}ms before re-queueing all watched addresses`
+    );
+    setTimeout(() => {
+      const allAddresses = getAllWatchedAddresses();
+      enqueueAddresses(allAddresses);
+    }, memory.db.apiDelay);
   } else {
     // If there are more items in the queue, continue processing
     processQueue();
