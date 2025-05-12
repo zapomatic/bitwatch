@@ -77,7 +77,7 @@ const BalanceCell = ({
           className="crystal-text"
           aria-label="Balance value"
           data-testid={dataTestId}
-          sx={{ opacity: pending ? 0.5 : 1 }}
+          sx={{ opacity: pending || actualValue === 0 ? 0.5 : 1 }}
         >
           {pending
             ? "waiting..."
