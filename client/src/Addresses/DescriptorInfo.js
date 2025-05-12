@@ -221,7 +221,7 @@ const DescriptorInfo = ({
                     <TableCell>Address</TableCell>
                     <TableCell>On-Chain</TableCell>
                     <TableCell>Mempool</TableCell>
-                    <TableCell>Actions</TableCell>
+                    <TableCell></TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody

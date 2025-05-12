@@ -223,9 +223,16 @@ export default function Addresses() {
     name,
     address,
     monitor,
+    trackWebsocket,
     setNewAddress
   ) => {
-    console.log("addAddress", { collection, name, address, monitor });
+    console.log("addAddress", {
+      collection,
+      name,
+      address,
+      monitor,
+      trackWebsocket,
+    });
     socketIO.emit(
       "addAddress",
       {
@@ -233,6 +240,7 @@ export default function Addresses() {
         name,
         address,
         monitor,
+        trackWebsocket,
       },
       (response) => {
         console.log("add", response);
@@ -564,12 +572,11 @@ export default function Addresses() {
       "editAddress",
       {
         collection: editDialog.collection,
-        address: {
-          address: editDialog.address.address,
-          name: updatedAddress.name,
-          monitor: updatedAddress.monitor,
-          parentKey: editDialog.address.parentKey, // Include parentKey in the update
-        },
+        address: editDialog.address.address,
+        name: updatedAddress.name,
+        monitor: updatedAddress.monitor,
+        trackWebsocket: updatedAddress.trackWebsocket,
+        parentKey: editDialog.address.parentKey,
       },
       (response) => {
         if (response.error) {

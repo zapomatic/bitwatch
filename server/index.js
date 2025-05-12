@@ -6,7 +6,7 @@ import http from "http";
 import engine from "./engine.js";
 import socketIO from "./io.js";
 import memory from "./memory.js";
-import initMempool from "./mempool.js";
+import mempool from "./mempool.js";
 import telegram from "./telegram.js";
 import logger from "./logger.js";
 
@@ -51,7 +51,8 @@ server.listen(PORT, () => {
 
   // Initialize mempool after socket.io is set up
   logger.info("Initializing mempool websocket connection...");
-  initMempool(socketIO.io)
+  mempool
+    .init(socketIO.io)
     .then((__ws) => {
       logger.success("Mempool websocket initialized");
     })

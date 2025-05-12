@@ -9,6 +9,7 @@ import {
   Table,
   TableHead,
   TableBody,
+  Tooltip,
 } from "@mui/material";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import EditIcon from "@mui/icons-material/Edit";
@@ -259,19 +260,7 @@ const CollectionRow = ({
             <Box sx={{ margin: 0 }}>
               {/* Single Addresses Table */}
               {collection.addresses?.length > 0 && (
-                <Box sx={{ mb: 1 }}>
-                  {/* <Typography
-                    variant="subtitle1"
-                    sx={{
-                      mt: 2,
-                      mb: 1,
-                      color: "var(--theme-secondary)",
-                      fontWeight: "bold",
-                      paddingBottom: "8px",
-                    }}
-                  >
-                    Single Addresses
-                  </Typography> */}
+                <Box sx={{ mb: 0 }}>
                   <Table
                     size="small"
                     className="crystal-table address-subtable"
@@ -282,7 +271,31 @@ const CollectionRow = ({
                         <TableCell>Address</TableCell>
                         <TableCell>On-Chain</TableCell>
                         <TableCell>Mempool</TableCell>
-                        <TableCell>Actions</TableCell>
+                        <TableCell>
+                          <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+                            <Tooltip
+                              title="Live tracking via mempool.space WebSocket"
+                              arrow
+                            >
+                              <Typography
+                                variant="body2"
+                                sx={{
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 0.5,
+                                }}
+                              >
+                                <span
+                                  role="img"
+                                  aria-label="Live WebSocket tracking"
+                                >
+                                  🔌
+                                </span>
+                              </Typography>
+                            </Tooltip>
+                          </Box>
+                        </TableCell>
+                        <TableCell></TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -319,7 +332,7 @@ const CollectionRow = ({
                         <TableCell>Skip</TableCell>
                         <TableCell>Initial</TableCell>
                         <TableCell>Count</TableCell>
-                        <TableCell>Actions</TableCell>
+                        <TableCell></TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>

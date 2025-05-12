@@ -1,12 +1,15 @@
 import memory from "../memory.js";
 import logger, { getMonitorLog } from "../logger.js";
+import mempool from "../mempool.js";
 
 export const editAddress = async ({ data, io }) => {
-  const { collection, address } = data;
+  console.log(`editAddress: ${JSON.stringify(data)}`);
+  const { collection, address, name, monitor, trackWebsocket, parentKey } =
+    data;
   logger.info(
-    `editAddress: ${collection}/${address.address} with ${getMonitorLog(
-      address.monitor
-    )}`
+    `editAddress: ${collection}/${address} with ${getMonitorLog(
+      monitor
+    )}, trackWebsocket: ${trackWebsocket}`
   );
 
   if (!collection || !address) {
@@ -22,44 +25,99 @@ export const editAddress = async ({ data, io }) => {
 
   // Try to find the address in the collection's addresses
   let addressIndex = targetCollection.addresses.findIndex(
-    (a) => a.address === address.address
+    (a) => a.address === address
   );
   if (addressIndex !== -1) {
+    const oldAddress = targetCollection.addresses[addressIndex];
+    logger.info(
+      `Found address in collection, old trackWebsocket: ${oldAddress.trackWebsocket}, new: ${trackWebsocket}`
+    );
+
     targetCollection.addresses[addressIndex] = {
-      ...targetCollection.addresses[addressIndex],
-      name: address.name,
-      monitor:
-        address.monitor || targetCollection.addresses[addressIndex].monitor,
+      ...oldAddress,
+      address,
+      name,
+      trackWebsocket,
+      monitor,
     };
+
+    // Update tracking if websocket setting changed
+    if (oldAddress.trackWebsocket !== trackWebsocket) {
+      logger.info(
+        `Updating tracking for ${address}, trackWebsocket changed from ${oldAddress.trackWebsocket} to ${trackWebsocket}`
+      );
+      if (trackWebsocket) {
+        mempool.trackAddress(address);
+      } else {
+        mempool.untrackAddress(address);
+      }
+    }
   } else {
     // Try to find the address in extended keys
     const extendedKey = targetCollection.extendedKeys?.find((key) =>
-      key.addresses.some((a) => a.address === address.address)
+      key.addresses.some((a) => a.address === address)
     );
     if (extendedKey) {
       addressIndex = extendedKey.addresses.findIndex(
-        (a) => a.address === address.address
+        (a) => a.address === address
       );
+      const oldAddress = extendedKey.addresses[addressIndex];
+      logger.info(
+        `Found address in extended key, old trackWebsocket: ${oldAddress.trackWebsocket}, new: ${trackWebsocket}`
+      );
+
       extendedKey.addresses[addressIndex] = {
-        ...extendedKey.addresses[addressIndex],
-        name: address.name,
-        monitor: address.monitor || extendedKey.addresses[addressIndex].monitor,
+        ...oldAddress,
+        address,
+        name,
+        trackWebsocket,
+        monitor,
       };
+
+      // Update tracking if websocket setting changed
+      if (oldAddress.trackWebsocket !== trackWebsocket) {
+        logger.info(
+          `Updating tracking for ${address}, trackWebsocket changed from ${oldAddress.trackWebsocket} to ${trackWebsocket}`
+        );
+        if (trackWebsocket) {
+          mempool.trackAddress(address);
+        } else {
+          mempool.untrackAddress(address);
+        }
+      }
     } else {
       // Try to find the address in descriptors
       const descriptor = targetCollection.descriptors?.find((desc) =>
-        desc.addresses.some((a) => a.address === address.address)
+        desc.addresses.some((a) => a.address === address)
       );
       if (descriptor) {
         addressIndex = descriptor.addresses.findIndex(
-          (a) => a.address === address.address
+          (a) => a.address === address
         );
+        const oldAddress = descriptor.addresses[addressIndex];
+        logger.info(
+          `Found address in descriptor, old trackWebsocket: ${oldAddress.trackWebsocket}, new: ${trackWebsocket}`
+        );
+
         descriptor.addresses[addressIndex] = {
-          ...descriptor.addresses[addressIndex],
-          name: address.name,
-          monitor:
-            address.monitor || descriptor.addresses[addressIndex].monitor,
+          ...oldAddress,
+          address,
+          name,
+          trackWebsocket,
+          monitor,
         };
+
+        // Update tracking if websocket setting changed
+        if (oldAddress.trackWebsocket !== trackWebsocket) {
+          logger.info(
+            `Updating tracking for ${address}, trackWebsocket changed from ${oldAddress.trackWebsocket} to ${trackWebsocket}`
+          );
+          if (trackWebsocket) {
+            mempool.trackAddress(address);
+          } else {
+            mempool.untrackAddress(address);
+          }
+        }
       } else {
         logger.error("Address not found");
         return { error: "Address not found" };
@@ -67,7 +125,12 @@ export const editAddress = async ({ data, io }) => {
     }
   }
 
-  memory.saveDb();
+  const saveResult = memory.saveDb();
+  if (!saveResult) {
+    logger.error("Failed to save address changes");
+    return { error: "Failed to save address changes" };
+  }
+
   io.emit("updateState", { collections: memory.db.collections });
   return { success: true };
 };

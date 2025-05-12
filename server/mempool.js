@@ -9,8 +9,8 @@ let mempoolClient = null;
 let trackedAddresses = new Set();
 let ws = null;
 let reconnectAttempts = 0;
-const MAX_RECONNECT_ATTEMPTS = 5;
-const RECONNECT_DELAY = 5000; // 5 seconds
+const MAX_RECONNECT_ATTEMPTS = 10;
+const RECONNECT_DELAY = 10000; // 10 seconds
 let isConnecting = false;
 let isReady = false;
 
@@ -28,6 +28,63 @@ const getWebSocketState = (ws) => {
     default:
       return "UNKNOWN";
   }
+};
+
+const trackAddress = (address) => {
+  if (!mempoolClient || !ws) {
+    logger.warning("Cannot track address - no websocket connection");
+    return false;
+  }
+
+  if (ws.readyState !== 1) {
+    logger.warning(
+      `Cannot track address - websocket not open (state: ${getWebSocketState(
+        ws
+      )})`
+    );
+    return false;
+  }
+
+  if (!isReady) {
+    logger.warning("Cannot track address - connection not ready");
+    return false;
+  }
+
+  if (trackedAddresses.has(address)) {
+    logger.info(`Address already tracked: ${address}`);
+    return true;
+  }
+
+  logger.network(`Tracking address: ${address}`);
+  mempoolClient.bitcoin.websocket.wsTrackAddress(ws, address);
+  trackedAddresses.add(address);
+  return true;
+};
+
+const untrackAddress = (address) => {
+  if (!mempoolClient || !ws) {
+    logger.warning("Cannot untrack address - no websocket connection");
+    return false;
+  }
+
+  if (ws.readyState !== 1) {
+    logger.warning(
+      `Cannot untrack address - websocket not open (state: ${getWebSocketState(
+        ws
+      )})`
+    );
+    return false;
+  }
+
+  if (!trackedAddresses.has(address)) {
+    logger.info(`Address not tracked: ${address}`);
+    return true;
+  }
+
+  logger.network(`Untracking address: ${address}`);
+  mempoolClient.bitcoin.websocket.wsStopTrackingAddress(ws, address);
+  trackedAddresses.delete(address);
+  return true;
 };
 
 const updateTrackedAddresses = () => {
@@ -52,16 +109,31 @@ const updateTrackedAddresses = () => {
 
   const newAddresses = new Set();
   Object.values(memory.db.collections).forEach((collection) => {
-    // Add regular addresses
+    // Add regular addresses that have websocket tracking enabled
     collection.addresses.forEach((addr) => {
-      newAddresses.add(addr.address);
+      if (addr.trackWebsocket) {
+        newAddresses.add(addr.address);
+      }
     });
 
-    // Add extended key addresses
+    // Add extended key addresses that have websocket tracking enabled
     if (collection.extendedKeys) {
       collection.extendedKeys.forEach((extendedKey) => {
         extendedKey.addresses.forEach((addr) => {
-          newAddresses.add(addr.address);
+          if (addr.trackWebsocket) {
+            newAddresses.add(addr.address);
+          }
+        });
+      });
+    }
+
+    // Add descriptor addresses that have websocket tracking enabled
+    if (collection.descriptors) {
+      collection.descriptors.forEach((descriptor) => {
+        descriptor.addresses.forEach((addr) => {
+          if (addr.trackWebsocket) {
+            newAddresses.add(addr.address);
+          }
         });
       });
     }
@@ -78,21 +150,13 @@ const updateTrackedAddresses = () => {
   );
 
   // Update tracking
-  if (addressesToTrack.length > 0) {
-    addressesToTrack.forEach((address) => {
-      logger.network(`Tracking address: ${address}`);
-      mempoolClient.bitcoin.websocket.wsTrackAddress(ws, address);
-      trackedAddresses.add(address);
-    });
-  }
+  addressesToTrack.forEach((address) => {
+    trackAddress(address);
+  });
 
-  if (addressesToUntrack.length > 0) {
-    addressesToUntrack.forEach((address) => {
-      logger.network(`Untracking address: ${address}`);
-      mempoolClient.bitcoin.websocket.wsStopTrackingAddress(ws, address);
-      trackedAddresses.delete(address);
-    });
-  }
+  addressesToUntrack.forEach((address) => {
+    untrackAddress(address);
+  });
 
   return true;
 };
@@ -479,4 +543,9 @@ const init = async (io) => {
   return mempoolClient;
 };
 
-export default init;
+export default {
+  init,
+  updateTrackedAddresses,
+  trackAddress,
+  untrackAddress,
+};

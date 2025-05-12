@@ -57,6 +57,7 @@ const saveDb = () => {
             address: addr.address,
             name: addr.name,
             expect: addr.expect,
+            trackWebsocket: addr.trackWebsocket,
             monitor: addr.monitor
               ? {
                   chain_in: addr.monitor.chain_in,
@@ -86,6 +87,7 @@ const saveDb = () => {
               name: addr.name,
               index: addr.index,
               expect: addr.expect,
+              trackWebsocket: addr.trackWebsocket,
               monitor: addr.monitor
                 ? {
                     chain_in: addr.monitor.chain_in,
@@ -126,6 +128,7 @@ const saveDb = () => {
               name: addr.name,
               index: addr.index,
               expect: addr.expect,
+              trackWebsocket: addr.trackWebsocket,
               monitor: addr.monitor
                 ? {
                     chain_in: addr.monitor.chain_in,

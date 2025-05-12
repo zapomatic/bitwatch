@@ -5,7 +5,9 @@ export const addAddress = async ({ data, io }) => {
   logger.info(
     `Adding address ${data.collection}/${data.name}, ${
       data.address
-    }, ${getMonitorLog(data.monitor)}`
+    }, ${getMonitorLog(data.monitor)}, ${
+      data.trackWebsocket ? "trackWebsocket" : "no trackWebsocket"
+    }`
   );
 
   if (!memory.db.collections[data.collection]) {
@@ -38,6 +40,7 @@ export const addAddress = async ({ data, io }) => {
       mempool_out: data.expect?.mempool_out || 0,
     },
     monitor: { ...(data.monitor || memory.db.monitor) },
+    trackWebsocket: data.trackWebsocket || false,
     actual: null,
     error: false,
     errorMessage: null,

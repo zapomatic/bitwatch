@@ -1,5 +1,6 @@
 import memory from "../memory.js";
 import logger from "../logger.js";
+import mempool from "../mempool.js";
 
 export const deleteHandler = async ({ data, io }) => {
   const { address, collection, extendedKey, descriptor } = data;
@@ -33,6 +34,8 @@ export const deleteHandler = async ({ data, io }) => {
         logger.error("Address not found in extended key");
         return { error: "Address not found in extended key" };
       }
+      // Untrack the address before removing it
+      mempool.untrackAddress(address);
       targetCollection.extendedKeys[keyIndex].addresses.splice(addressIndex, 1);
     } else if (descriptor) {
       const descIndex = targetCollection.descriptors.findIndex(
@@ -49,6 +52,8 @@ export const deleteHandler = async ({ data, io }) => {
         logger.error("Address not found in descriptor");
         return { error: "Address not found in descriptor" };
       }
+      // Untrack the address before removing it
+      mempool.untrackAddress(address);
       targetCollection.descriptors[descIndex].addresses.splice(addressIndex, 1);
     } else {
       const addressIndex = targetCollection.addresses.findIndex(
@@ -58,6 +63,8 @@ export const deleteHandler = async ({ data, io }) => {
         logger.error("Address not found");
         return { error: "Address not found" };
       }
+      // Untrack the address before removing it
+      mempool.untrackAddress(address);
       targetCollection.addresses.splice(addressIndex, 1);
     }
   } else if (extendedKey) {
@@ -68,6 +75,10 @@ export const deleteHandler = async ({ data, io }) => {
       logger.error("Extended key not found");
       return { error: "Extended key not found" };
     }
+    // Untrack all addresses in the extended key before removing it
+    targetCollection.extendedKeys[keyIndex].addresses.forEach((addr) => {
+      mempool.untrackAddress(addr.address);
+    });
     targetCollection.extendedKeys.splice(keyIndex, 1);
   } else if (descriptor) {
     const descIndex = targetCollection.descriptors.findIndex(
@@ -77,8 +88,30 @@ export const deleteHandler = async ({ data, io }) => {
       logger.error("Descriptor not found");
       return { error: "Descriptor not found" };
     }
+    // Untrack all addresses in the descriptor before removing it
+    targetCollection.descriptors[descIndex].addresses.forEach((addr) => {
+      mempool.untrackAddress(addr.address);
+    });
     targetCollection.descriptors.splice(descIndex, 1);
   } else {
+    // When deleting a collection, untrack all addresses in it
+    targetCollection.addresses.forEach((addr) => {
+      mempool.untrackAddress(addr.address);
+    });
+    if (targetCollection.extendedKeys) {
+      targetCollection.extendedKeys.forEach((key) => {
+        key.addresses.forEach((addr) => {
+          mempool.untrackAddress(addr.address);
+        });
+      });
+    }
+    if (targetCollection.descriptors) {
+      targetCollection.descriptors.forEach((desc) => {
+        desc.addresses.forEach((addr) => {
+          mempool.untrackAddress(addr.address);
+        });
+      });
+    }
     delete memory.db.collections[collection];
   }
 

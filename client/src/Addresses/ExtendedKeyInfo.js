@@ -237,7 +237,7 @@ const ExtendedKeyInfo = ({
                     <TableCell>Address</TableCell>
                     <TableCell>On-Chain</TableCell>
                     <TableCell>Mempool</TableCell>
-                    <TableCell>Actions</TableCell>
+                    <TableCell></TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody data-testid={`${extendedKey.key}-address-list`}>

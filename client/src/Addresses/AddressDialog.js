@@ -7,37 +7,63 @@ import {
   Button,
   TextField,
   Box,
+  FormControlLabel,
+  Switch,
+  Typography,
 } from "@mui/material";
 import MonitorSettings from "../components/MonitorSettings";
 import { DEFAULT_ADDRESS_FORM, COLLAPSE_ANIMATION_DURATION } from "../config";
 
 const AddressDialog = ({ open, onClose, address, onSave }) => {
-  const [formData, setFormData] = useState(DEFAULT_ADDRESS_FORM);
+  const [formData, setFormData] = useState({
+    ...DEFAULT_ADDRESS_FORM,
+    trackWebsocket: false,
+  });
 
   useEffect(() => {
-    setFormData({
-      ...DEFAULT_ADDRESS_FORM,
-      monitor: { ...DEFAULT_ADDRESS_FORM.monitor },
-      ...(address || {}),
-    });
+    if (address) {
+      console.log("Setting form data from address:", address);
+      setFormData({
+        ...DEFAULT_ADDRESS_FORM,
+        ...address,
+        trackWebsocket: Boolean(address.trackWebsocket),
+        monitor: {
+          ...DEFAULT_ADDRESS_FORM.monitor,
+          ...(address.monitor || {}),
+        },
+      });
+    } else {
+      setFormData({
+        ...DEFAULT_ADDRESS_FORM,
+        trackWebsocket: false,
+        monitor: { ...DEFAULT_ADDRESS_FORM.monitor },
+      });
+    }
   }, [address, open]);
 
   const handleSave = () => {
     if (!formData.name || !formData.address) {
       return;
     }
+    console.log("Saving form data:", formData);
     onSave({
       ...formData,
       address: formData.address, // Ensure address is passed as unique identifier
+      trackWebsocket: formData.trackWebsocket, // Ensure trackWebsocket is explicitly included
     });
     onClose();
   };
 
   const handleFormChange = (field, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    console.log(`Changing ${field} to:`, value);
+    setFormData((prev) => {
+      const newData = {
+        ...prev,
+        [field]: value,
+      };
+      console.log("New form data:", newData);
+      return newData;
+    });
   };
 
   return (
@@ -74,6 +100,26 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
               "data-testid": "address-input",
               "aria-label": "Bitcoin address",
             }}
+          />
+          <FormControlLabel
+            control={
+              <Switch
+                checked={Boolean(formData.trackWebsocket)}
+                onChange={(e) => {
+                  console.log("Switch changed to:", e.target.checked);
+                  handleFormChange("trackWebsocket", e.target.checked);
+                }}
+                data-testid="track-websocket-switch"
+              />
+            }
+            label={
+              <Box>
+                <Typography variant="body2">Track with WebSocket</Typography>
+                <Typography variant="caption" color="text.secondary">
+                  Enable real-time balance updates via mempool.space WebSocket
+                </Typography>
+              </Box>
+            }
           />
           <MonitorSettings
             value={formData.monitor || {}}

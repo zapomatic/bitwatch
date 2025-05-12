@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { TableRow, TableCell, Box, Typography } from "@mui/material";
+import { TableRow, TableCell, Box, Typography, Tooltip } from "@mui/material";
 import IconButtonStyled from "../components/IconButtonStyled";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -245,6 +245,38 @@ const AddressRow = ({
             type="mempool_out"
             dataTestId={`${testId}-mempool-out`}
           />
+        </Box>
+      </TableCell>
+      <TableCell>
+        <Box className="crystal-flex crystal-flex-start crystal-gap-1">
+          <Tooltip
+            title={
+              address.trackWebsocket
+                ? "Real-time balance updates enabled via mempool.space WebSocket"
+                : "Real-time balance updates disabled"
+            }
+            arrow
+          >
+            <Typography variant="body2">
+              {address.trackWebsocket ? (
+                <span
+                  role="img"
+                  aria-label="WebSocket tracking enabled"
+                  style={{ color: "#4CAF50" }}
+                >
+                  ●
+                </span>
+              ) : (
+                <span
+                  role="img"
+                  aria-label="WebSocket tracking disabled"
+                  style={{ color: "#F44336" }}
+                >
+                  ●
+                </span>
+              )}
+            </Typography>
+          </Tooltip>
         </Box>
       </TableCell>
       <TableCell>
