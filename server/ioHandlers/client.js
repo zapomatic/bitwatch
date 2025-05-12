@@ -1,9 +1,8 @@
 import pjson from "../../package.json" with { type: "json" };
 import memory from "../memory.js";
-import logger from "../logger.js";
+import { getQueueStatus } from "../balanceQueue.js";
 
-export const client = async ({ socketID }) => {
-  logger.info(`Client connected (ID: ${socketID})`);
+export const client = async () => {
 
   // Determine initial API state based on address data
   const hasActualData = Object.values(memory.db.collections).some(col => 
@@ -33,7 +32,7 @@ export const client = async ({ socketID }) => {
     collections: memory.db.collections,
     websocketState: memory.state.websocketState,
     apiState: memory.state.apiState,
-    interval: memory.db.interval,
+    queueStatus: getQueueStatus(),
     monitor: memory.db.monitor
   };
 }; 

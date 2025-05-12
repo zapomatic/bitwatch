@@ -1,34 +1,7 @@
-import { getAddressBalance, handleBalanceUpdate } from "./getAddressBalance.js";
-import { parallelLimit } from "async";
+import { enqueueAddresses } from "./balanceQueue.js";
 import socketIO from "./io.js";
 import memory from "./memory.js";
 import logger from "./logger.js";
-
-// Helper function to check balances for a set of addresses
-const checkAddressBalances = async (addresses) => {
-  // Process addresses in parallel with a limit and delay
-  const queue = addresses.map((addr) => async () => {
-    const balance = await getAddressBalance(addr.address);
-
-    if (balance.error) {
-      logger.error(
-        `Failed to fetch balance for ${addr.address}: ${balance.message}`
-      );
-      addr.error = true;
-      addr.errorMessage = balance.message;
-      addr.actual = null;
-    } else {
-      // Use centralized balance update handler
-      await handleBalanceUpdate(addr.address, balance, addr.collection);
-    }
-
-    // Add delay between API calls
-    await new Promise((resolve) => setTimeout(resolve, memory.db.apiDelay));
-  });
-
-  // Process the queue with parallelLimit
-  await parallelLimit(queue, memory.db.apiParallelLimit);
-};
 
 const engine = async () => {
   // Create a flat list of all addresses with their collection info
@@ -69,26 +42,10 @@ const engine = async () => {
     }
   }
 
-  // Set API state to CHECKING when starting a new check
-  memory.state.apiState = "CHECKING";
-  socketIO.io.emit("updateState", {
-    collections: memory.db.collections,
-    apiState: memory.state.apiState,
-  });
+  logger.info(`Adding ${allAddresses.length} addresses to balance queue`);
 
-  logger.processing(
-    `Starting balance check for ${allAddresses.length} addresses (${memory.db.apiParallelLimit} concurrent, ${memory.db.apiDelay}ms delay)`
-  );
-
-  // Check balances for all addresses
-  await checkAddressBalances(allAddresses);
-
-  // Save state and emit update
-  memory.saveDb();
-  socketIO.io.emit("updateState", {
-    collections: memory.db.collections,
-    apiState: "GOOD",
-  });
+  // Add all addresses to the queue
+  enqueueAddresses(allAddresses);
 
   // Schedule next update
   setTimeout(engine, memory.db.interval);

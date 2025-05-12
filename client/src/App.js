@@ -102,29 +102,30 @@ function AppContent() {
   const [websocketState, setWebsocketState] = useState("DISCONNECTED");
   const [apiState, setApiState] = useState("UNKNOWN");
   const [serverState, setServerState] = useState("DISCONNECTED");
-  const [interval, setInterval] = useState(0);
-  const intervalRef = React.useRef(0);
+  const [queueStatus, setQueueStatus] = useState({
+    queueSize: 0,
+    isProcessing: false,
+  });
   const navigate = useNavigate();
 
   const onSocketConnect = useCallback(() => {
     socketIO.emit(
       "client",
       {},
-      ({ version, websocketState, apiState, interval, monitor }) => {
+      ({ version, websocketState, apiState, queueStatus, monitor }) => {
         console.log("client loaded", {
           version,
           websocketState,
           apiState,
-          interval,
+          queueStatus,
           monitor,
         });
         setVersion(version);
         setWebsocketState(websocketState);
         setApiState(apiState);
         setServerState("CONNECTED");
-        if (interval) {
-          intervalRef.current = interval;
-          setInterval(interval);
+        if (queueStatus) {
+          setQueueStatus(queueStatus);
         }
         if (monitor) {
           Object.assign(defaultMonitorSettings, monitor);
@@ -157,10 +158,9 @@ function AppContent() {
         console.log("Updating API state to:", state.apiState);
         setApiState(state.apiState);
       }
-      if (state.interval) {
-        console.log("Updating interval to:", state.interval);
-        intervalRef.current = state.interval;
-        setInterval(state.interval);
+      if (state.queueStatus) {
+        console.log("Updating queue status to:", state.queueStatus);
+        setQueueStatus(state.queueStatus);
       }
       if (state.monitor) {
         console.log("Updating monitor settings to:", state.monitor);
@@ -359,34 +359,55 @@ function AppContent() {
           <StatusIndicator label="Bitwatch Socket" state={serverState} />
           <StatusIndicator label="Mempool Socket" state={websocketState} />
           <StatusIndicator label="Mempool API" state={apiState} />
-          {interval > 0 && (
+          {queueStatus.queueSize > 0 && (
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Box
+              <Typography
+                variant="body2"
                 sx={{
-                  width: "100px",
-                  height: "8px",
-                  backgroundColor: "rgba(77, 244, 255, 0.2)",
-                  borderRadius: "4px",
-                  overflow: "hidden",
-                  position: "relative",
+                  color: "text.secondary",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
                 }}
               >
                 <Box
                   sx={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    height: "100%",
-                    width: "0%",
-                    backgroundColor: "var(--theme-secondary)",
-                    animation: `progress ${interval}ms linear infinite`,
-                    "@keyframes progress": {
-                      "0%": { width: "0%" },
-                      "100%": { width: "100%" },
+                    width: "8px",
+                    height: "8px",
+                    borderRadius: "50%",
+                    backgroundColor: queueStatus.isProcessing
+                      ? "var(--theme-success)"
+                      : "var(--theme-warning)",
+                    animation: queueStatus.isProcessing
+                      ? "pulse 1.5s infinite"
+                      : "none",
+                    "@keyframes pulse": {
+                      "0%": {
+                        boxShadow: `0 0 0 0 ${
+                          queueStatus.isProcessing
+                            ? "var(--theme-success)"
+                            : "var(--theme-warning)"
+                        }80`,
+                      },
+                      "70%": {
+                        boxShadow: `0 0 0 6px ${
+                          queueStatus.isProcessing
+                            ? "var(--theme-success)"
+                            : "var(--theme-warning)"
+                        }00`,
+                      },
+                      "100%": {
+                        boxShadow: `0 0 0 0 ${
+                          queueStatus.isProcessing
+                            ? "var(--theme-success)"
+                            : "var(--theme-warning)"
+                        }00`,
+                      },
                     },
                   }}
                 />
-              </Box>
+                Queue: {queueStatus.queueSize}
+              </Typography>
             </Box>
           )}
         </Box>

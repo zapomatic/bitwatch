@@ -1,7 +1,4 @@
-import {
-  getAddressBalance,
-  handleBalanceUpdate,
-} from "../getAddressBalance.js";
+import { enqueueAddresses } from "../balanceQueue.js";
 import memory from "../memory.js";
 import logger from "../logger.js";
 
@@ -11,27 +8,15 @@ export const refreshBalance = async ({ data, io }) => {
     return { error: "Missing collection or address" };
   }
 
-  logger.info(`Refreshing balance for ${data.address} in ${data.collection}`);
+  logger.info(`Adding ${data.address} to balance queue in ${data.collection}`);
 
-  // Fetch new balance
-  const balance = await getAddressBalance(data.address);
-  if (balance.error) {
-    logger.error(balance.message);
-    return { error: balance.message };
-  }
+  // Add the address to the queue
+  enqueueAddresses([
+    {
+      address: data.address,
+      collection: data.collection,
+    },
+  ]);
 
-  // Use centralized balance update handler
-  const result = await handleBalanceUpdate(
-    data.address,
-    balance,
-    data.collection
-  );
-  if (result.error) {
-    logger.error(result.error);
-    return { error: result.error };
-  }
-
-  // Emit update to all clients
-  io.emit("updateState", { collections: memory.db.collections });
   return { success: true };
 };

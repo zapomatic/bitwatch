@@ -7,6 +7,7 @@
         {
           "address": "1A1zP1eP5QGefi2DMPTfTL5SLmv7DivfNa",
           "name": "genesis",
+          "trackWebsocket": false,
           "expect": {
             "chain_in": 5297010577,
             "chain_out": 0,
@@ -23,6 +24,7 @@
         {
           "address": "1HLoD9E4SDFFPDiYfNYnkBLQ85Y51J3Zb1",
           "name": "early",
+          "trackWebsocket": false,
           "expect": {
             "chain_in": 7878871,
             "chain_out": 0,
@@ -39,6 +41,7 @@
         {
           "address": "12cbQLTFMXRnSzktFkuoG3eHoMeFtpTu3S",
           "name": "first",
+          "trackWebsocket": false,
           "expect": {
             "chain_in": 44222430,
             "chain_out": 0,
@@ -61,6 +64,7 @@
         {
           "address": "bc1q67csgqm9muhynyd864tj2p48g8gachyg2nwara",
           "name": "zapomatic",
+          "trackWebsocket": false,
           "expect": {
             "chain_in": 600000,
             "chain_out": 600000,
@@ -83,6 +87,7 @@
         {
           "address": "19vkiEajfhuZ8bs8Zu2jgmC6oqZbWqhxhG",
           "name": "69",
+          "trackWebsocket": true,
           "expect": {
             "chain_in": 690013661,
             "chain_out": 0,
@@ -99,6 +104,7 @@
         {
           "address": "1PWo3JeB9jrGwfHDNpdGK54CRas7fsVzXU",
           "name": "71",
+          "trackWebsocket": false,
           "expect": {
             "chain_in": 710004370,
             "chain_out": 0,
@@ -115,6 +121,7 @@
         {
           "address": "1JTK7s9YVYywfm5XUH7RNhHJH1LshCaRFR",
           "name": "72",
+          "trackWebsocket": false,
           "expect": {
             "chain_in": 720004379,
             "chain_out": 0,
@@ -131,9 +138,8 @@
       ]
     }
   },
-  "interval": 600000,
   "api": "https://mempool.space",
-  "apiDelay": 2000,
+  "apiDelay": 5000,
   "apiParallelLimit": 1,
   "debugLogging": false,
   "telegram": {

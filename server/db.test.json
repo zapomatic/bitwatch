@@ -1,6 +1,5 @@
 {
   "collections": {},
-  "interval": 320000,
   "api": "http://localhost:3006",
   "apiDelay": 100,
   "apiParallelLimit": 1,

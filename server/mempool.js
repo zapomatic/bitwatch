@@ -367,7 +367,7 @@ const setupWebSocket = (io) => {
     }
 
     const messageType = Object.keys(data)[0];
-    logger.info(`Received websocket message: ${messageType}`);
+    // logger.info(`Received websocket message: ${messageType}`);
 
     // Handle mempoolInfo message - this indicates the connection is ready
     if (data.mempoolInfo) {
