@@ -481,17 +481,9 @@ const attemptCall = async (addr, testResponse) => {
     const currentOpt = { ...options };
     currentOpt.path = `${options.path}/${addr}`;
     
-    // If we have a test response, use it directly
+    // If we have a test response, add it to the headers
     if (testResponse) {
-      resolve({
-        actual: {
-          chain_in: testResponse.chain_stats?.funded_txo_sum || 0,
-          chain_out: testResponse.chain_stats?.spent_txo_sum || 0,
-          mempool_in: testResponse.mempool_stats?.funded_txo_sum || 0,
-          mempool_out: testResponse.mempool_stats?.spent_txo_sum || 0,
-        }
-      });
-      return;
+      currentOpt.headers["x-test-response"] = testResponse;
     }
     
     const req = (api.protocol === "https:" ? https : http).request(

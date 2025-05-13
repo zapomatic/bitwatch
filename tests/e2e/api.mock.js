@@ -9,115 +9,28 @@ let wss = null;
 let httpServer = null;
 let clients = new Set();
 let trackedAddresses = new Set();
-let addressBalances = new Map();
-let addressStates = new Map(); // Track state of each address
-let addressCheckCounts = new Map(); // Track number of checks per address
-
-const ADDRESS_STATES = {
-  INITIAL: "initial",
-  MEMPOOL_IN: "mempool_in",
-  CHAIN_IN: "chain_in",
-  MEMPOOL_OUT: "mempool_out",
-  CHAIN_OUT: "chain_out",
-};
+let testResponses = new Map(); // Store test responses per address
 
 const log = (level, message) => {
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] [${level}] ${message}`);
 };
 
-// Helper function to get next state
-const getNextState = (currentState) => {
-  const states = Object.values(ADDRESS_STATES);
-  const currentIndex = states.indexOf(currentState);
-  // If we're at the last state, stay there instead of cycling
-  if (currentIndex === states.length - 1) {
-    return currentState;
-  }
-  return states[(currentIndex + 1) % states.length];
-};
-
-// Helper function to get balance based on state
-const getBalanceForState = (state) => {
-  switch (state) {
-    case ADDRESS_STATES.INITIAL:
-      return {
-        chain_stats: {
-          funded_txo_count: 0,
-          funded_txo_sum: 0,
-          spent_txo_count: 0,
-          spent_txo_sum: 0,
-        },
-        mempool_stats: {
-          funded_txo_count: 0,
-          funded_txo_sum: 0,
-          spent_txo_count: 0,
-          spent_txo_sum: 0,
-        },
-      };
-    case ADDRESS_STATES.MEMPOOL_IN:
-      return {
-        chain_stats: {
-          funded_txo_count: 0,
-          funded_txo_sum: 0,
-          spent_txo_count: 0,
-          spent_txo_sum: 0,
-        },
-        mempool_stats: {
-          funded_txo_count: 1,
-          funded_txo_sum: 10000,
-          spent_txo_count: 0,
-          spent_txo_sum: 0,
-        },
-      };
-    case ADDRESS_STATES.CHAIN_IN:
-      return {
-        chain_stats: {
-          funded_txo_count: 1,
-          funded_txo_sum: 10000,
-          spent_txo_count: 0,
-          spent_txo_sum: 0,
-        },
-        mempool_stats: {
-          funded_txo_count: 0,
-          funded_txo_sum: 0,
-          spent_txo_count: 0,
-          spent_txo_sum: 0,
-        },
-      };
-    case ADDRESS_STATES.MEMPOOL_OUT:
-      return {
-        chain_stats: {
-          funded_txo_count: 1,
-          funded_txo_sum: 10000,
-          spent_txo_count: 0,
-          spent_txo_sum: 0,
-        },
-        mempool_stats: {
-          funded_txo_count: 0,
-          funded_txo_sum: 0,
-          spent_txo_count: 1,
-          spent_txo_sum: 1000,
-        },
-      };
-    case ADDRESS_STATES.CHAIN_OUT:
-    default:
-      return {
-        chain_stats: {
-          funded_txo_count: 1,
-          funded_txo_sum: 10000,
-          spent_txo_count: 1,
-          spent_txo_sum: 1000,
-        },
-        mempool_stats: {
-          funded_txo_count: 0,
-          funded_txo_sum: 0,
-          spent_txo_count: 0,
-          spent_txo_sum: 0,
-        },
-      };
-  }
-};
+// Helper function to get default zero balance
+const getZeroBalance = () => ({
+  chain_stats: {
+    funded_txo_count: 0,
+    funded_txo_sum: 0,
+    spent_txo_count: 0,
+    spent_txo_sum: 0,
+  },
+  mempool_stats: {
+    funded_txo_count: 0,
+    funded_txo_sum: 0,
+    spent_txo_count: 0,
+    spent_txo_sum: 0,
+  },
+});
 
 // WebSocket handlers
 const handleWebSocketConnection = (ws) => {
@@ -201,6 +114,8 @@ const handleHttpRequest = (req, res) => {
       if (testResponse) {
         try {
           const response = JSON.parse(testResponse);
+          // Store the test response for this address
+          testResponses.set(address, response);
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(response));
           return;
@@ -212,33 +127,16 @@ const handleHttpRequest = (req, res) => {
         }
       }
 
-      // Initialize state and check count if not exists
-      if (!addressStates.has(address)) {
-        addressStates.set(address, ADDRESS_STATES.INITIAL);
-        addressCheckCounts.set(address, 0);
+      // If we have a stored test response for this address, return it
+      if (testResponses.has(address)) {
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(testResponses.get(address)));
+        return;
       }
 
-      // Get current state and check count
-      const currentState = addressStates.get(address);
-      const checkCount = addressCheckCounts.get(address) + 1;
-      addressCheckCounts.set(address, checkCount);
-
-      // Get balance for current state
-      const balance = getBalanceForState(currentState);
-      addressBalances.set(address, balance);
-
-      // Send response first
+      // Otherwise return zero balance
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(balance));
-
-      // Only transition state if this is a refresh request (not an initial check)
-      // We can tell this by checking if the address already has a balance
-      if (addressBalances.has(address) && checkCount >= 1) {
-        const nextState = getNextState(currentState);
-        addressStates.set(address, nextState);
-        addressCheckCounts.set(address, 0); // Reset check count for next state
-      }
-
+      res.end(JSON.stringify(getZeroBalance()));
       return;
     }
 
@@ -322,14 +220,6 @@ const simulateTransaction = (tx) => {
           trackedAddresses.has(input.prevout.scriptpubkey_address)
         ) {
           relevantAddresses.add(input.prevout.scriptpubkey_address);
-          // Update balance for input address
-          const address = input.prevout.scriptpubkey_address;
-          const balance = addressBalances.get(address) || {
-            chain_stats: { funded_txo_sum: 0, spent_txo_sum: 0 },
-            mempool_stats: { funded_txo_sum: 0, spent_txo_sum: 0 },
-          };
-          balance.mempool_stats.spent_txo_sum += input.prevout.value;
-          addressBalances.set(address, balance);
         }
       });
     }
@@ -342,14 +232,6 @@ const simulateTransaction = (tx) => {
           trackedAddresses.has(output.scriptpubkey_address)
         ) {
           relevantAddresses.add(output.scriptpubkey_address);
-          // Update balance for output address
-          const address = output.scriptpubkey_address;
-          const balance = addressBalances.get(address) || {
-            chain_stats: { funded_txo_sum: 0, spent_txo_sum: 0 },
-            mempool_stats: { funded_txo_sum: 0, spent_txo_sum: 0 },
-          };
-          balance.mempool_stats.funded_txo_sum += output.value;
-          addressBalances.set(address, balance);
         }
       });
     }
@@ -369,19 +251,8 @@ const simulateTransaction = (tx) => {
   }
 };
 
-const setAddressBalance = (address, balance) => {
-  try {
-    addressBalances.set(address, balance);
-  } catch (error) {
-    log("error", `Error setting address balance: ${error}`);
-    throw error;
-  }
-};
-
 const reset = () => {
-  addressStates.clear();
-  addressCheckCounts.clear();
-  addressBalances.clear();
+  testResponses.clear();
   trackedAddresses.clear();
   clients.clear();
 };

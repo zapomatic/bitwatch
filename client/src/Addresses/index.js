@@ -422,8 +422,13 @@ export default function Addresses() {
     const testResponse = window.__TEST_RESPONSE__;
     if (testResponse) {
       delete window.__TEST_RESPONSE__; // Clear it after use
+      // Stringify the test response for the API call
+      socketIO.emit("refreshBalance", {
+        testResponse: JSON.stringify(testResponse),
+      });
+    } else {
+      socketIO.emit("refreshBalance");
     }
-    socketIO.emit("refreshBalance", { testResponse });
   }, []);
 
   const handleCloseNotification = () => {
