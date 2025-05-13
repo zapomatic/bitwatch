@@ -18,9 +18,9 @@ import VpnKeyIcon from "@mui/icons-material/VpnKey";
 import KeyIcon from "@mui/icons-material/Key";
 import GroupsIcon from "@mui/icons-material/Groups";
 import IconButtonStyled from "../components/IconButtonStyled";
-import ExtendedKeyInfo from "./ExtendedKeyInfo";
+import ExtendedKeyRow from "./ExtendedKeyRow";
 import AddressRow from "./AddressRow";
-import DescriptorInfo from "./DescriptorInfo";
+import DescriptorRow from "./DescriptorRow";
 import BalanceCell from "./BalanceCell";
 import ExtendedKeyDialog from "./ExtendedKeyDialog";
 import DescriptorDialog from "./DescriptorDialog";
@@ -342,7 +342,7 @@ const CollectionRow = ({
                     </TableHead>
                     <TableBody>
                       {(collection.extendedKeys || []).map((extendedKey) => (
-                        <ExtendedKeyInfo
+                        <ExtendedKeyRow
                           key={extendedKey.key}
                           extendedKey={extendedKey}
                           onEdit={() => handleEditExtendedKey(extendedKey)}
@@ -354,7 +354,7 @@ const CollectionRow = ({
                         />
                       ))}
                       {(collection.descriptors || []).map((descriptor) => (
-                        <DescriptorInfo
+                        <DescriptorRow
                           key={descriptor.descriptor}
                           descriptor={descriptor}
                           collection={collection}

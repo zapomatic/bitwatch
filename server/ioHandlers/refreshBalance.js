@@ -1,5 +1,4 @@
 import { enqueueAddresses } from "../balanceQueue.js";
-import memory from "../memory.js";
 import logger from "../logger.js";
 
 export const refreshBalance = async ({ data, io }) => {
