@@ -1,5 +1,5 @@
-import { enqueueAddresses } from "../balanceQueue.js";
-import logger from "../logger.js";
+import { enqueueAddresses } from "../lib/balanceQueue.js";
+import logger from "../lib/logger.js";
 
 export default async ({ data }) => {
   // Handle single address refresh

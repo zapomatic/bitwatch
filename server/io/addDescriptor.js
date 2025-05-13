@@ -1,7 +1,7 @@
-import memory from "../memory.js";
-import logger, { getMonitorLog } from "../logger.js";
-import { deriveAddresses, deriveAddress } from "../descriptors.js";
-import { descriptorExtractPaths } from "../descriptorExtractPaths.js";
+import memory from "../lib/memory.js";
+import logger, { getMonitorLog } from "../lib/logger.js";
+import { deriveAddresses, deriveAddress } from "../lib/descriptors.js";
+import { descriptorExtractPaths } from "../lib/descriptorExtractPaths.js";
 
 export default async ({ data, io }) => {
   logger.info(

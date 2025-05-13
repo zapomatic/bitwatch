@@ -1,6 +1,6 @@
-import memory from "../memory.js";
-import logger, { getMonitorLog } from "../logger.js";
-import mempool from "../mempool.js";
+import memory from "../lib/memory.js";
+import logger, { getMonitorLog } from "../lib/logger.js";
+import mempool from "../lib/mempool.js";
 
 function updateAddressInParent(
   addresses,
@@ -46,13 +46,13 @@ export default async ({ data, io }) => {
   );
 
   if (!collection || !address) {
-    logger.error("Missing collection or address data");
+    logger.error("editAddress: Missing collection or address data");
     return { error: "Missing collection or address data" };
   }
 
   const targetCollection = memory.db.collections[collection];
   if (!targetCollection) {
-    logger.error("Collection not found");
+    logger.error("editAddress: Collection not found");
     return { error: "Collection not found" };
   }
 

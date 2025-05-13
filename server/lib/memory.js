@@ -6,7 +6,7 @@ const __filename = fileURLToPath(import.meta.url); // get the resolved path to t
 const __dirname = path.dirname(__filename); // get the name of the directory
 
 // Ensure data directory exists
-const dataDir = path.join(__dirname, "./data");
+const dataDir = path.join(__dirname, "../data");
 if (!fs.existsSync(dataDir)) {
   fs.mkdirSync(dataDir, { recursive: true });
 }

@@ -1,4 +1,4 @@
-import logger from "../logger.js";
+import logger from "./logger.js";
 import getGap from "./getGap.js";
 
 export default (item) => {

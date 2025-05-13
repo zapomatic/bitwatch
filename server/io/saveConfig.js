@@ -1,5 +1,5 @@
-import memory from "../memory.js";
-import logger, { getMonitorLog } from "../logger.js";
+import memory from "../lib/memory.js";
+import logger, { getMonitorLog } from "../lib/logger.js";
 
 export default async ({ data }) => {
   if (!data?.api || !data?.apiDelay || data?.apiParallelLimit === undefined) {

@@ -1,6 +1,6 @@
-import memory from "../memory.js";
-import logger, { getMonitorLog } from "../logger.js";
-import { deriveExtendedKeyAddresses } from "../deriveExtendedKeyAddresses.js";
+import memory from "../lib/memory.js";
+import logger, { getMonitorLog } from "../lib/logger.js";
+import { deriveExtendedKeyAddresses } from "../lib/deriveExtendedKeyAddresses.js";
 import editExtendedKey from "./editExtendedKey.js";
 
 export default async ({ data, io }) => {

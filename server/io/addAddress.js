@@ -1,5 +1,5 @@
-import memory from "../memory.js";
-import logger, { getMonitorLog } from "../logger.js";
+import memory from "../lib/memory.js";
+import logger, { getMonitorLog } from "../lib/logger.js";
 
 export default async ({ data, io }) => {
   logger.info(
@@ -19,13 +19,13 @@ export default async ({ data, io }) => {
   }
   const collection = memory.db.collections[data.collection];
   if (!collection) {
-    logger.error("Collection not found");
+    logger.error("addAddress:Collection not found");
     return { error: "Collection not found" };
   }
 
   // Check if address already exists
   if (collection.addresses.some((addr) => addr.address === data.address)) {
-    logger.error("Address already exists in this collection");
+    logger.error("addAddress:Address already exists in this collection");
     return { error: "Address already exists in this collection" };
   }
 
@@ -48,7 +48,7 @@ export default async ({ data, io }) => {
 
   const saveResult = memory.saveDb();
   if (!saveResult) {
-    logger.error("Failed to save address");
+    logger.error("addAddress: Failed to save address");
     return { error: "Failed to save address" };
   }
 

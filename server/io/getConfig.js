@@ -1,5 +1,5 @@
-import memory from "../memory.js";
-import logger from "../logger.js";
+import memory from "../lib/memory.js";
+import logger from "../lib/logger.js";
 
 export default async () => {
   logger.info("Getting config");

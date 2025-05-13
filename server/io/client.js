@@ -1,6 +1,6 @@
 import pjson from "../../package.json" with { type: "json" };
-import memory from "../memory.js";
-import { getQueueStatus } from "../balanceQueue.js";
+import memory from "../lib/memory.js";
+import { getQueueStatus } from "../lib/balanceQueue.js";
 
 export default async () => {
 

@@ -1,5 +1,5 @@
-import memory from "../memory.js";
-import logger from "../logger.js";
+import memory from "../lib/memory.js";
+import logger from "../lib/logger.js";
 
 export default async ({ data, io }) => {
   logger.processing(
@@ -7,7 +7,7 @@ export default async ({ data, io }) => {
   );
   const collection = memory.db.collections[data.collection];
   if (!collection) {
-    logger.error("Collection not found");
+    logger.error("saveExpected: Collection not found");
     return { error: "Collection not found" };
   }
 
@@ -31,7 +31,7 @@ export default async ({ data, io }) => {
   }
 
   if (!record) {
-    logger.error("Address not found");
+    logger.error("saveExpected: Address not found");
     return { error: "Address not found" };
   }
 

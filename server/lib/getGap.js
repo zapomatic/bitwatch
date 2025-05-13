@@ -1,4 +1,4 @@
-import logger from "../logger.js";
+import logger from "./logger.js";
 import hasAddressActivity from "./hasAddressActivity.js";
 export default (addresses) => {
   let lastUsedIndex = -1;

@@ -1,6 +1,6 @@
-import memory from "../memory.js";
-import logger, { getMonitorLog } from "../logger.js";
-import { deriveExtendedKeyAddresses } from "../deriveExtendedKeyAddresses.js";
+import memory from "../lib/memory.js";
+import logger, { getMonitorLog } from "../lib/logger.js";
+import { deriveExtendedKeyAddresses } from "../lib/deriveExtendedKeyAddresses.js";
 
 export default async ({ data, io }) => {
   logger.info(
@@ -11,20 +11,20 @@ export default async ({ data, io }) => {
     } with ${getMonitorLog(data.monitor)}`
   );
   if (!data.collection || !data.name || !data.key) {
-    logger.error("Missing required fields");
+    logger.error("editExtendedKey: Missing required fields");
     return { error: "Missing required fields" };
   }
 
   const collection = memory.db.collections[data.collection];
   if (!collection) {
-    logger.error("Collection not found");
+    logger.error("editExtendedKey: Collection not found");
     return { error: "Collection not found" };
   }
 
   // Find extended key by its key string
   const keyIndex = collection.extendedKeys.findIndex((k) => k.key === data.key);
   if (keyIndex === -1) {
-    logger.error("Extended key not found");
+    logger.error("editExtendedKey: Extended key not found");
     return { error: "Extended key not found" };
   }
 

@@ -2,8 +2,8 @@ import url from "url";
 import socketIO from "../io/index.js";
 import http from "http";
 import https from "https";
-import memory from "../memory.js";
-import logger from "../logger.js";
+import memory from "./memory.js";
+import logger from "./logger.js";
 
 const attemptCall = async (addr, testResponse) => {
   return new Promise((resolve, reject) => {

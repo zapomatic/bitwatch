@@ -1,20 +1,22 @@
-import memory from "../memory.js";
-import logger from "../logger.js";
+import memory from "./memory.js";
+import logger from "./logger.js";
 import getAddressBalance from "./getAddressBalance.js";
 import detectBalanceChanges from "./detectBalanceChanges.js";
 import getGapNeeded from "./getGapNeeded.js";
-import { deriveExtendedKeyAddresses } from "../deriveExtendedKeyAddresses.js";
-import { deriveAddresses } from "../descriptors.js";
-import telegram from "../telegram.js";
+import { deriveExtendedKeyAddresses } from "./deriveExtendedKeyAddresses.js";
+import { deriveAddresses } from "./descriptors.js";
+import telegram from "./telegram.js";
 
 export default async (address, balance, collectionName) => {
   const collection = memory.db.collections[collectionName];
   if (!collection) {
-    logger.error(`Collection ${collectionName} not found`);
+    logger.error(`handleBalanceUpdate: Collection ${collectionName} not found`);
     return { error: "Collection not found" };
   }
 
-  logger.debug(`Handling balance update for ${address} in ${collectionName}`);
+  logger.debug(
+    `handleBalanceUpdate: Handling balance update for ${address} in ${collectionName}`
+  );
 
   // Find address in either main addresses or extended key addresses
   let addr = collection.addresses.find((a) => a.address === address);
@@ -22,11 +24,13 @@ export default async (address, balance, collectionName) => {
   let isExtendedKeyAddress = false;
   let isDescriptorAddress = false;
 
-  logger.debug(`Found in main addresses: ${!!addr}`);
+  logger.debug(`handleBalanceUpdate: Found in main addresses: ${!!addr}`);
 
   // If not found in main addresses, check extended keys
   if (!addr && collection.extendedKeys) {
-    logger.debug(`Checking ${collection.extendedKeys.length} extended keys`);
+    logger.debug(
+      `handleBalanceUpdate: Checking ${collection.extendedKeys.length} extended keys`
+    );
     for (const extendedKey of collection.extendedKeys) {
       addr = extendedKey.addresses.find((a) => a.address === address);
       if (addr) {

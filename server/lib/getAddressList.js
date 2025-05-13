@@ -1,4 +1,4 @@
-import memory from "../memory.js";
+import memory from "./memory.js";
 
 export default () => {
   const allAddresses = [];
@@ -20,6 +20,7 @@ export default () => {
           allAddresses.push({
             ...addr,
             collection: collectionName,
+            extendedKey: extendedKey.key,
           });
         });
       });
@@ -32,6 +33,7 @@ export default () => {
           allAddresses.push({
             ...addr,
             collection: collectionName,
+            descriptor: descriptor.descriptor,
           });
         });
       });

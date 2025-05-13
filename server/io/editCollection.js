@@ -1,5 +1,5 @@
-import memory from "../memory.js";
-import logger from "../logger.js";
+import memory from "../lib/memory.js";
+import logger from "../lib/logger.js";
 
 export default async ({ data, io }) => {
   const { oldName, newName } = data;
@@ -12,13 +12,13 @@ export default async ({ data, io }) => {
 
   // Check if old collection exists
   if (!memory.db.collections[oldName]) {
-    logger.error("Collection not found");
+    logger.error("editCollection: Collection not found");
     return { error: "Collection not found" };
   }
 
   // Check if new name already exists
   if (memory.db.collections[newName]) {
-    logger.error("Collection with new name already exists");
+    logger.error("editCollection: Collection with new name already exists");
     return { error: "Collection with new name already exists" };
   }
 

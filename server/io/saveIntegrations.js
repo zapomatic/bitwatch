@@ -1,6 +1,6 @@
-import memory from "../memory.js";
-import logger from "../logger.js";
-import telegram from "../telegram.js";
+import memory from "../lib/memory.js";
+import logger from "../lib/logger.js";
+import telegram from "../lib/telegram.js";
 
 export default async ({ data }) => {
   // Allow empty telegram config

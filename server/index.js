@@ -4,11 +4,11 @@ import express from "express";
 import cors from "cors";
 import http from "http";
 import socketIO from "./io/index.js";
-import memory from "./memory.js";
-import mempool from "./mempool.js";
-import telegram from "./telegram.js";
-import logger from "./logger.js";
-import { enqueueAddresses } from "./balanceQueue.js";
+import memory from "./lib/memory.js";
+import mempool from "./lib/mempool.js";
+import telegram from "./lib/telegram.js";
+import logger from "./lib/logger.js";
+import { enqueueAddresses } from "./lib/balanceQueue.js";
 
 import getAddressList from "./lib/getAddressList.js";
 

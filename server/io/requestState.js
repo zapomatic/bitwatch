@@ -1,6 +1,6 @@
-import memory from "../memory.js";
-import logger from "../logger.js";
-import { getQueueStatus } from "../balanceQueue.js";
+import memory from "../lib/memory.js";
+import logger from "../lib/logger.js";
+import { getQueueStatus } from "../lib/balanceQueue.js";
 
 export default async ({ socketID, io }) => {
   logger.info(`Client ${socketID} requested state update`);

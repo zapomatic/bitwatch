@@ -1,7 +1,7 @@
-import memory from "../memory.js";
-import logger, { getMonitorLog } from "../logger.js";
-import { deriveAddresses, deriveAddress } from "../descriptors.js";
-import { descriptorExtractPaths } from "../descriptorExtractPaths.js";
+import memory from "../lib/memory.js";
+import logger, { getMonitorLog } from "../lib/logger.js";
+import { deriveAddresses, deriveAddress } from "../lib/descriptors.js";
+import { descriptorExtractPaths } from "../lib/descriptorExtractPaths.js";
 
 export default async ({ data, io }) => {
   logger.info(
@@ -12,13 +12,13 @@ export default async ({ data, io }) => {
     } with ${getMonitorLog(data.monitor)}`
   );
   if (!data.collection || !data.name || !data.descriptor) {
-    logger.error("Missing required fields");
+    logger.error("editDescriptor: Missing required fields");
     return { error: "Missing required fields" };
   }
 
   const collection = memory.db.collections[data.collection];
   if (!collection) {
-    logger.error("Collection not found");
+    logger.error("editDescriptor: Collection not found");
     return { error: "Collection not found" };
   }
 
@@ -27,7 +27,7 @@ export default async ({ data, io }) => {
     (d) => d.descriptor === data.descriptor
   );
   if (descriptorIndex === -1) {
-    logger.error("Descriptor not found");
+    logger.error("editDescriptor: Descriptor not found");
     return { error: "Descriptor not found" };
   }
 

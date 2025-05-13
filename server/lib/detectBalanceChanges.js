@@ -1,5 +1,5 @@
-import memory from "../memory.js";
-import logger from "../logger.js";
+import memory from "./memory.js";
+import logger from "./logger.js";
 
 export default (address, balance, collectionName, addressName) => {
   const collections = memory.db.collections;
