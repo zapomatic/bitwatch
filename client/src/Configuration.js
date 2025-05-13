@@ -33,14 +33,6 @@ const Configs = {
     help: "Most users should use https://mempool.space (default) or http://10.21.21.26:3006 (umbrel)",
     default: DEFAULT_CONFIG.api,
   },
-  interval: {
-    label: "Update Interval (ms)",
-    help: (value) =>
-      `Updates every ${formatInterval(
-        value
-      )} (if running local mempool, you can run this much more frequently)`,
-    default: DEFAULT_CONFIG.interval,
-  },
   apiParallelLimit: {
     label: "API Parallel Requests",
     help: "If you are using your own local mempool instance, you can increase this number to speed up address monitoring. If you are only watching a few addresses, you can also increase this when using public mempool.space API, but with a lot of addresses, you will hit rate limits and it will slow things down more.",
@@ -48,7 +40,7 @@ const Configs = {
   },
   apiDelay: {
     label: "API Delay Between Requests (ms)",
-    help: "Delay between API requests to avoid rate limiting. This is used when we add an extended pub key and initially scan for balances and when we poll the API for changes on the interval. We will additionally backoff and retry if we get limited.",
+    help: "Delay between API requests to avoid rate limiting. Balances will be checked in a batch using the parallel limit and have this delay between queries. We will additionally backoff and retry if we get limited.",
     default: DEFAULT_CONFIG.apiDelay,
   },
   debugLogging: {
@@ -90,7 +82,6 @@ function Config() {
         api: config.api,
         apiDelay: config.apiDelay,
         apiParallelLimit: config.apiParallelLimit,
-        interval: config.interval,
         debugLogging: config.debugLogging,
         monitor: config.monitor || Configs.monitor.default,
         updateAllAddresses,

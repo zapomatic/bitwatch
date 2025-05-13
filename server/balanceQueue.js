@@ -104,14 +104,7 @@ const processQueue = async () => {
       );
     }
 
-    const balance = await getAddressBalance(
-      addr.address,
-      (delay, retryCount, maxRetries) => {
-        // Update state to BACKOFF when rate limited
-        memory.state.apiState = "BACKOFF";
-        emitQueueStatus();
-      }
-    );
+    const balance = await getAddressBalance(addr.address);
     lastProcessedTime = Date.now();
 
     if (balance.error) {
@@ -121,11 +114,13 @@ const processQueue = async () => {
       addr.error = true;
       addr.errorMessage = balance.message;
       addr.actual = null;
-      // Only set ERROR state if it's not a rate limit error
+      // Set appropriate state based on error type
       if (
-        !balance.message?.includes("429") &&
-        !balance.message?.includes("Too Many Requests")
+        balance.message?.includes("429") ||
+        balance.message?.includes("Too Many Requests")
       ) {
+        memory.state.apiState = "BACKOFF";
+      } else {
         memory.state.apiState = "ERROR";
       }
     } else {

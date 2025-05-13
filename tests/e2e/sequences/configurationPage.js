@@ -8,9 +8,6 @@ export default async (page) => {
 
   // Verify default test values first
   await expect(page.getByTestId("config-api")).toHaveValue(testDb.api);
-  await expect(page.getByTestId("config-interval")).toHaveValue(
-    testDb.interval.toString()
-  );
   await expect(page.getByTestId("config-apiDelay")).toHaveValue(
     testDb.apiDelay.toString()
   );
@@ -43,7 +40,6 @@ export default async (page) => {
 
   // Return to test settings
   await page.getByTestId("config-api").fill(testDb.api);
-  await page.getByTestId("config-interval").fill(testDb.interval.toString());
   await page.getByTestId("config-apiDelay").fill(testDb.apiDelay.toString());
   await page
     .getByTestId("config-apiParallelLimit")

@@ -2,21 +2,15 @@ import memory from "../memory.js";
 import logger, { getMonitorLog } from "../logger.js";
 
 export const saveConfig = async ({ data }) => {
-  if (
-    !data?.api ||
-    !data?.interval ||
-    !data?.apiDelay ||
-    data?.apiParallelLimit === undefined
-  ) {
+  if (!data?.api || !data?.apiDelay || data?.apiParallelLimit === undefined) {
     logger.error("Missing required config fields");
     return { error: "Missing required config fields" };
   }
 
   logger.info(
-    `Saving config ${data.api} at ${data.interval}ms, delay ${data.apiDelay}ms, parallel ${data.apiParallelLimit}, debug=${data.debugLogging}`
+    `Saving config ${data.api} at delay ${data.apiDelay}ms, parallel ${data.apiParallelLimit}, debug=${data.debugLogging}`
   );
 
-  memory.db.interval = data.interval;
   memory.db.api = data.api;
   memory.db.apiDelay = data.apiDelay;
   memory.db.apiParallelLimit = data.apiParallelLimit;
