@@ -283,8 +283,8 @@ const AddressRow = ({
         <Box className="crystal-flex crystal-flex-right crystal-gap-1">
           <IconButtonStyled
             size="small"
-            onClick={handleRefresh}
             icon={<RefreshIcon fontSize="small" />}
+            onClick={handleRefresh}
             data-testid={`${testId}-refresh-button`}
             aria-label="Refresh balance"
             disabled={isRefreshing}
