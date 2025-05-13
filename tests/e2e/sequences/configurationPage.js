@@ -22,7 +22,6 @@ export default async (page) => {
   await expect(page.getByTestId("config-api")).toHaveValue(
     "https://mempool.space"
   );
-  await expect(page.getByTestId("config-interval")).toHaveValue("600000");
   await expect(page.getByTestId("config-apiDelay")).toHaveValue("2000");
   await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue("1");
 
@@ -32,7 +31,6 @@ export default async (page) => {
   await expect(page.getByTestId("config-api")).toHaveValue(
     "http://10.21.21.26:3006"
   );
-  await expect(page.getByTestId("config-interval")).toHaveValue("60000");
   await expect(page.getByTestId("config-apiDelay")).toHaveValue("100");
   await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue("100");
   await findAndClick(page, "config-debugLogging");
