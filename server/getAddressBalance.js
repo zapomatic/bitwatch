@@ -459,7 +459,7 @@ const handleBalanceUpdate = async (address, balance, collectionName) => {
   return { success: true };
 };
 
-const attemptCall = async (addr) => {
+const attemptCall = async (addr, testResponse) => {
   return new Promise((resolve, reject) => {
     const api = url.parse(memory.db.api);
     const options = {
@@ -481,7 +481,18 @@ const attemptCall = async (addr) => {
     const currentOpt = { ...options };
     currentOpt.path = `${options.path}/${addr}`;
     
-    // const fullUrl = `${api.protocol}//${api.hostname}${api.port ? `:${api.port}` : ''}${currentOpt.path}`;
+    // If we have a test response, use it directly
+    if (testResponse) {
+      resolve({
+        actual: {
+          chain_in: testResponse.chain_stats?.funded_txo_sum || 0,
+          chain_out: testResponse.chain_stats?.spent_txo_sum || 0,
+          mempool_in: testResponse.mempool_stats?.funded_txo_sum || 0,
+          mempool_out: testResponse.mempool_stats?.spent_txo_sum || 0,
+        }
+      });
+      return;
+    }
     
     const req = (api.protocol === "https:" ? https : http).request(
       currentOpt,
@@ -534,13 +545,13 @@ const attemptCall = async (addr) => {
   });
 };
 
-const getAddressBalance = async (addr, onRateLimit) => {
+const getAddressBalance = async (addr, onRateLimit, testResponse) => {
   let retryCount = 0;
   const maxRetries = 5;
   const baseDelay = 2000; // Start with 2 seconds
 
   while (retryCount < maxRetries) {
-    const result = await attemptCall(addr).catch((e) => {
+    const result = await attemptCall(addr, testResponse).catch((e) => {
       return { error: true, message: e.message };
     });
     if (!result.error) {

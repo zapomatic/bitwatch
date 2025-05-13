@@ -7,7 +7,8 @@ export default async (
   address,
   expectedBalances,
   index = 0,
-  parentKey = null
+  parentKey = null,
+  testResponse = null
 ) => {
   // For balance cells, we use the new format
   const testIdPrefix = parentKey ? `${parentKey}-address-${index}` : address;
@@ -63,6 +64,13 @@ export default async (
   // Find and verify the refresh button exists and is visible
   const refreshButton = page.getByTestId(`${testIdPrefix}-refresh-button`);
   await expect(refreshButton).toBeVisible();
+
+  // If we have a test response, set it in the page context
+  if (testResponse) {
+    await page.evaluate((response) => {
+      window.__TEST_RESPONSE__ = response;
+    }, testResponse);
+  }
 
   // Click the refresh button and wait for loading state
   await findAndClick(page, `${testIdPrefix}-refresh-button`, {

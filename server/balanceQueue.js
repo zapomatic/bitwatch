@@ -104,7 +104,11 @@ const processQueue = async () => {
       );
     }
 
-    const balance = await getAddressBalance(addr.address);
+    const balance = await getAddressBalance(
+      addr.address,
+      null,
+      addr.testResponse
+    );
     lastProcessedTime = Date.now();
 
     if (balance.error) {

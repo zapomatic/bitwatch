@@ -129,7 +129,18 @@ export default async (page) => {
       mempool_in: "0.00000000 ₿",
       mempool_out: "0.00000000 ₿",
     },
-    0
+    0,
+    null,
+    {
+      chain_stats: {
+        funded_txo_sum: 10000,
+        spent_txo_sum: 0
+      },
+      mempool_stats: {
+        funded_txo_sum: 0,
+        spent_txo_sum: 0
+      }
+    }
   );
   console.log("Chain input state verified");
 

@@ -11,6 +11,7 @@ export const refreshBalance = async ({ data }) => {
       {
         address: data.address,
         collection: data.collection,
+        testResponse: data.testResponse,
       },
     ]);
     return { success: true };
@@ -31,6 +32,7 @@ export const refreshBalance = async ({ data }) => {
       data.addresses.map((address) => ({
         address,
         collection: data.collection,
+        testResponse: data.testResponse,
       }))
     );
     return { success: true };

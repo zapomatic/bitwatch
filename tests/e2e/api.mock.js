@@ -196,6 +196,22 @@ const handleHttpRequest = (req, res) => {
     if (url.pathname.startsWith("/api/address/")) {
       const address = url.pathname.split("/").pop();
 
+      // Check for test response header
+      const testResponse = req.headers["x-test-response"];
+      if (testResponse) {
+        try {
+          const response = JSON.parse(testResponse);
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(response));
+          return;
+        } catch (error) {
+          log("error", `Invalid test response JSON: ${error}`);
+          res.writeHead(400, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Invalid test response format" }));
+          return;
+        }
+      }
+
       // Initialize state and check count if not exists
       if (!addressStates.has(address)) {
         addressStates.set(address, ADDRESS_STATES.INITIAL);

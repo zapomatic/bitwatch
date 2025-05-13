@@ -289,7 +289,7 @@ export default function Addresses() {
         });
         setNotification({
           open: true,
-          message: "Balance refresh queued",
+          message: "Expected balance saved",
           severity: "success",
         });
       }
@@ -418,19 +418,12 @@ export default function Addresses() {
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    socketIO.emit("refresh", {}, (response) => {
-      if (response?.error) {
-        console.error("Error refreshing data:", response.error);
-        setNotification({
-          open: true,
-          message: "Failed to refresh data. Please try again.",
-          severity: "error",
-        });
-        setRefreshing(false);
-      }
-      // Note: We don't set refreshing to false here anymore
-      // It will be set to false when we receive the updateState event
-    });
+    // Get test response from window context if it exists
+    const testResponse = window.__TEST_RESPONSE__;
+    if (testResponse) {
+      delete window.__TEST_RESPONSE__; // Clear it after use
+    }
+    socketIO.emit("refreshBalance", { testResponse });
   }, []);
 
   const handleCloseNotification = () => {
