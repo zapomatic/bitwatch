@@ -1,5 +1,5 @@
 import logger from "../logger.js";
-import findLastUsedAndEmpty from "./findLastUsedAndEmpty.js";
+import getGap from "./getGap.js";
 
 export default (item) => {
   if (!item?.addresses) {
@@ -7,7 +7,7 @@ export default (item) => {
     return false;
   }
 
-  const { lastUsedIndex, emptyCount } = findLastUsedAndEmpty(item.addresses);
+  const { lastUsedIndex, emptyCount } = getGap(item.addresses);
 
   // If we haven't found any activity yet, we don't need more addresses
   if (lastUsedIndex === -1) {

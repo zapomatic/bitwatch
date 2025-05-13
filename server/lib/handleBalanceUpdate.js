@@ -2,7 +2,7 @@ import memory from "../memory.js";
 import logger from "../logger.js";
 import getAddressBalance from "./getAddressBalance.js";
 import detectBalanceChanges from "./detectBalanceChanges.js";
-import checkAndUpdateGapLimit from "./checkAndUpdateGapLimit.js";
+import getGapNeeded from "./getGapNeeded.js";
 import { deriveExtendedKeyAddresses } from "../deriveExtendedKeyAddresses.js";
 import { deriveAddresses } from "../descriptors.js";
 import telegram from "../telegram.js";
@@ -181,7 +181,7 @@ export default async (address, balance, collectionName) => {
       );
 
       // Check if we need to derive more addresses
-      const addressesNeeded = checkAndUpdateGapLimit(parentItem);
+      const addressesNeeded = getGapNeeded(parentItem);
       if (addressesNeeded) {
         logger.debug(
           `After checking balances, need ${addressesNeeded} more to maintain gap limit`
