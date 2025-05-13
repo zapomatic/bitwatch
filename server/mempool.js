@@ -1,6 +1,6 @@
 import memory from "./memory.js";
 import logger from "./logger.js";
-import { handleBalanceUpdate } from "./getAddressBalance.js";
+import handleBalanceUpdate from "./lib/handleBalanceUpdate.js";
 import telegram from "./telegram.js";
 import mempoolJS from "@mempool/mempool.js";
 import { URL } from "url";

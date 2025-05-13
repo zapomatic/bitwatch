@@ -1,7 +1,7 @@
 import memory from "../memory.js";
 import logger, { getMonitorLog } from "../logger.js";
 import { deriveExtendedKeyAddresses } from "../deriveExtendedKeyAddresses.js";
-import { editExtendedKey } from "./editExtendedKey.js";
+import editExtendedKey from "./editExtendedKey.js";
 
 export default async ({ data, io }) => {
   // Debug log incoming data (excluding io property)

@@ -3,12 +3,14 @@
 import express from "express";
 import cors from "cors";
 import http from "http";
-import engine from "./engine.js";
 import socketIO from "./io/index.js";
 import memory from "./memory.js";
 import mempool from "./mempool.js";
 import telegram from "./telegram.js";
 import logger from "./logger.js";
+import { enqueueAddresses } from "./balanceQueue.js";
+
+import getAddressList from "./lib/getAddressList.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -47,7 +49,9 @@ server.listen(PORT, () => {
     telegram.init();
   }
 
-  engine();
+  const allAddresses = getAddressList();
+  logger.info(`Adding ${allAddresses.length} addresses to balance queue`);
+  enqueueAddresses(allAddresses);
 
   // Initialize mempool after socket.io is set up
   logger.info("Initializing mempool websocket connection...");

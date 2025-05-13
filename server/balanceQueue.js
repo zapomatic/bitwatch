@@ -2,7 +2,9 @@ import { parallelLimit } from "async";
 import memory from "./memory.js";
 import logger from "./logger.js";
 import socketIO from "./io/index.js";
-import { getAddressBalance, handleBalanceUpdate } from "./getAddressBalance.js";
+import getAddressList from "./lib/getAddressList.js";
+import handleBalanceUpdate from "./lib/handleBalanceUpdate.js";
+import getAddressBalance from "./lib/getAddressBalance.js";
 
 // Queue state
 let queue = [];
@@ -14,47 +16,6 @@ const emitQueueStatus = () => {
   socketIO.io.emit("updateState", {
     queueStatus: getQueueStatus(),
   });
-};
-
-// Get all watched addresses
-const getAllWatchedAddresses = () => {
-  const allAddresses = [];
-  for (const [collectionName, collection] of Object.entries(
-    memory.db.collections
-  )) {
-    // Add regular addresses
-    collection.addresses.forEach((addr) => {
-      allAddresses.push({
-        ...addr,
-        collection: collectionName,
-      });
-    });
-
-    // Add extended key addresses
-    if (collection.extendedKeys) {
-      collection.extendedKeys.forEach((extendedKey) => {
-        extendedKey.addresses.forEach((addr) => {
-          allAddresses.push({
-            ...addr,
-            collection: collectionName,
-          });
-        });
-      });
-    }
-
-    // Add descriptor addresses
-    if (collection.descriptors) {
-      collection.descriptors.forEach((descriptor) => {
-        descriptor.addresses.forEach((addr) => {
-          allAddresses.push({
-            ...addr,
-            collection: collectionName,
-          });
-        });
-      });
-    }
-  }
-  return allAddresses;
 };
 
 // Add addresses to the queue
@@ -157,7 +118,7 @@ const processQueue = async () => {
       `Queue empty, waiting ${memory.db.apiDelay}ms before re-queueing all watched addresses`
     );
     setTimeout(() => {
-      const allAddresses = getAllWatchedAddresses();
+      const allAddresses = getAddressList();
       enqueueAddresses(allAddresses);
     }, memory.db.apiDelay);
   } else {

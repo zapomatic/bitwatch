@@ -3,7 +3,7 @@ import logger, { getMonitorLog } from "../logger.js";
 import { deriveAddresses, deriveAddress } from "../descriptors.js";
 import { descriptorExtractPaths } from "../descriptorExtractPaths.js";
 
-export const addDescriptor = async ({ data, io }) => {
+export default async ({ data, io }) => {
   logger.info(
     `Adding descriptor ${data.collection}/${data.name} as ${
       data.descriptor
