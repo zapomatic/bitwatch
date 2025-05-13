@@ -2,7 +2,7 @@ import pjson from "../../package.json" with { type: "json" };
 import memory from "../memory.js";
 import { getQueueStatus } from "../balanceQueue.js";
 
-export const client = async () => {
+export default async () => {
 
   // Determine initial API state based on address data
   const hasActualData = Object.values(memory.db.collections).some(col => 

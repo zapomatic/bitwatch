@@ -3,7 +3,7 @@ import logger, { getMonitorLog } from "../logger.js";
 import { deriveExtendedKeyAddresses } from "../deriveExtendedKeyAddresses.js";
 import { editExtendedKey } from "./editExtendedKey.js";
 
-export const addExtendedKey = async ({ data, io }) => {
+export default async ({ data, io }) => {
   // Debug log incoming data (excluding io property)
   const debugData = { ...data };
   delete debugData.io; // Remove the Socket.IO instance

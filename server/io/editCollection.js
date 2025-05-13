@@ -1,7 +1,7 @@
 import memory from "../memory.js";
 import logger from "../logger.js";
 
-export const editCollection = async ({ data, io }) => {
+export default async ({ data, io }) => {
   const { oldName, newName } = data;
   logger.info(`Renaming collection from ${oldName} to ${newName}`);
 

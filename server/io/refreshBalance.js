@@ -1,7 +1,7 @@
 import { enqueueAddresses } from "../balanceQueue.js";
 import logger from "../logger.js";
 
-export const refreshBalance = async ({ data }) => {
+export default async ({ data }) => {
   // Handle single address refresh
   if (data.collection && data.address) {
     logger.info(

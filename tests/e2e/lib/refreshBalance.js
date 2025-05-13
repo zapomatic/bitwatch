@@ -124,6 +124,40 @@ export default async (
       }
     });
 
+  // Wait for balance values to be updated (not showing "queued...")
+  const waitForBalanceUpdate = async () => {
+    const chainIn = page.getByTestId(`${testIdPrefix}-chain-in`);
+    const chainOut = page.getByTestId(`${testIdPrefix}-chain-out`);
+    const mempoolIn = page.getByTestId(`${testIdPrefix}-mempool-in`);
+    const mempoolOut = page.getByTestId(`${testIdPrefix}-mempool-out`);
+
+    // Wait for all balance values to be updated
+    await Promise.all([
+      chainIn.waitFor({ state: "visible", timeout: 10000 }),
+      chainOut.waitFor({ state: "visible", timeout: 10000 }),
+      mempoolIn.waitFor({ state: "visible", timeout: 10000 }),
+      mempoolOut.waitFor({ state: "visible", timeout: 10000 }),
+    ]);
+
+    // Wait for values to not be "queued..."
+    await page.waitForFunction(
+      (prefix) => {
+        const elements = [
+          document.querySelector(`[data-testid="${prefix}-chain-in"]`),
+          document.querySelector(`[data-testid="${prefix}-chain-out"]`),
+          document.querySelector(`[data-testid="${prefix}-mempool-in"]`),
+          document.querySelector(`[data-testid="${prefix}-mempool-out"]`),
+        ];
+        return elements.every((el) => el && !el.textContent.includes("queued"));
+      },
+      testIdPrefix,
+      { timeout: 10000 }
+    );
+  };
+
+  // Wait for balance update
+  await waitForBalanceUpdate();
+
   // Now verify the balances
   await verifyBalance(page, address, expectedBalances, index, parentKey);
 };

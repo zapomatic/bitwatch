@@ -4,7 +4,7 @@ import pjson from "../package.json" with { type: "json" };
 import memory from "./memory.js";
 import * as url from "node:url";
 import logger from "./logger.js";
-import socketIO from "./io.js";
+import socketIO from "./io/index.js";
 import telegram from "./telegram.js";
 import { deriveExtendedKeyAddresses } from "./deriveExtendedKeyAddresses.js";
 import { deriveAddresses } from "./descriptors.js";

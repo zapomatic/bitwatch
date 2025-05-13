@@ -1,7 +1,7 @@
 import { Server as io } from "socket.io";
-import memory from "./memory.js";
-import logger from "./logger.js";
-import handlers from "./ioHandlers/index.js";
+import memory from "../memory.js";
+import logger from "../logger.js";
+import handlers from "./handlers.js";
 
 const socketIO = {
   io: null,

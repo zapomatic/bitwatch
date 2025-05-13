@@ -2,7 +2,7 @@ import memory from "../memory.js";
 import logger from "../logger.js";
 import telegram from "../telegram.js";
 
-export const saveIntegrations = async ({ data }) => {
+export default async ({ data }) => {
   // Allow empty telegram config
   if (!data?.telegram) {
     data.telegram = {};

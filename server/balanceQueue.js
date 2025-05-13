@@ -1,7 +1,7 @@
 import { parallelLimit } from "async";
 import memory from "./memory.js";
 import logger from "./logger.js";
-import socketIO from "./io.js";
+import socketIO from "./io/index.js";
 import { getAddressBalance, handleBalanceUpdate } from "./getAddressBalance.js";
 
 // Queue state

@@ -15,7 +15,7 @@ import MuiAppBar from "@mui/material/AppBar";
 import Paper from "@mui/material/Paper";
 import React, { useCallback, useEffect, useState } from "react";
 import SettingsIcon from "@mui/icons-material/Settings";
-import socketIO from "./io.js";
+import socketIO from "../server/io/index.js";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Integrations from "./Integrations";
@@ -358,43 +358,33 @@ function AppContent() {
           <StatusIndicator label="Bitwatch Socket" state={serverState} />
           <StatusIndicator label="Mempool Socket" state={websocketState} />
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-            <Typography
-              variant="body2"
-              sx={{
-                color: "text.secondary",
-                display: "flex",
-                alignItems: "center",
-                gap: 1,
-              }}
+            <Tooltip
+              title={`API Status: ${apiState}, Queue (${queueStatus.queueSize})`}
+              arrow
             >
-              <Tooltip
-                title={`API Status: ${apiState}, Queue (${queueStatus.queueSize})`}
-                arrow
-              >
-                <Box
-                  sx={{
-                    width: "8px",
-                    height: "8px",
-                    borderRadius: "50%",
-                    backgroundColor: getStatusColor(apiState),
-                    animation:
-                      apiState === "BACKOFF" ? "pulse 1.5s infinite" : "none",
-                    "@keyframes pulse": {
-                      "0%": {
-                        boxShadow: `0 0 0 0 ${getStatusColor(apiState)}80`,
-                      },
-                      "70%": {
-                        boxShadow: `0 0 0 6px ${getStatusColor(apiState)}00`,
-                      },
-                      "100%": {
-                        boxShadow: `0 0 0 0 ${getStatusColor(apiState)}00`,
-                      },
+              <Box
+                sx={{
+                  width: "8px",
+                  height: "8px",
+                  borderRadius: "50%",
+                  backgroundColor: getStatusColor(apiState),
+                  animation:
+                    apiState === "BACKOFF" ? "pulse 1.5s infinite" : "none",
+                  "@keyframes pulse": {
+                    "0%": {
+                      boxShadow: `0 0 0 0 ${getStatusColor(apiState)}80`,
                     },
-                  }}
-                />
-              </Tooltip>
-              API {queueStatus.queueSize > 0 && `(${queueStatus.queueSize})`}
-            </Typography>
+                    "70%": {
+                      boxShadow: `0 0 0 6px ${getStatusColor(apiState)}00`,
+                    },
+                    "100%": {
+                      boxShadow: `0 0 0 0 ${getStatusColor(apiState)}00`,
+                    },
+                  },
+                }}
+              />
+            </Tooltip>
+            API {queueStatus.queueSize > 0 && `(${queueStatus.queueSize})`}
           </Box>
         </Box>
         <Typography

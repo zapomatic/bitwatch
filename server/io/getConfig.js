@@ -1,7 +1,7 @@
 import memory from "../memory.js";
 import logger from "../logger.js";
 
-export const getConfig = async () => {
+export default async () => {
   logger.info("Getting config");
   return {
     api: memory.db.api,

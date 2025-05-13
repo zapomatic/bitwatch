@@ -1,7 +1,7 @@
 import memory from "../memory.js";
 import logger, { getMonitorLog } from "../logger.js";
 
-export const addAddress = async ({ data, io }) => {
+export default async ({ data, io }) => {
   logger.info(
     `Adding address ${data.collection}/${data.name}, ${
       data.address

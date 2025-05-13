@@ -3,7 +3,7 @@ import logger, { getMonitorLog } from "../logger.js";
 import { deriveAddresses, deriveAddress } from "../descriptors.js";
 import { descriptorExtractPaths } from "../descriptorExtractPaths.js";
 
-export const editDescriptor = async ({ data, io }) => {
+export default async ({ data, io }) => {
   logger.info(
     `editDescriptor: ${data.collection}/${data.descriptor}, gap ${
       data.gapLimit

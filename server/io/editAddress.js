@@ -35,7 +35,7 @@ function updateAddressInParent(
   return true;
 }
 
-export const editAddress = async ({ data, io }) => {
+export default async ({ data, io }) => {
   // console.log(`editAddress: ${JSON.stringify(data)}`);
   const { collection, address, name, monitor, trackWebsocket, parentKey } =
     data;

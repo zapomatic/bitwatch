@@ -2,7 +2,7 @@ import memory from "../memory.js";
 import logger, { getMonitorLog } from "../logger.js";
 import { deriveExtendedKeyAddresses } from "../deriveExtendedKeyAddresses.js";
 
-export const editExtendedKey = async ({ data, io }) => {
+export default async ({ data, io }) => {
   logger.info(
     `editExtendedKey: ${data.collection}/${data.name}, path: ${
       data.derivationPath

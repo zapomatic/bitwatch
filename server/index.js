@@ -4,7 +4,7 @@ import express from "express";
 import cors from "cors";
 import http from "http";
 import engine from "./engine.js";
-import socketIO from "./io.js";
+import socketIO from "./io/index.js";
 import memory from "./memory.js";
 import mempool from "./mempool.js";
 import telegram from "./telegram.js";

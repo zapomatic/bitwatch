@@ -1,7 +1,7 @@
 import memory from "../memory.js";
 import logger, { getMonitorLog } from "../logger.js";
 
-export const saveConfig = async ({ data }) => {
+export default async ({ data }) => {
   if (!data?.api || !data?.apiDelay || data?.apiParallelLimit === undefined) {
     logger.error("Missing required config fields");
     return { error: "Missing required config fields" };

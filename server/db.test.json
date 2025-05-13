@@ -1,8 +1,8 @@
 {
   "collections": {},
   "api": "http://localhost:3006",
-  "apiDelay": 100,
-  "apiParallelLimit": 1,
+  "apiDelay": 2000,
+  "apiParallelLimit": 10,
   "debugLogging": false,
   "telegram": {
     "chatId": "",

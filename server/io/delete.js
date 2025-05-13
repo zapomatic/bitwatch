@@ -2,7 +2,7 @@ import memory from "../memory.js";
 import logger from "../logger.js";
 import mempool from "../mempool.js";
 
-export const deleteHandler = async ({ data, io }) => {
+export default async ({ data, io }) => {
   const { address, collection, extendedKey, descriptor } = data;
 
   if (!collection) {
