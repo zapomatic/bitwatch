@@ -14,6 +14,7 @@ let lastProcessedTime = 0;
 // Emit queue status update
 const emitQueueStatus = () => {
   socketIO.io.emit("updateState", {
+    collections: memory.db.collections,
     queueStatus: getQueueStatus(),
   });
 };
@@ -33,6 +34,42 @@ export const enqueueAddresses = (addresses) => {
     logger.debug(
       `Added ${newAddresses.length} addresses to queue. Queue size: ${queue.length}`
     );
+
+    // Mark addresses as queued in collections memory
+    newAddresses.forEach((addr) => {
+      const collection = memory.db.collections[addr.collection];
+      if (collection) {
+        // Check regular addresses
+        const address = collection.addresses.find(
+          (a) => a.address === addr.address
+        );
+        if (address) {
+          address.queued = true;
+        }
+        // Check extended key addresses
+        if (collection.extendedKeys) {
+          collection.extendedKeys.forEach((key) => {
+            const extAddress = key.addresses.find(
+              (a) => a.address === addr.address
+            );
+            if (extAddress) {
+              extAddress.queued = true;
+            }
+          });
+        }
+        // Check descriptor addresses
+        if (collection.descriptors) {
+          collection.descriptors.forEach((desc) => {
+            const descAddress = desc.addresses.find(
+              (a) => a.address === addr.address
+            );
+            if (descAddress) {
+              descAddress.queued = true;
+            }
+          });
+        }
+      }
+    });
 
     // Emit updated queue status
     emitQueueStatus();
@@ -71,6 +108,40 @@ const processQueue = async () => {
       addr.testResponse
     );
     lastProcessedTime = Date.now();
+
+    // Clear queued state from the address
+    const collection = memory.db.collections[addr.collection];
+    if (collection) {
+      // Check regular addresses
+      const address = collection.addresses.find(
+        (a) => a.address === addr.address
+      );
+      if (address) {
+        address.queued = false;
+      }
+      // Check extended key addresses
+      if (collection.extendedKeys) {
+        collection.extendedKeys.forEach((key) => {
+          const extAddress = key.addresses.find(
+            (a) => a.address === addr.address
+          );
+          if (extAddress) {
+            extAddress.queued = false;
+          }
+        });
+      }
+      // Check descriptor addresses
+      if (collection.descriptors) {
+        collection.descriptors.forEach((desc) => {
+          const descAddress = desc.addresses.find(
+            (a) => a.address === addr.address
+          );
+          if (descAddress) {
+            descAddress.queued = false;
+          }
+        });
+      }
+    }
 
     if (balance.error) {
       logger.error(

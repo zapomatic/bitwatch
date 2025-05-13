@@ -4,6 +4,7 @@ import CheckIcon from "@mui/icons-material/Check";
 import WarningIcon from "@mui/icons-material/Warning";
 import NotificationsActiveIcon from "@mui/icons-material/NotificationsActive";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import RefreshIcon from "@mui/icons-material/Refresh";
 import { formatSatoshis } from "../utils/format";
 
 const BalanceCell = ({
@@ -13,6 +14,7 @@ const BalanceCell = ({
   label,
   monitor,
   pending,
+  queued,
   type,
   value,
   dataTestId,
@@ -77,13 +79,34 @@ const BalanceCell = ({
           className="crystal-text"
           aria-label="Balance value"
           data-testid={dataTestId}
-          sx={{ opacity: pending || actualValue === 0 ? 0.3 : 1 }}
+          sx={{
+            opacity: pending || actualValue === 0 ? 0.3 : 1,
+            position: "relative",
+            display: "flex",
+            alignItems: "center",
+            gap: "4px",
+          }}
         >
           {pending
             ? "queued..."
             : error
             ? "—"
             : formatSatoshis(actualValue, displayBtc)}
+          {queued && (
+            <Tooltip title="Balance update queued">
+              <RefreshIcon
+                className="crystal-text-secondary"
+                sx={{
+                  fontSize: "1rem",
+                  animation: "spin 1s linear infinite",
+                  "@keyframes spin": {
+                    "0%": { transform: "rotate(0deg)" },
+                    "100%": { transform: "rotate(360deg)" },
+                  },
+                }}
+              />
+            </Tooltip>
+          )}
         </Typography>
         {!pending && !error && diff !== 0 && (
           <Typography

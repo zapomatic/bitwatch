@@ -15,7 +15,7 @@ import MuiAppBar from "@mui/material/AppBar";
 import Paper from "@mui/material/Paper";
 import React, { useCallback, useEffect, useState } from "react";
 import SettingsIcon from "@mui/icons-material/Settings";
-import socketIO from "../server/io/index.js";
+import socketIO from "./io.js";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import Integrations from "./Integrations";
