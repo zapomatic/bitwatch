@@ -289,7 +289,7 @@ export default function Addresses() {
         });
         setNotification({
           open: true,
-          message: "Balance refreshed successfully",
+          message: "Balance refresh queued",
           severity: "success",
         });
       }

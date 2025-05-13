@@ -9,7 +9,6 @@ import {
   Table,
   TableHead,
   TableBody,
-  Tooltip,
 } from "@mui/material";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import EditIcon from "@mui/icons-material/Edit";
@@ -19,7 +18,6 @@ import KeyIcon from "@mui/icons-material/Key";
 import GroupsIcon from "@mui/icons-material/Groups";
 import IconButtonStyled from "../components/IconButtonStyled";
 import ExtendedKeyRow from "./ExtendedKeyRow";
-import AddressRow from "./AddressRow";
 import DescriptorRow from "./DescriptorRow";
 import BalanceCell from "./BalanceCell";
 import ExtendedKeyDialog from "./ExtendedKeyDialog";
@@ -27,6 +25,7 @@ import DescriptorDialog from "./DescriptorDialog";
 import AddressDialog from "./AddressDialog";
 import { calculateCollectionTotals } from "../utils/collection";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
+import AddressTable from "./AddressTable";
 
 const CollectionRow = ({
   collection,
@@ -266,57 +265,15 @@ const CollectionRow = ({
               {/* Single Addresses Table */}
               {collection.addresses?.length > 0 && (
                 <Box sx={{ mb: 0 }}>
-                  <Table
-                    size="small"
-                    className="crystal-table address-subtable"
-                  >
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>Name</TableCell>
-                        <TableCell>Address</TableCell>
-                        <TableCell>On-Chain</TableCell>
-                        <TableCell>Mempool</TableCell>
-                        <TableCell>
-                          <Box className="crystal-flex crystal-flex-start crystal-gap-1">
-                            <Tooltip
-                              title="Live tracking via mempool.space WebSocket"
-                              arrow
-                            >
-                              <Typography
-                                variant="body2"
-                                sx={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  gap: 0.5,
-                                }}
-                              >
-                                <span
-                                  role="img"
-                                  aria-label="Live WebSocket tracking"
-                                >
-                                  🔌
-                                </span>
-                              </Typography>
-                            </Tooltip>
-                          </Box>
-                        </TableCell>
-                        <TableCell></TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {collection.addresses.map((address) => (
-                        <AddressRow
-                          key={address.address}
-                          address={address}
-                          collection={collection}
-                          displayBtc={displayBtc}
-                          setNotification={setNotification}
-                          onDelete={onDelete}
-                          onEditAddress={onEditAddress}
-                        />
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <AddressTable
+                    addresses={collection.addresses}
+                    collection={collection}
+                    displayBtc={displayBtc}
+                    setNotification={setNotification}
+                    onDelete={onDelete}
+                    onEditAddress={onEditAddress}
+                    dataTestId={`${collection.name}-address-list`}
+                  />
                 </Box>
               )}
 
