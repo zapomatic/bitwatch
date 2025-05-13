@@ -2,14 +2,33 @@ import { expect } from "@playwright/test";
 import findAndClick from "./findAndClick.js";
 import verifyBalance from "./verifyBalance.js";
 
+// Helper to convert Bitcoin string to satoshis
+const btcToSats = (btcStr) => {
+  // Remove ₿ symbol and trim
+  const cleanStr = btcStr.replace("₿", "").trim();
+  // Convert to number and multiply by 100M (satoshis)
+  return Math.round(parseFloat(cleanStr) * 100000000);
+};
+
 export default async (
   page,
   address,
   expectedBalances,
   index = 0,
-  parentKey = null,
-  testResponse = null
+  parentKey = null
 ) => {
+  // Create test response from expected balances
+  const testResponse = {
+    chain_stats: {
+      funded_txo_sum: btcToSats(expectedBalances.chain_in),
+      spent_txo_sum: btcToSats(expectedBalances.chain_out),
+    },
+    mempool_stats: {
+      funded_txo_sum: btcToSats(expectedBalances.mempool_in),
+      spent_txo_sum: btcToSats(expectedBalances.mempool_out),
+    },
+  };
+
   // For balance cells, we use the new format
   const testIdPrefix = parentKey ? `${parentKey}-address-${index}` : address;
 
@@ -65,12 +84,10 @@ export default async (
   const refreshButton = page.getByTestId(`${testIdPrefix}-refresh-button`);
   await expect(refreshButton).toBeVisible();
 
-  // If we have a test response, set it in the page context
-  if (testResponse) {
-    await page.evaluate((response) => {
-      window.__TEST_RESPONSE__ = response;
-    }, testResponse);
-  }
+  // Set test response in the page context
+  await page.evaluate((response) => {
+    window.__TEST_RESPONSE__ = response;
+  }, testResponse);
 
   // Click the refresh button and wait for loading state
   await findAndClick(page, `${testIdPrefix}-refresh-button`, {

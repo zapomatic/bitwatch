@@ -31,8 +31,8 @@ export default async (page) => {
   await expect(page.getByTestId("config-api")).toHaveValue(
     "http://10.21.21.26:3006"
   );
-  await expect(page.getByTestId("config-apiDelay")).toHaveValue("100");
-  await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue("100");
+  await expect(page.getByTestId("config-apiDelay")).toHaveValue("5000");
+  await expect(page.getByTestId("config-apiParallelLimit")).toHaveValue("10");
   await findAndClick(page, "config-debugLogging");
   await expect(page.getByTestId("config-debugLogging")).toBeChecked();
 
