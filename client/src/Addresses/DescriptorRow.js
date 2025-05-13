@@ -16,7 +16,7 @@ import IconButtonStyled from "../components/IconButtonStyled";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import socketIO from "../io";
 import AddressTable from "./AddressTable";
-
+import { ADDRESS_DISPLAY_LENGTH } from "../config";
 const DescriptorRow = ({
   descriptor,
   onEdit,
@@ -142,7 +142,7 @@ const DescriptorRow = ({
         <TableCell>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Typography variant="body2">
-              {descriptor.descriptor.slice(0, 15)}...
+              {descriptor.descriptor.slice(0, ADDRESS_DISPLAY_LENGTH)}...
             </Typography>
             <Tooltip title={copied ? "Copied!" : "Copy full descriptor"}>
               <IconButtonStyled

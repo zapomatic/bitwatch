@@ -8,7 +8,7 @@ import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import BalanceCell from "./BalanceCell";
 import socketIO from "../io";
-
+import { ADDRESS_DISPLAY_LENGTH } from "../config";
 const AddressCell = ({ address }) => {
   const [copied, setCopied] = useState(false);
 
@@ -45,7 +45,7 @@ const AddressCell = ({ address }) => {
         className="crystal-link"
         onClick={(e) => e.stopPropagation()}
       >
-        {`${address.slice(0, 15)}...`}
+        {`${address.slice(0, ADDRESS_DISPLAY_LENGTH)}...`}
       </Box>
       <IconButtonStyled
         size="small"

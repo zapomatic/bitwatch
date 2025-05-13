@@ -12,7 +12,7 @@ import {
   Typography,
 } from "@mui/material";
 import MonitorSettings from "../components/MonitorSettings";
-import { DEFAULT_ADDRESS_FORM, COLLAPSE_ANIMATION_DURATION } from "../config";
+import { DEFAULT_ADDRESS_FORM } from "../config";
 
 const AddressDialog = ({ open, onClose, address, onSave }) => {
   const [formData, setFormData] = useState({
@@ -71,7 +71,7 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
       open={open}
       onClose={onClose}
       TransitionProps={{
-        timeout: COLLAPSE_ANIMATION_DURATION,
+        timeout: 300,
       }}
       data-testid="address-dialog"
     >

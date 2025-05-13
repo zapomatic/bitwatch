@@ -16,7 +16,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import IconButtonStyled from "../components/IconButtonStyled";
 import socketIO from "../io";
 import AddressTable from "./AddressTable";
-
+import { ADDRESS_DISPLAY_LENGTH } from "../config";
 const ExtendedKeyRow = ({
   extendedKey,
   onEdit,
@@ -150,7 +150,7 @@ const ExtendedKeyRow = ({
         <TableCell>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Typography variant="body2">
-              {extendedKey.key.slice(0, 15)}...
+              {extendedKey.key.slice(0, ADDRESS_DISPLAY_LENGTH)}...
             </Typography>
             <Tooltip title={copied ? "Copied!" : "Copy full key"}>
               <IconButtonStyled
