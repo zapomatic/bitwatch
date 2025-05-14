@@ -6,19 +6,23 @@ import emitState from "../emitState.js";
 import getAddressBalance from "../getAddressBalance.js";
 import getAddressObj from "../getAddressObj.js";
 import handleBalanceUpdate from "../handleBalanceUpdate.js";
-import getAddressList from "../getAddressList.js";
 import parallelLimit from "async/parallelLimit.js";
 const runQueue = async () => {
-  if (queue.isProcessing || queue.items.length === 0) return;
-
-  queue.isProcessing = true;
+  if (queue.items.length === 0) {
+    for (const collectionName of Object.keys(memory.db.collections)) {
+      logger.debug(`Enqueuing collection ${collectionName}`);
+      enqueue({
+        collectionName,
+      });
+    }
+  }
   emitState({
     collections: memory.db.collections,
     queue,
   });
 
   logger.processing(
-    `Processing balance queue with ${queue.items.length} addresses (${memory.db.apiParallelLimit} concurrent, ${memory.db.apiDelay}ms delay)`
+    `Processing api queue with ${queue.items.length} addresses (${memory.db.apiParallelLimit} concurrent, ${memory.db.apiDelay}ms delay)`
   );
 
   // Create tasks for parallel processing
@@ -103,24 +107,9 @@ const runQueue = async () => {
   // Process the queue with parallelLimit
   await parallelLimit(tasks, memory.db.apiParallelLimit);
 
-  // Emit queue status
-  emitState({
-    collections: memory.db.collections,
-    queue,
-  });
-
-  queue.isProcessing = false;
-
-  // If queue is empty, wait for the configured delay before re-queueing all watched addresses
-  if (queue.items.length === 0) {
-    setTimeout(() => {
-      const allAddresses = getAddressList();
-      enqueue(allAddresses);
-    }, memory.db.apiDelay);
-  } else {
-    // If there are more items in the queue, continue processing
+  setTimeout(() => {
     runQueue();
-  }
+  }, memory.db.apiDelay);
 };
 
 export default runQueue;

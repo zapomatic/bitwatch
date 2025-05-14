@@ -8,8 +8,7 @@ import memory from "./lib/memory.js";
 import mempool from "./lib/mempool.js";
 import telegram from "./lib/telegram.js";
 import logger from "./lib/logger.js";
-import enqueue from "./lib/queue/enqueue.js";
-// import runQueue from "./lib/queue/run.js";
+import runQueue from "./lib/queue/run.js";
 
 const app = express();
 const server = http.createServer(app);
@@ -48,13 +47,7 @@ server.listen(PORT, () => {
     telegram.init();
   }
 
-  // enqueue all collections
-  for (const collectionName of Object.keys(memory.db.collections)) {
-    logger.debug(`Enqueuing collection ${collectionName}`);
-    enqueue({
-      collectionName,
-    });
-  }
+  runQueue();
 
   // Initialize mempool after socket.io is set up
   logger.info("Initializing mempool websocket connection...");

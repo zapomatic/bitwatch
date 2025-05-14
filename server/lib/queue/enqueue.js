@@ -2,7 +2,6 @@ import queue from "./index.js";
 import memory from "../memory.js";
 import logger from "../logger.js";
 import emitState from "../emitState.js";
-import runQueue from "./run.js";
 import getAddressObj from "../getAddressObj.js";
 // Add addresses to the queue
 export default ({
@@ -96,10 +95,5 @@ export default ({
       collections: memory.db.collections,
       queue,
     });
-
-    // Start processing if not already running
-    if (!queue.isProcessing) {
-      runQueue();
-    }
   }
 };

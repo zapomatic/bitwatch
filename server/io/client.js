@@ -32,7 +32,7 @@ export default async () => {
     collections: memory.db.collections,
     websocketState: memory.state.websocketState,
     apiState: memory.state.apiState,
-    queueStatus: queue,
+    queue,
     monitor: memory.db.monitor
   };
 }; 

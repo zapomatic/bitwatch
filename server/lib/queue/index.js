@@ -2,7 +2,6 @@
 
 const queue = {
   items: [],
-  isProcessing: false,
   lastProcessedTime: 0,
 };
 

@@ -102,9 +102,8 @@ function AppContent() {
   const [websocketState, setWebsocketState] = useState("DISCONNECTED");
   const [apiState, setApiState] = useState("UNKNOWN");
   const [serverState, setServerState] = useState("DISCONNECTED");
-  const [queueStatus, setQueueStatus] = useState({
-    queueSize: 0,
-    isProcessing: false,
+  const [queue, setQueue] = useState({
+    items: [],
   });
   const navigate = useNavigate();
 
@@ -112,20 +111,20 @@ function AppContent() {
     socketIO.emit(
       "client",
       {},
-      ({ version, websocketState, apiState, queueStatus, monitor }) => {
+      ({ version, websocketState, apiState, queue, monitor }) => {
         console.log("client loaded", {
           version,
           websocketState,
           apiState,
-          queueStatus,
+          queue,
           monitor,
         });
         setVersion(version);
         setWebsocketState(websocketState);
         setApiState(apiState);
         setServerState("CONNECTED");
-        if (queueStatus) {
-          setQueueStatus(queueStatus);
+        if (queue) {
+          setQueue(queue);
         }
         if (monitor) {
           Object.assign(defaultMonitorSettings, monitor);
@@ -158,9 +157,9 @@ function AppContent() {
         console.log("Updating API state to:", state.apiState);
         setApiState(state.apiState);
       }
-      if (state.queueStatus) {
-        console.log("Updating queue status to:", state.queueStatus);
-        setQueueStatus(state.queueStatus);
+      if (state.queue) {
+        console.log("Updating queue to:", state.queue);
+        setQueue(state.queue);
       }
       if (state.monitor) {
         console.log("Updating monitor settings to:", state.monitor);
@@ -359,7 +358,7 @@ function AppContent() {
           <StatusIndicator label="Mempool Socket" state={websocketState} />
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             <Tooltip
-              title={`API Status: ${apiState}, Queue (${queueStatus.queueSize})`}
+              title={`API Status: ${apiState}, Queue (${queue.items.length})`}
               arrow
             >
               <Box
@@ -384,7 +383,7 @@ function AppContent() {
                 }}
               />
             </Tooltip>
-            API {queueStatus.queueSize > 0 && `(${queueStatus.queueSize})`}
+            API {queue.items.length > 0 && `(${queue.items.length})`}
           </Box>
         </Box>
         <Typography
