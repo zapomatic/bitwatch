@@ -60,7 +60,7 @@ export default function Addresses() {
   });
   const [editDialog, setEditDialog] = useState({
     open: false,
-    collection: null,
+    collectionName: null,
     address: null,
   });
 
@@ -587,19 +587,19 @@ export default function Addresses() {
           });
           // Wait for notification to be shown before closing dialog
           setTimeout(() => {
-            setEditDialog({ open: false, collection: null, address: null });
+            setEditDialog({ open: false, collectionName: null, address: null });
           }, 100);
         }
       }
     );
   };
 
-  const handleAddExtendedKey = (collection, data) => {
-    console.log("handleAddExtendedKey", { collection, data });
+  const handleAddExtendedKey = (collectionName, data) => {
+    console.log("handleAddExtendedKey", { collectionName, data });
     socketIO.emit(
       "addExtendedKey",
       {
-        collectionName: collection,
+        collectionName,
         ...data,
       },
       (response) => {
@@ -620,11 +620,11 @@ export default function Addresses() {
     );
   };
 
-  const handleAddDescriptor = (collection, data) => {
+  const handleAddDescriptor = (collectionName, data) => {
     socketIO.emit(
       "addDescriptor",
       {
-        collection,
+        collectionName,
         ...data,
       },
       (response) => {
@@ -645,12 +645,12 @@ export default function Addresses() {
     );
   };
 
-  const handleEditDescriptor = (collection, data) => {
-    console.log("handleEditDescriptor", { collection, data });
+  const handleEditDescriptor = (collectionName, data) => {
+    console.log("handleEditDescriptor", { collectionName, data });
     socketIO.emit(
       "editDescriptor",
       {
-        collection,
+        collectionName,
         ...data,
       },
       (response) => {
@@ -671,11 +671,11 @@ export default function Addresses() {
     );
   };
 
-  const handleEditExtendedKey = (collection, data) => {
+  const handleEditExtendedKey = (collectionName, data) => {
     socketIO.emit(
       "editExtendedKey",
       {
-        collection,
+        collectionName,
         ...data,
       },
       (response) => {

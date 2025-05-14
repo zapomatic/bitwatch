@@ -10,8 +10,8 @@ export default async (
   console.log(`Verifying balance for ${address} at index ${index}`);
   console.log(`Expected balances:`, expectedBalances);
 
-  // For balance cells, we use the new format
-  const testIdPrefix = parentKey ? `${parentKey}-address-${index}` : address;
+  // For balance cells, we now use the address as the test ID prefix
+  const testIdPrefix = address;
 
   // First verify all balance selectors exist and are visible
   const chainInSelector = page.getByTestId(`${testIdPrefix}-chain-in`);
@@ -42,7 +42,7 @@ export default async (
     console.log(`Verifying chain-in matches ${expectedBalances.chain_in}`);
     try {
       await expect(chainInSelector).toHaveText(expectedBalances.chain_in, {
-        timeout: 5000,
+        // timeout: 10000,
       });
     } catch (error) {
       errors.push(
@@ -58,7 +58,7 @@ export default async (
     console.log(`Verifying chain-out matches ${expectedBalances.chain_out}`);
     try {
       await expect(chainOutSelector).toHaveText(expectedBalances.chain_out, {
-        timeout: 5000,
+        // timeout: 10000,
       });
     } catch (error) {
       errors.push(
@@ -74,7 +74,7 @@ export default async (
     console.log(`Verifying mempool-in matches ${expectedBalances.mempool_in}`);
     try {
       await expect(mempoolInSelector).toHaveText(expectedBalances.mempool_in, {
-        timeout: 5000,
+        // timeout: 10000,
       });
     } catch (error) {
       errors.push(
@@ -92,8 +92,8 @@ export default async (
     );
     try {
       await expect(mempoolOutSelector).toHaveText(
-        expectedBalances.mempool_out,
-        { timeout: 5000 }
+        expectedBalances.mempool_out
+        // { timeout: 5000 }
       );
     } catch (error) {
       errors.push(

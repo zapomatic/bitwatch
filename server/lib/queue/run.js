@@ -76,13 +76,13 @@ const runQueue = async () => {
           address: addrObj.address,
           balance,
           collectionName: found.collectionName,
-          extendedKey: found.extendedKeyName,
-          descriptor: found.descriptorName,
+          extendedKeyName: found.extendedKeyName,
+          descriptorName: found.descriptorName,
         });
         memory.state.apiState = "GOOD";
       } else {
         logger.error(
-          `Address ${
+          `runQueue: Address ${
             addrObj.address
           } not found in any collection: ${JSON.stringify(addrObj)}`
         );

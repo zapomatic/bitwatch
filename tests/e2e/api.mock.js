@@ -11,26 +11,12 @@ let clients = new Set();
 let trackedAddresses = new Set();
 let testResponses = new Map(); // Store test responses per address
 
+const responseHeaders = { "Content-Type": "application/json" };
+
 const log = (level, message) => {
   const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] [${level}] API Mock: ${message}`);
+  console.log(`[mockAPI] [${timestamp}] [${level}] ${message}`);
 };
-
-// Helper function to get default zero balance
-const getZeroBalance = () => ({
-  chain_stats: {
-    funded_txo_count: 0,
-    funded_txo_sum: 0,
-    spent_txo_count: 0,
-    spent_txo_sum: 0,
-  },
-  mempool_stats: {
-    funded_txo_count: 0,
-    funded_txo_sum: 0,
-    spent_txo_count: 0,
-    spent_txo_sum: 0,
-  },
-});
 
 // WebSocket handlers
 const handleWebSocketConnection = (ws) => {
@@ -111,13 +97,11 @@ const handleHttpRequest = (req, res) => {
 
       // Check for test response header
       const testResponse = req.headers["x-test-response"];
-      // log(
-      //   "query",
-      //   `balance check for ${address} with test response ${testResponse}`
-      // );
       if (testResponse) {
-        log("testResponses", `${address}: ${testResponse}`);
-        res.writeHead(200, { "Content-Type": "application/json" });
+        log("testResponses:saved", `${address}: ${testResponse}`);
+        // Store the test response for future requests
+        testResponses.set(address, testResponse);
+        res.writeHead(200, responseHeaders);
         res.end(testResponse);
         return;
       }
@@ -125,32 +109,47 @@ const handleHttpRequest = (req, res) => {
       // If we have a stored test response for this address, return it
       if (testResponses.has(address)) {
         const response = testResponses.get(address);
-        log("testResponses:reused", response);
-        res.writeHead(200, { "Content-Type": "application/json" });
+        log("testResponses:cached", `${address}: ${response}`);
+        res.writeHead(200, responseHeaders);
         res.end(response);
         return;
       }
 
       // log("zerobalance", address);
       // Otherwise return zero balance
-      res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify(getZeroBalance()));
+      res.writeHead(200, responseHeaders);
+      res.end(
+        JSON.stringify({
+          chain_stats: {
+            funded_txo_count: 0,
+            funded_txo_sum: 0,
+            spent_txo_count: 0,
+            spent_txo_sum: 0,
+          },
+          mempool_stats: {
+            funded_txo_count: 0,
+            funded_txo_sum: 0,
+            spent_txo_count: 0,
+            spent_txo_sum: 0,
+          },
+        })
+      );
       return;
     }
 
     // Handle /api/v1/ws endpoint
     if (url.pathname === "/api/v1/ws") {
-      res.writeHead(200, { "Content-Type": "application/json" });
+      res.writeHead(200, responseHeaders);
       res.end(JSON.stringify({ status: "ok" }));
       return;
     }
 
     // Handle unknown endpoints
-    res.writeHead(404, { "Content-Type": "application/json" });
+    res.writeHead(404, responseHeaders);
     res.end(JSON.stringify({ error: "Not found" }));
   } catch (error) {
     log("error", `Error handling HTTP request: ${error}`);
-    res.writeHead(500, { "Content-Type": "application/json" });
+    res.writeHead(500, responseHeaders);
     res.end(JSON.stringify({ error: "Internal server error" }));
   }
 };

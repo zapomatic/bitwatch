@@ -29,8 +29,8 @@ export default async (
     },
   };
 
-  // For balance cells, we use the new format
-  const testIdPrefix = parentKey ? `${parentKey}-address-${index}` : address;
+  // For balance cells, we now use the address as the test ID prefix
+  const testIdPrefix = address;
 
   // If this is a child address, ensure the parent section is expanded
   if (parentKey) {

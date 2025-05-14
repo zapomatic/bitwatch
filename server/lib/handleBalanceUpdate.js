@@ -6,73 +6,48 @@ import getGapNeeded from "./getGapNeeded.js";
 import { deriveExtendedKeyAddresses } from "./deriveExtendedKeyAddresses.js";
 import { deriveAddresses } from "./descriptors.js";
 import telegram from "./telegram.js";
+import getAddressObj from "./getAddressObj.js";
 
 export default async ({
   address,
   balance,
   collectionName,
-  extendedKey,
-  descriptor,
+  extendedKeyName,
+  descriptorName,
 }) => {
-  const collection = memory.db.collections[collectionName];
-  if (!collection) {
-    logger.error(`handleBalanceUpdate: Collection ${collectionName} not found`);
-    return { error: "Collection not found" };
-  }
-
   logger.debug(
-    `handleBalanceUpdate: Handling balance update for ${address} in ${collectionName}`
+    `handleBalanceUpdate: Handling balance update for ${address} in ${collectionName}/${
+      extendedKeyName || descriptorName || "root"
+    }`
   );
 
-  // Find address in either main addresses or extended key addresses
-  let addr = collection.addresses.find((a) => a.address === address);
-  let parentItem = null;
-  let isExtendedKeyAddress = false;
-  let isDescriptorAddress = false;
+  // Find address using getAddressObj helper
+  const found = getAddressObj({
+    address,
+    collectionName,
+    extendedKeyName,
+    descriptorName,
+  });
 
-  logger.debug(`handleBalanceUpdate: Found in main addresses: ${!!addr}`);
-
-  // If not found in main addresses, check extended keys
-  if (!addr && collection.extendedKeys) {
-    logger.debug(
-      `handleBalanceUpdate: Checking ${collection.extendedKeys.length} extended keys`
+  if (!found) {
+    logger.error(
+      `handleBalanceUpdate: Address ${address} not found in any location: ${JSON.stringify(
+        {
+          collectionName,
+          extendedKeyName,
+          descriptorName,
+        }
+      )}`
     );
-    for (const key of collection.extendedKeys) {
-      if (extendedKey && key.key !== extendedKey) continue;
-      addr = key.addresses.find((a) => a.address === address);
-      if (addr) {
-        logger.debug(`Found in extended key: ${key.name}`);
-        parentItem = key;
-        isExtendedKeyAddress = true;
-        break;
-      }
-    }
-  }
-
-  // If not found in extended keys, check descriptors
-  if (!addr && collection.descriptors) {
-    logger.debug(`Checking ${collection.descriptors.length} descriptors`);
-    for (const desc of collection.descriptors) {
-      if (descriptor && desc.descriptor !== descriptor) continue;
-      logger.debug(
-        `Checking descriptor ${desc.name} with ${
-          desc.addresses?.length || 0
-        } addresses`
-      );
-      addr = desc.addresses.find((a) => a.address === address);
-      if (addr) {
-        logger.debug(`Found in descriptor: ${desc.name}`);
-        parentItem = desc;
-        isDescriptorAddress = true;
-        break;
-      }
-    }
-  }
-
-  if (!addr) {
-    logger.error(`Address ${address} not found in any location`);
     return { error: "Address not found" };
   }
+
+  const {
+    address: addr,
+    parentItem,
+    isExtendedKeyAddress,
+    isDescriptorAddress,
+  } = found;
 
   logger.debug(
     `Found address ${address} in ${

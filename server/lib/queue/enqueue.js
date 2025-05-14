@@ -40,38 +40,26 @@ export default ({
           }))
         );
       }
-    }
-    if (descriptorName) {
-      addresses.push(
-        ...collection.descriptors[descriptorName].addresses.map((a) => ({
-          ...baseData,
-          address: a.address,
-        }))
+    } else if (descriptorName) {
+      const descriptor = collection.descriptors.find(
+        (d) => d.name === descriptorName
       );
-    }
-    if (collectionName) {
+      if (descriptor) {
+        addresses.push(
+          ...descriptor.addresses.map((a) => ({
+            ...baseData,
+            address: a.address,
+          }))
+        );
+      }
+    } else if (collectionName) {
+      // Only add main collection addresses if no specific extended key or descriptor is specified
       addresses.push(
         ...collection.addresses.map((a) => ({
           ...baseData,
           address: a.address,
         }))
       );
-      for (const desc of collection.descriptors) {
-        addresses.push(
-          ...desc.addresses.map((a) => ({
-            ...baseData,
-            address: a.address,
-          }))
-        );
-      }
-      for (const extKey of collection.extendedKeys) {
-        addresses.push(
-          ...extKey.addresses.map((a) => ({
-            ...baseData,
-            address: a.address,
-          }))
-        );
-      }
     }
   }
   logger.debug(`Enqueuing ${addresses.length} addresses`);

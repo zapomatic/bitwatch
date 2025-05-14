@@ -11,6 +11,11 @@ export default ({
   descriptorName,
   collectionName,
 }) => {
+  // logger.debug(
+  //   `getAddressObj: ${collectionName}/${
+  //     extendedKeyName || descriptorName || "root"
+  //   }/${address} `
+  // );
   if (descriptorName && collectionName) {
     const desc = memory.db.collections[collectionName]?.descriptors?.find(
       (d) => d.name === descriptorName

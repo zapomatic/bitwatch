@@ -115,7 +115,7 @@ export default (address, balance, collectionName, addressName) => {
 
   // If there are any changes, log them
   if (Object.keys(changes).length > 0) {
-    logger.info(`Balance changes detected for ${address} (${collectionName}/${addressName}):
+    logger.debug(`Balance changes detected for ${address} (${collectionName}/${addressName}):
 Expected: chain_in=${addr.expect.chain_in}, chain_out=${addr.expect.chain_out}, mempool_in=${addr.expect.mempool_in}, mempool_out=${addr.expect.mempool_out}
 Actual: chain_in=${newBalance.chain_in}, chain_out=${newBalance.chain_out}, mempool_in=${newBalance.mempool_in}, mempool_out=${newBalance.mempool_out}
 Previous: chain_in=${oldBalance.chain_in}, chain_out=${oldBalance.chain_out}, mempool_in=${oldBalance.mempool_in}, mempool_out=${oldBalance.mempool_out}`);

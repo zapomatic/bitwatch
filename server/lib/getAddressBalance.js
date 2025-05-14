@@ -31,7 +31,9 @@ const attemptCall = async (addr, testResponse) => {
 
     // If we have a test response, add it to the headers
     if (testResponse) {
-      logger.info(`Adding test response for ${addr}: ${testResponse}`);
+      logger.info(
+        `getAddressBalance with test response for ${addr}: ${testResponse}`
+      );
       currentOpt.headers["x-test-response"] = testResponse;
     }
 
