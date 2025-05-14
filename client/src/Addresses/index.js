@@ -550,10 +550,10 @@ export default function Addresses() {
     });
   };
 
-  const handleEditAddress = (collection, address) => {
+  const handleEditAddress = (collectionName, address) => {
     setEditDialog({
       open: true,
-      collectionName: collection.name,
+      collectionName,
       address: {
         ...address,
         parentKey: address.parentKey || null, // Preserve parentKey if it exists

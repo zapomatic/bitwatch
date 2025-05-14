@@ -3,9 +3,9 @@ import logger from "../lib/logger.js";
 
 export default async ({ data, io }) => {
   logger.processing(
-    `Saving expected state for ${data.collection}/${data.address}`
+    `Saving expected state for ${data.collectionName}/${data.address}`
   );
-  const collection = memory.db.collections[data.collection];
+  const collection = memory.db.collections[data.collectionName];
   if (!collection) {
     logger.error("saveExpected: Collection not found");
     return { error: "Collection not found" };
