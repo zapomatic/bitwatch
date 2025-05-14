@@ -116,27 +116,18 @@ const handleHttpRequest = (req, res) => {
         `balance check for ${address} with test response ${testResponse}`
       );
       if (testResponse) {
-        try {
-          const response = JSON.parse(testResponse);
-          // Store the test response for this address
-          testResponses.set(address, response);
-          log("testResponses", `${address}: ${JSON.stringify(response)}`);
-          res.writeHead(200, { "Content-Type": "application/json" });
-          res.end(JSON.stringify(response));
-          return;
-        } catch (error) {
-          log("error", `Invalid test response JSON: ${error}`);
-          res.writeHead(400, { "Content-Type": "application/json" });
-          res.end(JSON.stringify({ error: "Invalid test response format" }));
-          return;
-        }
+        log("testResponses", `${address}: testResponse`);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(testResponse);
+        return;
       }
 
       // If we have a stored test response for this address, return it
       if (testResponses.has(address)) {
-        log("testResponses:reused", testResponses);
+        const response = testResponses.get(address);
+        log("testResponses:reused", response);
         res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(JSON.stringify(testResponses.get(address)));
+        res.end(response);
         return;
       }
 

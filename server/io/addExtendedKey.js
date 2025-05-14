@@ -7,13 +7,10 @@ export default async ({ data, io }) => {
   // Debug log incoming data (excluding io property)
   const debugData = { ...data };
   delete debugData.io; // Remove the Socket.IO instance
-  logger.info(
-    `Incoming extended key data:`,
-    JSON.stringify(debugData, null, 2)
-  );
+  logger.info(`Incoming extended key data: ${JSON.stringify(debugData)}`);
 
   // Validate required fields
-  const requiredFields = ["collection", "name", "key", "derivationPath"];
+  const requiredFields = ["collectionName", "name", "key", "derivationPath"];
   const missingFields = requiredFields.filter((field) => !data[field]);
 
   if (missingFields.length > 0) {
@@ -22,7 +19,7 @@ export default async ({ data, io }) => {
   }
 
   logger.info(
-    `Adding extended key ${data.collection}/${data.name} as ${
+    `Adding extended key ${data.collectionName}/${data.name} as ${
       data.key
     }, path: ${data.derivationPath}, gap: ${data.gapLimit}, skip: ${
       data.skip
@@ -30,8 +27,8 @@ export default async ({ data, io }) => {
   );
 
   // Create collection if it doesn't exist
-  if (!memory.db.collections[data.collection]) {
-    memory.db.collections[data.collection] = {
+  if (!memory.db.collections[data.collectionName]) {
+    memory.db.collections[data.collectionName] = {
       addresses: [],
       extendedKeys: [],
       descriptors: [],
@@ -39,7 +36,7 @@ export default async ({ data, io }) => {
   }
 
   // Check if extended key already exists
-  const collection = memory.db.collections[data.collection];
+  const collection = memory.db.collections[data.collectionName];
   if (!collection.extendedKeys) {
     collection.extendedKeys = [];
   }
