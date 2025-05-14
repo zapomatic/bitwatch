@@ -116,7 +116,7 @@ const handleHttpRequest = (req, res) => {
         `balance check for ${address} with test response ${testResponse}`
       );
       if (testResponse) {
-        log("testResponses", `${address}: testResponse`);
+        log("testResponses", `${address}: ${testResponse}`);
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(testResponse);
         return;

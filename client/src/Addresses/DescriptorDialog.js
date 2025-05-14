@@ -17,7 +17,7 @@ const DescriptorDialog = ({
   open,
   onClose,
   onSave,
-  collection,
+  collectionName,
   descriptor,
 }) => {
   const [formData, setFormData] = useState(DEFAULT_DESCRIPTOR_FORM);
@@ -51,7 +51,7 @@ const DescriptorDialog = ({
   };
 
   const handleSubmit = async () => {
-    const result = await onSave(collection, formData);
+    const result = await onSave(collectionName, formData);
     if (result?.error) {
       setError(result.error.toString());
       return;

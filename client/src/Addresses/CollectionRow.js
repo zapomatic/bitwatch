@@ -338,7 +338,7 @@ const CollectionRow = ({
           setEditingExtendedKey(null);
         }}
         onSave={editingExtendedKey ? onEditExtendedKey : onAddExtendedKey}
-        collection={collection.name}
+        collectionName={collection.name}
         extendedKey={editingExtendedKey}
       />
       <DescriptorDialog
@@ -348,7 +348,7 @@ const CollectionRow = ({
           setEditingDescriptor(null);
         }}
         onSave={editingDescriptor ? onEditDescriptor : onAddDescriptor}
-        collection={collection.name}
+        collectionName={collection.name}
         descriptor={editingDescriptor}
       />
       <AddressDialog
