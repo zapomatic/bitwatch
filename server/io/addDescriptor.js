@@ -2,24 +2,25 @@ import memory from "../lib/memory.js";
 import logger, { getMonitorLog } from "../lib/logger.js";
 import { deriveAddresses, deriveAddress } from "../lib/descriptors.js";
 import { descriptorExtractPaths } from "../lib/descriptorExtractPaths.js";
+import enqueue from "../lib/queue/enqueue.js";
 
 export default async ({ data, io }) => {
   logger.info(
-    `Adding descriptor ${data.collection}/${data.name} as ${
+    `Adding descriptor ${data.collectionName}/${data.name} as ${
       data.descriptor
     }, gap: ${data.gapLimit}, skip: ${data.skip}, initial: ${
       data.initialAddresses
     }, monitor:${getMonitorLog(data.monitor)}`
   );
 
-  if (!data.collection || !data.name || !data.descriptor) {
+  if (!data.collectionName || !data.name || !data.descriptor) {
     logger.error("Missing required fields");
     return { error: "Missing required fields" };
   }
 
   // Create collection if it doesn't exist
-  if (!memory.db.collections[data.collection]) {
-    memory.db.collections[data.collection] = {
+  if (!memory.db.collections[data.collectionName]) {
+    memory.db.collections[data.collectionName] = {
       addresses: [],
       extendedKeys: [],
       descriptors: [],
@@ -27,7 +28,7 @@ export default async ({ data, io }) => {
   }
 
   // Check if descriptor already exists
-  const collection = memory.db.collections[data.collection];
+  const collection = memory.db.collections[data.collectionName];
   // upgrade old db versions
   if (!collection.descriptors) {
     collection.descriptors = [];
@@ -110,6 +111,12 @@ export default async ({ data, io }) => {
 
   // Add descriptor to collection
   collection.descriptors.push(desc);
+
+  // Enqueue addresses for balance checking
+  enqueue({
+    collectionName: data.collectionName,
+    descriptorName: data.name,
+  });
 
   memory.saveDb();
   io.emit("updateState", { collections: memory.db.collections });

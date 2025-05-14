@@ -2,6 +2,7 @@ import memory from "../lib/memory.js";
 import logger, { getMonitorLog } from "../lib/logger.js";
 import { deriveExtendedKeyAddresses } from "../lib/deriveExtendedKeyAddresses.js";
 import editExtendedKey from "./editExtendedKey.js";
+import enqueue from "../lib/queue/enqueue.js";
 
 export default async ({ data, io }) => {
   // Debug log incoming data (excluding io property)
@@ -102,6 +103,12 @@ export default async ({ data, io }) => {
 
   // Add extended key to collection
   collection.extendedKeys.push(key);
+
+  // Enqueue addresses for balance checking
+  enqueue({
+    collectionName: data.collectionName,
+    extendedKeyName: data.name,
+  });
 
   // Debug log the collection before saving
   // const debugCollection = {

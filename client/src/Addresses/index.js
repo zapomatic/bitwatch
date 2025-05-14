@@ -599,7 +599,7 @@ export default function Addresses() {
     socketIO.emit(
       "addExtendedKey",
       {
-        collection,
+        collectionName: collection,
         ...data,
       },
       (response) => {

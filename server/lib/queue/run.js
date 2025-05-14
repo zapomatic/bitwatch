@@ -81,7 +81,11 @@ const runQueue = async () => {
         });
         memory.state.apiState = "GOOD";
       } else {
-        logger.error(`Address ${addrObj.address} not found in any collection`);
+        logger.error(
+          `Address ${
+            addrObj.address
+          } not found in any collection: ${JSON.stringify(addrObj)}`
+        );
         memory.state.apiState = "ERROR";
       }
     }

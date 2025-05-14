@@ -2,6 +2,7 @@ import memory from "../lib/memory.js";
 import logger, { getMonitorLog } from "../lib/logger.js";
 import { deriveAddresses, deriveAddress } from "../lib/descriptors.js";
 import { descriptorExtractPaths } from "../lib/descriptorExtractPaths.js";
+import enqueue from "../lib/queue/enqueue.js";
 
 export default async ({ data, io }) => {
   logger.info(
@@ -90,6 +91,12 @@ export default async ({ data, io }) => {
       errorMessage: null,
     })),
   };
+
+  // Enqueue addresses for balance checking
+  enqueue({
+    collectionName: data.collection,
+    descriptorName: data.descriptor,
+  });
 
   memory.saveDb();
   io.emit("updateState", { collections: memory.db.collections });

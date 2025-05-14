@@ -111,10 +111,10 @@ const handleHttpRequest = (req, res) => {
 
       // Check for test response header
       const testResponse = req.headers["x-test-response"];
-      log(
-        "query",
-        `balance check for ${address} with test response ${testResponse}`
-      );
+      // log(
+      //   "query",
+      //   `balance check for ${address} with test response ${testResponse}`
+      // );
       if (testResponse) {
         log("testResponses", `${address}: ${testResponse}`);
         res.writeHead(200, { "Content-Type": "application/json" });
@@ -131,7 +131,7 @@ const handleHttpRequest = (req, res) => {
         return;
       }
 
-      log("zerobalance", address);
+      // log("zerobalance", address);
       // Otherwise return zero balance
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(getZeroBalance()));

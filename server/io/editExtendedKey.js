@@ -1,21 +1,22 @@
 import memory from "../lib/memory.js";
 import logger, { getMonitorLog } from "../lib/logger.js";
 import { deriveExtendedKeyAddresses } from "../lib/deriveExtendedKeyAddresses.js";
+import enqueue from "../lib/queue/enqueue.js";
 
 export default async ({ data, io }) => {
   logger.info(
-    `editExtendedKey: ${data.collection}/${data.name}, path: ${
+    `editExtendedKey: ${data.collectionName}/${data.name}, path: ${
       data.derivationPath
     }, gap: ${data.gapLimit}, initialAddresses ${data.initialAddresses}, skip ${
       data.skip
     } with ${getMonitorLog(data.monitor)}`
   );
-  if (!data.collection || !data.name || !data.key) {
+  if (!data.collectionName || !data.name || !data.key) {
     logger.error("editExtendedKey: Missing required fields");
     return { error: "Missing required fields" };
   }
 
-  const collection = memory.db.collections[data.collection];
+  const collection = memory.db.collections[data.collectionName];
   if (!collection) {
     logger.error("editExtendedKey: Collection not found");
     return { error: "Collection not found" };
@@ -78,6 +79,12 @@ export default async ({ data, io }) => {
       errorMessage: null,
     })),
   };
+
+  // Enqueue addresses for balance checking
+  enqueue({
+    collectionName: data.collectionName,
+    extendedKeyName: data.name,
+  });
 
   memory.saveDb();
   io.emit("updateState", { collections: memory.db.collections });

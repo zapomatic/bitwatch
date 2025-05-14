@@ -13,7 +13,7 @@ export default ({
 }) => {
   if (descriptorName && collectionName) {
     const desc = memory.db.collections[collectionName]?.descriptors?.find(
-      (d) => d.descriptor === descriptorName
+      (d) => d.name === descriptorName
     );
     const addrObj = desc?.addresses?.find((a) => a.address === address);
     if (addrObj) {
@@ -28,7 +28,7 @@ export default ({
   }
   if (extendedKeyName && collectionName) {
     const key = memory.db.collections[collectionName]?.extendedKeys?.find(
-      (k) => k.key === extendedKeyName
+      (k) => k.name === extendedKeyName
     );
     const addrObj = key?.addresses?.find((a) => a.address === address);
     if (addrObj) {

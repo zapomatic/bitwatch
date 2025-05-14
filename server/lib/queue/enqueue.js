@@ -29,12 +29,17 @@ export default ({
     const collection = memory.db.collections[collectionName];
 
     if (extendedKeyName) {
-      addresses.push(
-        ...collection.extendedKeys[extendedKeyName].addresses.map((a) => ({
-          ...baseData,
-          address: a.address,
-        }))
+      const extendedKey = collection.extendedKeys.find(
+        (k) => k.name === extendedKeyName
       );
+      if (extendedKey) {
+        addresses.push(
+          ...extendedKey.addresses.map((a) => ({
+            ...baseData,
+            address: a.address,
+          }))
+        );
+      }
     }
     if (descriptorName) {
       addresses.push(
