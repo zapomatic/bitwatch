@@ -59,8 +59,6 @@ export default ({
   logger.warning(
     `getAddressObj: ${address} No collectionName, extendedKeyName, or descriptorName provided, using legacy support`
   );
-  // eslint-disable-next-line no-console
-  // console.trace("getAddressObj", address);
   for (const [collectionName, collection] of Object.entries(
     memory.db.collections
   )) {

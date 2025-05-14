@@ -10,11 +10,11 @@ export default async ({ data }) => {
     descriptorName,
     extendedKeyName,
   } = data;
-
+  // logger.debug(`refreshBalance: ${JSON.stringify(data)}`);
   if (address) {
     // just a single address
     logger.info(
-      `Adding ${address} to api queue in collection ${collectionName}`
+      `Adding ${address} to api queue in collection ${collectionName} with testResponse ${testResponse}`
     );
     enqueue({
       address,

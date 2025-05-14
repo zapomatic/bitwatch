@@ -34,7 +34,7 @@ const runQueue = async () => {
     const balance = await getAddressBalance(
       addrObj.address,
       null,
-      null // testResponse is no longer needed since we're not passing collection info
+      addrObj.testResponse
     );
     queue.lastProcessedTime = Date.now();
 

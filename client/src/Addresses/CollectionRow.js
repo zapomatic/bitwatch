@@ -267,7 +267,7 @@ const CollectionRow = ({
                 <Box sx={{ mb: 0 }}>
                   <AddressTable
                     addresses={collection.addresses}
-                    collection={collection}
+                    collectionName={collection.name}
                     displayBtc={displayBtc}
                     setNotification={setNotification}
                     onDelete={onDelete}

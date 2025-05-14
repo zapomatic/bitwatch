@@ -96,7 +96,7 @@ const ExtendedKeyRow = ({
     // Get test response from window context if it exists
     let testResponse = undefined;
     if (window.__TEST_RESPONSE__) {
-      testResponse = { ...(window.__TEST_RESPONSE__ || {}) };
+      testResponse = window.__TEST_RESPONSE__;
       delete window.__TEST_RESPONSE__; // Clear it after use
     }
     socketIO.emit(

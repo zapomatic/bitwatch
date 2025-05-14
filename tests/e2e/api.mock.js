@@ -120,6 +120,7 @@ const handleHttpRequest = (req, res) => {
           const response = JSON.parse(testResponse);
           // Store the test response for this address
           testResponses.set(address, response);
+          log("testResponses", `${address}: ${JSON.stringify(response)}`);
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(JSON.stringify(response));
           return;
@@ -133,11 +134,13 @@ const handleHttpRequest = (req, res) => {
 
       // If we have a stored test response for this address, return it
       if (testResponses.has(address)) {
+        log("testResponses:reused", testResponses);
         res.writeHead(200, { "Content-Type": "application/json" });
         res.end(JSON.stringify(testResponses.get(address)));
         return;
       }
 
+      log("zerobalance", address);
       // Otherwise return zero balance
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(JSON.stringify(getZeroBalance()));

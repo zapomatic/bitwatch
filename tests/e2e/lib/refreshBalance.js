@@ -87,7 +87,7 @@ export default async (
   // Set test response in the page context
   await page.evaluate((response) => {
     window.__TEST_RESPONSE__ = response;
-  }, testResponse);
+  }, JSON.stringify(testResponse));
 
   // Click the refresh button and wait for loading state
   await findAndClick(page, `${testIdPrefix}-refresh-button`, {

@@ -1,5 +1,6 @@
 import memory from "../lib/memory.js";
 import logger, { getMonitorLog } from "../lib/logger.js";
+import enqueue from "../lib/queue/enqueue.js";
 
 export default async ({ data, io }) => {
   logger.info(
@@ -44,6 +45,11 @@ export default async ({ data, io }) => {
     actual: null,
     error: false,
     errorMessage: null,
+  });
+
+  enqueue({
+    collectionName: data.collectionName,
+    address: data.address,
   });
 
   const saveResult = memory.saveDb();
