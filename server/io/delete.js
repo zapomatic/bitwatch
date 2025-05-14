@@ -1,17 +1,17 @@
 import memory from "../lib/memory.js";
 import logger from "../lib/logger.js";
 import mempool from "../lib/mempool.js";
-import { removeFromQueue } from "../lib/balanceQueue.js";
+import remove from "../lib/queue/remove.js";
 
 export default async ({ data, io }) => {
-  const { address, collection, extendedKey, descriptor } = data;
+  const { address, collectionName, extendedKeyName, descriptorName } = data;
 
-  if (!collection) {
+  if (!collectionName) {
     logger.error("Collection not specified");
     return { error: "Collection not specified" };
   }
 
-  const targetCollection = memory.db.collections[collection];
+  const targetCollection = memory.db.collections[collectionName];
   if (!targetCollection) {
     logger.error("delete: Collection not found");
     return { error: "Collection not found" };
@@ -23,9 +23,9 @@ export default async ({ data, io }) => {
   // Handle address deletion
   if (address) {
     // If it's an extended key address
-    if (extendedKey) {
+    if (extendedKeyName) {
       const keyIndex = targetCollection.extendedKeys.findIndex(
-        (k) => k.key === extendedKey
+        (k) => k.key === extendedKeyName
       );
       if (keyIndex === -1) {
         logger.error("delete: Extended key not found");
@@ -41,10 +41,15 @@ export default async ({ data, io }) => {
       // Untrack the address before removing it
       mempool.untrackAddress(address);
       targetCollection.extendedKeys[keyIndex].addresses.splice(addressIndex, 1);
-      addressesToRemove.push(address);
-    } else if (descriptor) {
+      addressesToRemove.push({
+        address,
+        collectionName,
+        extendedKeyName,
+        descriptorName: undefined,
+      });
+    } else if (descriptorName) {
       const descIndex = targetCollection.descriptors.findIndex(
-        (d) => d.descriptor === descriptor
+        (d) => d.descriptor === descriptorName
       );
       if (descIndex === -1) {
         logger.error("delete: Descriptor not found");
@@ -60,7 +65,12 @@ export default async ({ data, io }) => {
       // Untrack the address before removing it
       mempool.untrackAddress(address);
       targetCollection.descriptors[descIndex].addresses.splice(addressIndex, 1);
-      addressesToRemove.push(address);
+      addressesToRemove.push({
+        address,
+        collectionName,
+        extendedKeyName: undefined,
+        descriptorName,
+      });
     } else {
       const addressIndex = targetCollection.addresses.findIndex(
         (a) => a.address === address
@@ -72,11 +82,16 @@ export default async ({ data, io }) => {
       // Untrack the address before removing it
       mempool.untrackAddress(address);
       targetCollection.addresses.splice(addressIndex, 1);
-      addressesToRemove.push(address);
+      addressesToRemove.push({
+        address,
+        collectionName,
+        extendedKeyName: undefined,
+        descriptorName: undefined,
+      });
     }
-  } else if (extendedKey) {
+  } else if (extendedKeyName) {
     const keyIndex = targetCollection.extendedKeys.findIndex(
-      (k) => k.key === extendedKey
+      (k) => k.key === extendedKeyName
     );
     if (keyIndex === -1) {
       logger.error("delete: Extended key not found");
@@ -85,12 +100,17 @@ export default async ({ data, io }) => {
     // Untrack all addresses in the extended key before removing it
     targetCollection.extendedKeys[keyIndex].addresses.forEach((addr) => {
       mempool.untrackAddress(addr.address);
-      addressesToRemove.push(addr.address);
+      addressesToRemove.push({
+        address: addr.address,
+        collectionName,
+        extendedKeyName,
+        descriptorName: undefined,
+      });
     });
     targetCollection.extendedKeys.splice(keyIndex, 1);
-  } else if (descriptor) {
+  } else if (descriptorName) {
     const descIndex = targetCollection.descriptors.findIndex(
-      (d) => d.descriptor === descriptor
+      (d) => d.descriptor === descriptorName
     );
     if (descIndex === -1) {
       logger.error("delete: Descriptor not found");
@@ -99,20 +119,35 @@ export default async ({ data, io }) => {
     // Untrack all addresses in the descriptor before removing it
     targetCollection.descriptors[descIndex].addresses.forEach((addr) => {
       mempool.untrackAddress(addr.address);
-      addressesToRemove.push(addr.address);
+      addressesToRemove.push({
+        address: addr.address,
+        collectionName,
+        extendedKeyName: undefined,
+        descriptorName,
+      });
     });
     targetCollection.descriptors.splice(descIndex, 1);
   } else {
     // When deleting a collection, untrack all addresses in it
     targetCollection.addresses.forEach((addr) => {
       mempool.untrackAddress(addr.address);
-      addressesToRemove.push(addr.address);
+      addressesToRemove.push({
+        address: addr.address,
+        collectionName,
+        extendedKeyName: undefined,
+        descriptorName: undefined,
+      });
     });
     if (targetCollection.extendedKeys) {
       targetCollection.extendedKeys.forEach((key) => {
         key.addresses.forEach((addr) => {
           mempool.untrackAddress(addr.address);
-          addressesToRemove.push(addr.address);
+          addressesToRemove.push({
+            address: addr.address,
+            collectionName,
+            extendedKeyName: key.key,
+            descriptorName: undefined,
+          });
         });
       });
     }
@@ -120,16 +155,21 @@ export default async ({ data, io }) => {
       targetCollection.descriptors.forEach((desc) => {
         desc.addresses.forEach((addr) => {
           mempool.untrackAddress(addr.address);
-          addressesToRemove.push(addr.address);
+          addressesToRemove.push({
+            address: addr.address,
+            collectionName,
+            extendedKeyName: undefined,
+            descriptorName: desc.descriptor,
+          });
         });
       });
     }
-    delete memory.db.collections[collection];
+    delete memory.db.collections[collectionName];
   }
 
   // Remove the deleted addresses from the queue
   if (addressesToRemove.length > 0) {
-    removeFromQueue(addressesToRemove);
+    remove(addressesToRemove);
   }
 
   memory.saveDb();

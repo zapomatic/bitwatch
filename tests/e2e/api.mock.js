@@ -13,7 +13,7 @@ let testResponses = new Map(); // Store test responses per address
 
 const log = (level, message) => {
   const timestamp = new Date().toISOString();
-  console.log(`[${timestamp}] [${level}] ${message}`);
+  console.log(`[${timestamp}] [${level}] API Mock: ${message}`);
 };
 
 // Helper function to get default zero balance
@@ -111,6 +111,10 @@ const handleHttpRequest = (req, res) => {
 
       // Check for test response header
       const testResponse = req.headers["x-test-response"];
+      log(
+        "query",
+        `balance check for ${address} with test response ${testResponse}`
+      );
       if (testResponse) {
         try {
           const response = JSON.parse(testResponse);

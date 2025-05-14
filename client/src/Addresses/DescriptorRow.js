@@ -87,13 +87,18 @@ const DescriptorRow = ({
       message: `Refreshing balances for all addresses in ${descriptor.name}...`,
       severity: "info",
     });
-
+    // Get test response from window context if it exists
+    let testResponse = undefined;
+    if (window.__TEST_RESPONSE__) {
+      testResponse = { ...(window.__TEST_RESPONSE__ || {}) };
+      delete window.__TEST_RESPONSE__; // Clear it after use
+    }
     socketIO.emit(
       "refreshBalance",
       {
-        collection: collection.name,
-        descriptor: descriptor.descriptor,
-        addresses: descriptor.addresses.map((addr) => addr.address),
+        collectionName: collection.name,
+        descriptorName: descriptor.descriptor,
+        testResponse,
       },
       (response) => {
         setIsRefreshing(false);

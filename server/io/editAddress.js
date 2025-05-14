@@ -37,30 +37,41 @@ function updateAddressInParent(
 
 export default async ({ data, io }) => {
   // console.log(`editAddress: ${JSON.stringify(data)}`);
-  const { collection, address, name, monitor, trackWebsocket, parentKey } =
-    data;
+  const {
+    collectionName,
+    address,
+    name,
+    monitor,
+    trackWebsocket,
+    extendedKeyName,
+    descriptorName,
+  } = data;
   logger.info(
-    `editAddress: ${collection}/${address} with ${getMonitorLog(
+    `editAddress: ${collectionName}/${
+      extendedKeyName ? `/${extendedKeyName}` : ""
+    }${
+      descriptorName ? `/${descriptorName}` : ""
+    }/${address} with ${getMonitorLog(
       monitor
-    )}, trackWebsocket: ${trackWebsocket}, parentKey: ${parentKey}`
+    )}, trackWebsocket: ${trackWebsocket}`
   );
 
-  if (!collection || !address) {
+  if (!collectionName || !address) {
     logger.error("editAddress: Missing collection or address data");
     return { error: "Missing collection or address data" };
   }
 
-  const targetCollection = memory.db.collections[collection];
+  const targetCollection = memory.db.collections[collectionName];
   if (!targetCollection) {
     logger.error("editAddress: Collection not found");
     return { error: "Collection not found" };
   }
 
   let found = false;
-  if (parentKey) {
+  if (extendedKeyName) {
     // Try extended keys first
     const extendedKey = targetCollection.extendedKeys?.find(
-      (key) => key.key === parentKey
+      (key) => key.key === extendedKeyName
     );
     if (extendedKey) {
       const addressIndex = extendedKey.addresses.findIndex(
@@ -76,9 +87,9 @@ export default async ({ data, io }) => {
       );
     }
     // Try descriptors if not found in extended keys
-    if (!found) {
+    if (!found && descriptorName) {
       const descriptor = targetCollection.descriptors?.find(
-        (desc) => desc.descriptor === parentKey
+        (desc) => desc.descriptor === descriptorName
       );
       if (descriptor) {
         const addressIndex = descriptor.addresses.findIndex(
@@ -93,6 +104,24 @@ export default async ({ data, io }) => {
           trackWebsocket
         );
       }
+    }
+  } else if (descriptorName) {
+    // Try descriptors directly if descriptorName is provided
+    const descriptor = targetCollection.descriptors?.find(
+      (desc) => desc.descriptor === descriptorName
+    );
+    if (descriptor) {
+      const addressIndex = descriptor.addresses.findIndex(
+        (a) => a.address === address
+      );
+      found = updateAddressInParent(
+        descriptor.addresses,
+        addressIndex,
+        address,
+        name,
+        monitor,
+        trackWebsocket
+      );
     }
   } else {
     // Fallback: Try to find the address in the collection's addresses

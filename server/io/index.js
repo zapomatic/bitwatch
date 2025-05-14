@@ -33,7 +33,7 @@ const socketIO = {
       Object.entries(handlers).forEach(([event, handler]) => {
         logger.debug(`Registering handler for ${event}`);
         socket.on(event, async (data = {}, cb) => {
-          logger.debug("socket.on", { event, data });
+          logger.debug(`socket.on ${event}: ${JSON.stringify(data)}`);
           const handlerData = {
             data: { ...(data || {}) },
             socketID,

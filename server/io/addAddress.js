@@ -3,21 +3,21 @@ import logger, { getMonitorLog } from "../lib/logger.js";
 
 export default async ({ data, io }) => {
   logger.info(
-    `Adding address ${data.collection}/${data.name}, ${
+    `Adding address ${data.collectionName}/${data.name}, ${
       data.address
     }, ${getMonitorLog(data.monitor)}, ${
       data.trackWebsocket ? "trackWebsocket" : "no trackWebsocket"
     }`
   );
 
-  if (!memory.db.collections[data.collection]) {
-    memory.db.collections[data.collection] = {
+  if (!memory.db.collections[data.collectionName]) {
+    memory.db.collections[data.collectionName] = {
       addresses: [],
       extendedKeys: [],
       descriptors: [],
     };
   }
-  const collection = memory.db.collections[data.collection];
+  const collection = memory.db.collections[data.collectionName];
   if (!collection) {
     logger.error("addAddress:Collection not found");
     return { error: "Collection not found" };

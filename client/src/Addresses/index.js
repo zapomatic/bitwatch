@@ -186,8 +186,8 @@ export default function Addresses() {
 
   const handleAddCollection = () => {
     if (!newCollection?.name?.trim()) return;
-    const collection = newCollection.name.trim();
-    if (collections[collection]) {
+    const collectionName = newCollection.name.trim();
+    if (collections[collectionName]) {
       setNotification({
         open: true,
         message: "Collection already exists",
@@ -198,7 +198,7 @@ export default function Addresses() {
     socketIO.emit(
       "addCollection",
       {
-        collection,
+        collectionName,
         extendedKeys: [],
         descriptors: [],
         addresses: [],
@@ -211,7 +211,7 @@ export default function Addresses() {
             severity: "error",
           });
         } else {
-          setJustCreatedCollection(collection);
+          setJustCreatedCollection(collectionName);
           setNewCollection(null);
         }
       }
@@ -219,7 +219,7 @@ export default function Addresses() {
   };
 
   const handleAddAddress = (
-    collection,
+    collectionName,
     name,
     address,
     monitor,
@@ -227,7 +227,7 @@ export default function Addresses() {
     setNewAddress
   ) => {
     console.log("addAddress", {
-      collection,
+      collectionName,
       name,
       address,
       monitor,
@@ -236,7 +236,7 @@ export default function Addresses() {
     socketIO.emit(
       "addAddress",
       {
-        collection,
+        collectionName,
         name,
         address,
         monitor,
@@ -297,70 +297,70 @@ export default function Addresses() {
   }, []);
 
   const handleDelete = useCallback(
-    ({ address, collection, extendedKey, descriptor, message }) => {
+    ({ address, collectionName, extendedKeyName, descriptorName, message }) => {
       if (message) {
         setDeleteDialog({
           open: true,
           address,
-          collection,
-          extendedKey,
-          descriptor,
+          collectionName,
+          extendedKeyName,
+          descriptorName,
           message,
         });
-      } else if (address && descriptor) {
+      } else if (address && descriptorName) {
         setDeleteDialog({
           open: true,
           address,
-          collection,
-          extendedKey: null,
-          descriptor,
+          collectionName,
+          extendedKeyName: null,
+          descriptorName,
           message: "Remove this address from the descriptor set?",
         });
-      } else if (descriptor) {
-        setDeleteDialog({
-          open: true,
-          collection,
-          address: null,
-          extendedKey: null,
-          descriptor: descriptor,
-          message: "Delete this descriptor and all its derived addresses?",
-        });
-      } else if (typeof collection === "string" && !address) {
-        // Handle direct collection name string (only for collection deletion)
-        setDeleteDialog({
-          open: true,
-          collection,
-          address: null,
-          extendedKey: null,
-          descriptor: null,
-          message: "Delete this collection and all its addresses?",
-        });
-      } else if (address && extendedKey) {
+      } else if (address && extendedKeyName) {
         setDeleteDialog({
           open: true,
           address,
-          collection,
-          extendedKey,
-          descriptor: null,
+          collectionName,
+          extendedKeyName,
+          descriptorName: null,
           message: "Remove this address from the extended key set?",
         });
       } else if (address) {
         setDeleteDialog({
           open: true,
           address,
-          collection,
-          extendedKey: null,
-          descriptor: null,
+          collectionName,
+          extendedKeyName: null,
+          descriptorName: null,
           message: "Remove this address from the collection?",
         });
-      } else if (extendedKey) {
+      } else if (descriptorName) {
         setDeleteDialog({
           open: true,
-          collection: extendedKey.collection,
+          collectionName,
           address: null,
-          extendedKey,
-          descriptor: null,
+          extendedKeyName: null,
+          descriptorName,
+          message: "Delete this descriptor and all its derived addresses?",
+        });
+      } else if (extendedKeyName) {
+        setDeleteDialog({
+          open: true,
+          collectionName,
+          address: null,
+          extendedKeyName,
+          descriptorName: null,
           message: "Delete this extended key and all its derived addresses?",
+        });
+      } else if (collectionName) {
+        // Handle direct collection name string (only for collection deletion)
+        setDeleteDialog({
+          open: true,
+          collectionName,
+          address: null,
+          extendedKeyName: null,
+          descriptorName: null,
+          message: "Delete this collection and all its addresses?",
         });
       }
     },
@@ -368,10 +368,11 @@ export default function Addresses() {
   );
 
   const confirmDelete = useCallback(() => {
-    const { address, collection, extendedKey, descriptor } = deleteDialog;
+    const { address, collectionName, extendedKeyName, descriptorName } =
+      deleteDialog;
     socketIO.emit(
       "delete",
-      { address, collection, extendedKey, descriptor },
+      { address, collectionName, extendedKeyName, descriptorName },
       (response) => {
         if (response.error) {
           setNotification({
@@ -389,9 +390,9 @@ export default function Addresses() {
         setDeleteDialog({
           open: false,
           address: null,
-          collection: null,
-          extendedKey: null,
-          descriptor: null,
+          collectionName: null,
+          extendedKeyName: null,
+          descriptorName: null,
           message: "",
         });
       }
@@ -416,20 +417,15 @@ export default function Addresses() {
     });
   }, []);
 
+  // refresh all collections
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    // Get test response from window context if it exists
-    const testResponse = window.__TEST_RESPONSE__;
-    if (testResponse) {
-      delete window.__TEST_RESPONSE__; // Clear it after use
-      // Stringify the test response for the API call
+    for (const collection of Object.values(collections)) {
       socketIO.emit("refreshBalance", {
-        testResponse: JSON.stringify(testResponse),
+        collectionName: collection.name,
       });
-    } else {
-      socketIO.emit("refreshBalance");
     }
-  }, []);
+  }, [collections]);
 
   const handleCloseNotification = () => {
     setNotification({ ...notification, open: false });
@@ -557,7 +553,7 @@ export default function Addresses() {
   const handleEditAddress = (collection, address) => {
     setEditDialog({
       open: true,
-      collection: collection.name,
+      collectionName: collection.name,
       address: {
         ...address,
         parentKey: address.parentKey || null, // Preserve parentKey if it exists
@@ -569,7 +565,7 @@ export default function Addresses() {
     socketIO.emit(
       "editAddress",
       {
-        collection: editDialog.collection,
+        collectionName: editDialog.collectionName,
         address: editDialog.address.address,
         name: updatedAddress.name,
         monitor: updatedAddress.monitor,

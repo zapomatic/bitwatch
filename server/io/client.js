@@ -1,6 +1,6 @@
 import pjson from "../../package.json" with { type: "json" };
 import memory from "../lib/memory.js";
-import { getQueueStatus } from "../lib/balanceQueue.js";
+import queue from "../lib/queue/index.js";
 
 export default async () => {
 
@@ -32,7 +32,7 @@ export default async () => {
     collections: memory.db.collections,
     websocketState: memory.state.websocketState,
     apiState: memory.state.apiState,
-    queueStatus: getQueueStatus(),
+    queueStatus: queue,
     monitor: memory.db.monitor
   };
 }; 

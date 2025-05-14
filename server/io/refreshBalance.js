@@ -1,43 +1,88 @@
-import { enqueueAddresses } from "../lib/balanceQueue.js";
+import enqueue from "../lib/queue/enqueue.js";
 import logger from "../lib/logger.js";
+import memory from "../lib/memory.js";
 
 export default async ({ data }) => {
-  // Handle single address refresh
-  if (data.collection && data.address) {
+  const {
+    testResponse,
+    address,
+    collectionName,
+    descriptorName,
+    extendedKeyName,
+  } = data;
+
+  if (address) {
+    // just a single address
     logger.info(
-      `Adding ${data.address} to balance queue in ${data.collection}`
+      `Adding ${address} to api queue in collection ${collectionName}`
     );
-    enqueueAddresses([
-      {
-        address: data.address,
-        collection: data.collection,
-        testResponse: data.testResponse,
-      },
-    ]);
+    enqueue({
+      address,
+      collectionName,
+      descriptorName,
+      extendedKeyName,
+      testResponse,
+    });
     return { success: true };
   }
 
-  // Handle batch refresh for descriptor or extended key
-  if (
-    data.collection &&
-    (data.descriptor || data.extendedKey) &&
-    data.addresses
-  ) {
+  if (descriptorName && collectionName) {
+    const collection = memory.db.collections[collectionName];
+    const descriptorObj = collection?.descriptors?.find(
+      (d) => d.descriptor === descriptorName
+    );
+    if (!descriptorObj) {
+      logger.error(
+        `Descriptor ${descriptorName} not found in collection ${collectionName}`
+      );
+      return {
+        success: false,
+        error: `Descriptor ${descriptorName} not found in collection ${collectionName}`,
+      };
+    }
+    // descriptor
     logger.info(
-      `Adding ${data.addresses.length} addresses to balance queue in ${
-        data.collection
-      } for ${data.descriptor ? "descriptor" : "extended key"}`
+      `Adding ${descriptorObj.addresses.length} addresses to api queue in collection ${collectionName} in ${descriptorName}`
     );
-    enqueueAddresses(
-      data.addresses.map((address) => ({
-        address,
-        collection: data.collection,
-        testResponse: data.testResponse,
-      }))
-    );
+    enqueue({
+      collectionName,
+      descriptorName,
+      testResponse,
+    });
     return { success: true };
   }
 
-  logger.error("Invalid refresh request - missing required parameters");
-  return { error: "Invalid refresh request - missing required parameters" };
+  if (extendedKeyName && collectionName) {
+    const collection = memory.db.collections[collectionName];
+    const extendedKeyObj = collection?.extendedKeys?.find(
+      (k) => k.key === extendedKeyName
+    );
+    if (!extendedKeyObj) {
+      logger.error(
+        `Extended key ${extendedKeyName} not found in collection ${collectionName}`
+      );
+      return {
+        success: false,
+        error: `Extended key ${extendedKeyName} not found in collection ${collectionName}`,
+      };
+    }
+    logger.info(
+      `Adding ${extendedKeyObj.addresses.length} addresses to api queue in collection ${collectionName} in ${extendedKeyName}`
+    );
+    enqueue({
+      collectionName,
+      extendedKeyName,
+      testResponse,
+    });
+    return { success: true };
+  }
+
+  logger.error(
+    "No valid address, descriptorName, extendedKeyName, or collectionName provided to refreshBalance"
+  );
+  return {
+    success: false,
+    error:
+      "No valid address, descriptorName, extendedKeyName, or collectionName provided",
+  };
 };

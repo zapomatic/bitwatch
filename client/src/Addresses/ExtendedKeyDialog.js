@@ -38,7 +38,7 @@ const ExtendedKeyDialog = ({
   open,
   onClose,
   onSave,
-  collection,
+  collectionName,
   extendedKey,
 }) => {
   const [formData, setFormData] = useState(DEFAULT_EXTENDED_KEY_FORM);
@@ -107,7 +107,7 @@ const ExtendedKeyDialog = ({
     }
 
     console.log("Submitting extended key with data:", formData);
-    const result = await onSave(collection, formData);
+    const result = await onSave(collectionName, formData);
     if (result?.error) {
       setError(result.error.toString());
       return;

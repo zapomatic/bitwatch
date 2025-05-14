@@ -59,13 +59,15 @@ const AddressCell = ({ address }) => {
 
 const AddressRow = ({
   address,
-  collection,
+  collectionName,
+  descriptorName,
+  extendedKeyName,
   displayBtc,
   setNotification,
-  parentKey,
   index,
   onDelete,
   onEditAddress,
+  parentKey,
 }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -78,12 +80,20 @@ const AddressRow = ({
       message: `Refreshing balance for ${address.name}...`,
       severity: "info",
     });
-
+    // Get test response from window context if it exists
+    let testResponse = undefined;
+    if (window.__TEST_RESPONSE__) {
+      testResponse = { ...(window.__TEST_RESPONSE__ || {}) };
+      delete window.__TEST_RESPONSE__; // Clear it after use
+    }
     socketIO.emit(
       "refreshBalance",
       {
-        collection: collection.name,
+        collectionName,
+        descriptorName,
+        extendedKeyName,
         address: address.address,
+        testResponse,
       },
       (response) => {
         setIsRefreshing(false);
@@ -107,32 +117,25 @@ const AddressRow = ({
   const handleEdit = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    onEditAddress(collection, {
+    onEditAddress(collectionName, {
       ...address,
-      parentKey: parentKey,
+      collectionName,
+      extendedKeyName,
+      descriptorName,
     });
   };
 
   const handleDelete = (e) => {
     e.preventDefault();
     e.stopPropagation();
-
-    // Determine if this is an extended key or descriptor address
-    const isExtendedKey = collection.extendedKeys?.some(
-      (k) => k.key === parentKey
-    );
-    const isDescriptor = collection.descriptors?.some(
-      (d) => d.descriptor === parentKey
-    );
-
     onDelete({
-      collection: collection.name,
+      collectionName,
       address: address.address,
-      ...(isExtendedKey ? { extendedKey: parentKey } : {}),
-      ...(isDescriptor ? { descriptor: parentKey } : {}),
-      message: isExtendedKey
+      extendedKeyName,
+      descriptorName,
+      message: extendedKeyName
         ? "Remove this address from the extended key set?"
-        : isDescriptor
+        : descriptorName
         ? "Remove this address from the descriptor set?"
         : "Remove this address from the collection?",
     });
@@ -144,10 +147,12 @@ const AddressRow = ({
     socketIO.emit(
       "saveExpected",
       {
-        collection: collection.name,
+        collectionName,
         address: address.address,
         actual: address.actual,
         expect: address.actual,
+        extendedKeyName,
+        descriptorName,
       },
       (response) => {
         if (response.error) {

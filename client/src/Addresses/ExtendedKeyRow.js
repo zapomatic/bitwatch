@@ -58,8 +58,8 @@ const ExtendedKeyRow = ({
     e.preventDefault();
     e.stopPropagation();
     onDelete({
-      collection: collection.name,
-      extendedKey: extendedKey.key,
+      collectionName: collection.name,
+      extendedKeyName: extendedKey.name,
       message: "Delete this extended key and all its derived addresses?",
     });
   };
@@ -93,12 +93,18 @@ const ExtendedKeyRow = ({
       severity: "info",
     });
 
+    // Get test response from window context if it exists
+    let testResponse = undefined;
+    if (window.__TEST_RESPONSE__) {
+      testResponse = { ...(window.__TEST_RESPONSE__ || {}) };
+      delete window.__TEST_RESPONSE__; // Clear it after use
+    }
     socketIO.emit(
       "refreshBalance",
       {
-        collection: collection.name,
-        extendedKey: extendedKey.key,
-        addresses: (extendedKey.addresses || []).map((addr) => addr.address),
+        collectionName: collection.name,
+        extendedKeyName: extendedKey.name,
+        testResponse,
       },
       (response) => {
         setIsRefreshing(false);

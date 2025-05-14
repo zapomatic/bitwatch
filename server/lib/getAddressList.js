@@ -8,8 +8,10 @@ export default () => {
     // Add regular addresses
     collection.addresses.forEach((addr) => {
       allAddresses.push({
-        ...addr,
-        collection: collectionName,
+        address: addr.address,
+        collectionName,
+        extendedKeyName: undefined,
+        descriptorName: undefined,
       });
     });
 
@@ -18,9 +20,10 @@ export default () => {
       collection.extendedKeys.forEach((extendedKey) => {
         extendedKey.addresses.forEach((addr) => {
           allAddresses.push({
-            ...addr,
-            collection: collectionName,
-            extendedKey: extendedKey.key,
+            address: addr.address,
+            collectionName,
+            extendedKeyName: extendedKey.key,
+            descriptorName: undefined,
           });
         });
       });
@@ -31,9 +34,10 @@ export default () => {
       collection.descriptors.forEach((descriptor) => {
         descriptor.addresses.forEach((addr) => {
           allAddresses.push({
-            ...addr,
-            collection: collectionName,
-            descriptor: descriptor.descriptor,
+            address: addr.address,
+            collectionName,
+            extendedKeyName: undefined,
+            descriptorName: descriptor.descriptor,
           });
         });
       });

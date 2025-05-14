@@ -1,28 +1,89 @@
 import memory from "./memory.js";
-
+import logger from "./logger.js";
 // getAddressObj returns an object with:
 // - collectionName: name of the collection
 // - address: address object (reference in memory.db.collections)
 // - extendedKey: extendedKey obj's key (extendedKey.key)
 // - descriptor: descriptor obj's descriptor (descriptor.descriptor)
-export default (address) => {
+export default ({
+  address,
+  extendedKeyName,
+  descriptorName,
+  collectionName,
+}) => {
+  if (descriptorName && collectionName) {
+    const desc = memory.db.collections[collectionName]?.descriptors?.find(
+      (d) => d.descriptor === descriptorName
+    );
+    const addrObj = desc?.addresses?.find((a) => a.address === address);
+    if (addrObj) {
+      return {
+        collectionName,
+        address: addrObj,
+        extendedKeyName: undefined,
+        descriptorName,
+      };
+    }
+    return null;
+  }
+  if (extendedKeyName && collectionName) {
+    const key = memory.db.collections[collectionName]?.extendedKeys?.find(
+      (k) => k.key === extendedKeyName
+    );
+    const addrObj = key?.addresses?.find((a) => a.address === address);
+    if (addrObj) {
+      return {
+        collectionName,
+        address: addrObj,
+        extendedKeyName,
+        descriptorName: undefined,
+      };
+    }
+    return null;
+  }
+  if (collectionName) {
+    const addrObj = memory.db.collections[collectionName]?.addresses?.find(
+      (a) => a.address === address
+    );
+    if (addrObj) {
+      return {
+        collectionName,
+        address: addrObj,
+        extendedKeyName: undefined,
+        descriptorName: undefined,
+      };
+    }
+    return null;
+  }
+  // legacy support for getting by only address and no other info
+  logger.warning(
+    `getAddressObj: ${address} No collectionName, extendedKeyName, or descriptorName provided, using legacy support`
+  );
+  // eslint-disable-next-line no-console
+  // console.trace("getAddressObj", address);
   for (const [collectionName, collection] of Object.entries(
     memory.db.collections
   )) {
     // Check regular addresses
-    const addr = collection.addresses.find((a) => a.address === address);
-    if (addr) {
-      return { collectionName, address: addr };
+    const addrObj = collection.addresses.find((a) => a.address === address);
+    if (addrObj) {
+      return {
+        collectionName,
+        address: addrObj,
+        extendedKeyName: undefined,
+        descriptorName: undefined,
+      };
     }
     // Check extended key addresses
     if (collection.extendedKeys) {
       for (const key of collection.extendedKeys) {
-        const addr = key.addresses.find((a) => a.address === address);
-        if (addr) {
+        const addrObj = key.addresses.find((a) => a.address === address);
+        if (addrObj) {
           return {
             collectionName,
-            address: addr,
-            extendedKey: key.key,
+            address: addrObj,
+            extendedKeyName: key.key,
+            descriptorName: undefined,
           };
         }
       }
@@ -30,12 +91,13 @@ export default (address) => {
     // Check descriptor addresses
     if (collection.descriptors) {
       for (const desc of collection.descriptors) {
-        const addr = desc.addresses.find((a) => a.address === address);
-        if (addr) {
+        const addrObj = desc.addresses.find((a) => a.address === address);
+        if (addrObj) {
           return {
             collectionName,
-            address: addr,
-            descriptor: desc.descriptor,
+            address: addrObj,
+            extendedKeyName: undefined,
+            descriptorName: desc.descriptor,
           };
         }
       }

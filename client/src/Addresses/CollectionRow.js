@@ -247,7 +247,7 @@ const CollectionRow = ({
               aria-label="Add descriptor to collection"
             />
             <IconButtonStyled
-              onClick={() => onDelete({ collection: collection.name })}
+              onClick={() => onDelete({ collectionName: collection.name })}
               icon={<DeleteIcon />}
               size="small"
               variant="danger"
@@ -360,6 +360,7 @@ const CollectionRow = ({
             data.name,
             data.address,
             data.monitor,
+            data.trackWebsocket,
             () => setAddressDialogOpen(false)
           )
         }

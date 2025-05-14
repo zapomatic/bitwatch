@@ -13,12 +13,13 @@ import AddressRow from "./AddressRow";
 
 const AddressTable = ({
   addresses,
-  collection,
+  collectionName,
+  descriptorName,
+  extendedKeyName,
   displayBtc,
   setNotification,
   onDelete,
   onEditAddress,
-  parentKey,
   dataTestId,
 }) => {
   return (
@@ -55,10 +56,12 @@ const AddressTable = ({
           <AddressRow
             key={address.address}
             address={address}
-            collection={collection}
+            collectionName={collectionName}
+            descriptorName={descriptorName}
+            extendedKeyName={extendedKeyName}
             displayBtc={displayBtc}
             setNotification={setNotification}
-            parentKey={parentKey}
+            parentKey={descriptorName || extendedKeyName}
             index={address.index}
             onDelete={onDelete}
             onEditAddress={onEditAddress}

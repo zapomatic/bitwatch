@@ -15,7 +15,7 @@
     "test:e2e:ui": "NODE_NO_WARNINGS=1 node node_modules/@playwright/test/cli.js test --ui",
     "test:e2e:codegen": "NODE_NO_WARNINGS=1 node node_modules/@playwright/test/cli.js codegen http://localhost:3119",
     "test:cleanup": "mv server/data/db.backup server/data/db.json 2>/dev/null || rm -f server/data/db.json",
-    "dev:server": "nodemon --config nodemon.json server/index.js",
+    "dev:server": "DEBUG=1 nodemon --config nodemon.json server/index.js",
     "dev:client": "cd client && npm start",
     "dev": "rm server/data/db.json 2>/dev/null && concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "start": "node server/index.js"

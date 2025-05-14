@@ -41,6 +41,10 @@ const loadDb = () => {
     db.monitor = sampleDb.monitor;
   }
 
+  if (process.env.DEBUG) {
+    db.debugLogging = true;
+  }
+
   return db;
 };
 
@@ -167,8 +171,5 @@ const memory = {
   loadDb,
   saveDb,
 };
-
-// Initialize state with collections from db
-memory.state.collections = memory.db.collections;
 
 export default memory;

@@ -2,14 +2,14 @@ import memory from "../lib/memory.js";
 import logger from "../lib/logger.js";
 
 export default async ({ data, io }) => {
-  logger.info(`Adding collection: ${data.collection}`);
+  logger.info(`Adding collection: ${data.collectionName}`);
 
-  if (memory.db.collections[data.collection]) {
+  if (memory.db.collections[data.collectionName]) {
     logger.error("Collection already exists");
     return { error: "Collection already exists" };
   }
 
-  memory.db.collections[data.collection] = {
+  memory.db.collections[data.collectionName] = {
     addresses: data.addresses || [],
     extendedKeys: data.extendedKeys || [],
     descriptors: data.descriptors || [],

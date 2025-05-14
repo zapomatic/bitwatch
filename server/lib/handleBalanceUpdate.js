@@ -7,7 +7,13 @@ import { deriveExtendedKeyAddresses } from "./deriveExtendedKeyAddresses.js";
 import { deriveAddresses } from "./descriptors.js";
 import telegram from "./telegram.js";
 
-export default async (address, balance, collectionName) => {
+export default async ({
+  address,
+  balance,
+  collectionName,
+  extendedKey,
+  descriptor,
+}) => {
   const collection = memory.db.collections[collectionName];
   if (!collection) {
     logger.error(`handleBalanceUpdate: Collection ${collectionName} not found`);
@@ -31,11 +37,12 @@ export default async (address, balance, collectionName) => {
     logger.debug(
       `handleBalanceUpdate: Checking ${collection.extendedKeys.length} extended keys`
     );
-    for (const extendedKey of collection.extendedKeys) {
-      addr = extendedKey.addresses.find((a) => a.address === address);
+    for (const key of collection.extendedKeys) {
+      if (extendedKey && key.key !== extendedKey) continue;
+      addr = key.addresses.find((a) => a.address === address);
       if (addr) {
-        logger.debug(`Found in extended key: ${extendedKey.name}`);
-        parentItem = extendedKey;
+        logger.debug(`Found in extended key: ${key.name}`);
+        parentItem = key;
         isExtendedKeyAddress = true;
         break;
       }
@@ -45,16 +52,17 @@ export default async (address, balance, collectionName) => {
   // If not found in extended keys, check descriptors
   if (!addr && collection.descriptors) {
     logger.debug(`Checking ${collection.descriptors.length} descriptors`);
-    for (const descriptor of collection.descriptors) {
+    for (const desc of collection.descriptors) {
+      if (descriptor && desc.descriptor !== descriptor) continue;
       logger.debug(
-        `Checking descriptor ${descriptor.name} with ${
-          descriptor.addresses?.length || 0
+        `Checking descriptor ${desc.name} with ${
+          desc.addresses?.length || 0
         } addresses`
       );
-      addr = descriptor.addresses.find((a) => a.address === address);
+      addr = desc.addresses.find((a) => a.address === address);
       if (addr) {
-        logger.debug(`Found in descriptor: ${descriptor.name}`);
-        parentItem = descriptor;
+        logger.debug(`Found in descriptor: ${desc.name}`);
+        parentItem = desc;
         isDescriptorAddress = true;
         break;
       }
