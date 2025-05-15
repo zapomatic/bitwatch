@@ -8,8 +8,7 @@ export default async (page, address, expectedBalances) => {
     mempool_out: "0.00000000 ₿",
     ...(expectedBalances || {}),
   };
-  // console.log(`Verifying balance for ${address} is `, expectation);
-  // Get selectors
+
   const selectors = {
     chain_in: page.getByTestId(`${address}-chain-in`),
     chain_out: page.getByTestId(`${address}-chain-out`),
@@ -17,19 +16,21 @@ export default async (page, address, expectedBalances) => {
     mempool_out: page.getByTestId(`${address}-mempool-out`),
   };
 
-  // Wait for each balance to match expected value with timeout
+  // Wait for all balance values to be visible and match expected
   await Promise.all(
-    Object.entries(expectation).map(([key, expectedValue]) =>
-      expect(selectors[key]).toHaveText(expectedValue, { timeout: 30000 })
-    )
+    Object.entries(selectors).map(async ([key, locator]) => {
+      await locator.waitFor({ state: "visible", timeout: 10000 });
+      await expect(locator).toHaveText(expectation[key], { timeout: 15000 });
+    })
   );
 
   // Log final values for debugging
-  const balances = await Promise.all(
+  const results = await Promise.all(
     Object.entries(selectors).map(async ([key, selector]) => {
-      const value = await selector.textContent();
+      const value = (await selector.textContent())?.trim();
       return [key, value];
     })
   );
-  console.log(`${address} final balances:`, Object.fromEntries(balances));
+  console.log(`${address} final balances:`, Object.fromEntries(results));
+  return true;
 };

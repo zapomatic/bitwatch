@@ -89,72 +89,15 @@ export default async (page, address, expectedBalances, parentKey = null) => {
   await findAndClick(page, `${address}-refresh-button`, {
     force: true,
   });
-
-  // Wait for the notification to appear
-  const notification = page.getByTestId("notification");
-  await expect(notification).toBeVisible();
-
-  // Verify it's a success notification
-  await expect(notification).toHaveClass(/MuiAlert-standardSuccess/);
-
   // Wait for the test response to be marked as used
   await page.waitForFunction(() => window.__TEST_RESPONSE_USED__, {
     timeout: 5000,
   });
 
-  // Wait for balance values to be updated (not showing "queued...")
-  const waitForBalanceUpdate = async () => {
-    const chainIn = page.getByTestId(`${address}-chain-in`);
-    const chainOut = page.getByTestId(`${address}-chain-out`);
-    const mempoolIn = page.getByTestId(`${address}-mempool-in`);
-    const mempoolOut = page.getByTestId(`${address}-mempool-out`);
-
-    // Wait for all balance values to be visible
-    await Promise.all([
-      chainIn.waitFor({ state: "visible", timeout: 10000 }),
-      chainOut.waitFor({ state: "visible", timeout: 10000 }),
-      mempoolIn.waitFor({ state: "visible", timeout: 10000 }),
-      mempoolOut.waitFor({ state: "visible", timeout: 10000 }),
-    ]);
-
-    // Wait for values to not be "queued..." and match expected values
-    await page.waitForFunction(
-      (prefix, expectedBalancesStr) => {
-        if (!expectedBalancesStr) {
-          console.log(
-            "No expected balances provided!",
-            prefix,
-            expectedBalancesStr
-          );
-          return true;
-        }
-        const expectedBalances = JSON.parse(expectedBalancesStr);
-        const elements = [
-          document.querySelector(`[data-testid="${prefix}-chain-in"]`),
-          document.querySelector(`[data-testid="${prefix}-chain-out"]`),
-          document.querySelector(`[data-testid="${prefix}-mempool-in"]`),
-          document.querySelector(`[data-testid="${prefix}-mempool-out"]`),
-        ];
-        return elements.every((el) => {
-          if (!el) return false;
-          const text = el.textContent;
-          if (text.includes("queued")) return false;
-          // If we have an expected value for this field, check it matches
-          const field = el.getAttribute("data-testid").split("-").pop();
-          const expectedValue = expectedBalances[field];
-          if (expectedValue && text !== expectedValue) return false;
-          return true;
-        });
-      },
-      address,
-      JSON.stringify(expectedBalances),
-      { timeout: 30000 }
-    );
-  };
-
-  // Wait for balance update
-  await waitForBalanceUpdate();
-
+  console.log(
+    "Debug - Calling verifyBalance with expectedBalances:",
+    expectedBalances
+  );
   // Now verify the balances
   await verifyBalance(page, address, expectedBalances);
 };

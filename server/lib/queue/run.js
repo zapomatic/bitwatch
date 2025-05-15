@@ -23,9 +23,10 @@ const runQueue = async () => {
     queue,
   });
 
-  logger.processing(
-    `Processing api queue with ${queue.items.length} addresses (${memory.db.apiParallelLimit} concurrent, ${delay}ms delay)`
-  );
+  !testMode &&
+    logger.processing(
+      `Processing api queue with ${queue.items.length} addresses (${memory.db.apiParallelLimit} concurrent, ${delay}ms delay)`
+    );
 
   // Create tasks for parallel processing, taking items off queue as we go
   const tasks = [];
