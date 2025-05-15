@@ -94,14 +94,7 @@ export default async (page) => {
   // Initial state (all zeros)
   await refreshBalance(
     page,
-    testData.plain.zapomatic,
-    {
-      chain_in: "0.00000000 ₿",
-      chain_out: "0.00000000 ₿",
-      mempool_in: "0.00000000 ₿",
-      mempool_out: "0.00000000 ₿",
-    },
-    0
+    testData.plain.zapomatic
   );
   console.log("Initial zero balance state verified");
 
@@ -110,12 +103,8 @@ export default async (page) => {
     page,
     testData.plain.zapomatic,
     {
-      chain_in: "0.00000000 ₿",
-      chain_out: "0.00000000 ₿",
       mempool_in: "0.00010000 ₿",
-      mempool_out: "0.00000000 ₿",
-    },
-    0
+    }
   );
   console.log("Mempool input state verified");
 
@@ -125,11 +114,7 @@ export default async (page) => {
     testData.plain.zapomatic,
     {
       chain_in: "0.00010000 ₿",
-      chain_out: "0.00000000 ₿",
-      mempool_in: "0.00000000 ₿",
-      mempool_out: "0.00000000 ₿",
-    },
-    0
+    }
   );
   console.log("Chain input state verified");
 
@@ -139,11 +124,8 @@ export default async (page) => {
     testData.plain.zapomatic,
     {
       chain_in: "0.00010000 ₿",
-      chain_out: "0.00000000 ₿",
-      mempool_in: "0.00000000 ₿",
       mempool_out: "0.00001000 ₿",
-    },
-    0
+    }
   );
   // Wait for the diff to appear and have the correct value
   await expect(
@@ -165,10 +147,7 @@ export default async (page) => {
     {
       chain_in: "0.00010000 ₿",
       chain_out: "0.00001000 ₿",
-      mempool_in: "0.00000000 ₿",
-      mempool_out: "0.00000000 ₿",
-    },
-    0
+    }
   );
   const testId = testData.plain.zapomatic;
   await expect(page.getByTestId(`${testId}-chain-out-diff`)).toBeVisible();
@@ -199,10 +178,7 @@ export default async (page) => {
     {
       chain_in: "0.00010000 ₿",
       chain_out: "0.00001000 ₿",
-      mempool_in: "0.00000000 ₿",
-      mempool_out: "0.00000000 ₿",
-    },
-    0
+    }
   );
   console.log("Final stable state verified");
 

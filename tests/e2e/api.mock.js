@@ -115,25 +115,23 @@ const handleHttpRequest = (req, res) => {
         return;
       }
 
-      // log("zerobalance", address);
       // Otherwise return zero balance
+      const zeroBalance = JSON.stringify({
+        chain_stats: {
+          funded_txo_count: 0,
+          funded_txo_sum: 0,
+          spent_txo_count: 0,
+          spent_txo_sum: 0,
+        },
+        mempool_stats: {
+          funded_txo_count: 0,
+          funded_txo_sum: 0,
+          spent_txo_count: 0,
+          spent_txo_sum: 0,
+        },
+      });
       res.writeHead(200, responseHeaders);
-      res.end(
-        JSON.stringify({
-          chain_stats: {
-            funded_txo_count: 0,
-            funded_txo_sum: 0,
-            spent_txo_count: 0,
-            spent_txo_sum: 0,
-          },
-          mempool_stats: {
-            funded_txo_count: 0,
-            funded_txo_sum: 0,
-            spent_txo_count: 0,
-            spent_txo_sum: 0,
-          },
-        })
-      );
+      res.end(zeroBalance);
       return;
     }
 
@@ -246,12 +244,6 @@ const simulateTransaction = (tx) => {
     log("error", `Error simulating transaction: ${error}`);
     throw error;
   }
-};
-
-const reset = () => {
-  testResponses.clear();
-  trackedAddresses.clear();
-  clients.clear();
 };
 
 // Start the server immediately

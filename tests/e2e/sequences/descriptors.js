@@ -156,19 +156,19 @@ export default async (page) => {
         // now refresh balance with incremet
         await refreshBalance(page, firstExpectedAddress, {
           mempool_in: "0.00010000 ₿"
-        }, firstAddressIndex, descriptor.descriptor);
+        }, descriptor.descriptor);
         await refreshBalance(page, firstExpectedAddress, {
           chain_in: "0.00010000 ₿"
-        }, firstAddressIndex, descriptor.descriptor);
+        }, descriptor.descriptor);
         await refreshBalance(page, firstExpectedAddress, {
           chain_in: "0.00010000 ₿",
           mempool_out: "0.00001000 ₿"
-        }, firstAddressIndex, descriptor.descriptor);
+        }, descriptor.descriptor);
         // console.log(`Verified chain input for ${descriptor.name}/${firstExpectedAddress}`);
         await refreshBalance(page, firstExpectedAddress, {
           chain_in: "0.00010000 ₿",
           chain_out: "0.00001000 ₿"
-        }, firstAddressIndex, descriptor.descriptor);
+        }, descriptor.descriptor);
         console.log(`Verified balances for ${descriptor.name}/${firstExpectedAddress}`);
 
         // Accept the change
@@ -182,7 +182,7 @@ export default async (page) => {
         // also incrememt the second address
         await refreshBalance(page, secondExpectedAddress, {
           chain_in: "0.00010000 ₿"
-        }, firstAddressIndex+1, descriptor.descriptor);
+        }, descriptor.descriptor);
 
         // Wait up to 5 seconds for the new address to appear
         let newAddressList;

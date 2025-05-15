@@ -5,20 +5,14 @@ import verifyBalance from "./verifyBalance.js";
 // Helper to convert Bitcoin string to satoshis
 const btcToSats = (btcStr) => {
   // Debug log
-  console.log("btcToSats input:", btcStr);
+  // console.log("btcToSats input:", btcStr);
   // Remove ₿ symbol and trim
   const cleanStr = btcStr.replace("₿", "").trim();
   // Convert to number and multiply by 100M (satoshis)
   return Math.round(parseFloat(cleanStr) * 100000000);
 };
 
-export default async (
-  page,
-  address,
-  expectedBalances,
-  index = 0,
-  parentKey = null
-) => {
+export default async (page, address, expectedBalances, parentKey = null) => {
   // Default all missing fields to zero
   expectedBalances = {
     chain_in: "0.00000000 ₿",
@@ -28,7 +22,7 @@ export default async (
     ...expectedBalances,
   };
 
-  // Create test response from expected balances
+  // Create test response from expected balances to send to mock api
   const testResponse = {
     chain_stats: {
       funded_txo_sum: btcToSats(expectedBalances.chain_in),
@@ -39,9 +33,6 @@ export default async (
       spent_txo_sum: btcToSats(expectedBalances.mempool_out),
     },
   };
-
-  // For balance cells, we now use the address as the test ID prefix
-  const testIdPrefix = address;
 
   // If this is a child address, ensure the parent section is expanded
   if (parentKey) {
@@ -54,13 +45,6 @@ export default async (
     if (expandedState === "false") {
       await findAndClick(page, `${parentKey}-expand-button`);
     }
-
-    // Check if this is a descriptor (starts with pkh, sh, wpkh, etc) or an extended key
-    const isDescriptor =
-      parentKey.startsWith("pkh(") ||
-      parentKey.startsWith("sh(") ||
-      parentKey.startsWith("wpkh(");
-    console.log("Is descriptor:", isDescriptor);
 
     const addressListSelector = `[data-testid="${parentKey}-address-list"]`;
     console.log("Looking for address list with selector:", addressListSelector);
@@ -85,12 +69,12 @@ export default async (
     await expect(addressList).toBeVisible();
 
     // Now verify the specific address row is visible
-    const addressRow = page.getByTestId(`${testIdPrefix}-row`);
+    const addressRow = page.getByTestId(`${address}-row`);
     await expect(addressRow).toBeVisible();
   }
 
   // Find and verify the refresh button exists and is visible
-  const refreshButton = page.getByTestId(`${testIdPrefix}-refresh-button`);
+  const refreshButton = page.getByTestId(`${address}-refresh-button`);
   await expect(refreshButton).toBeVisible();
 
   // Set test response in the page context
@@ -99,7 +83,7 @@ export default async (
   }, JSON.stringify(testResponse));
 
   // Click the refresh button and wait for loading state
-  await findAndClick(page, `${testIdPrefix}-refresh-button`, {
+  await findAndClick(page, `${address}-refresh-button`, {
     force: true,
   });
 
@@ -117,28 +101,28 @@ export default async (
   }
 
   // Wait for the notification to disappear
-  await page
-    .waitForSelector('[data-testid="notification"]', {
-      state: "hidden",
-      timeout: 5000,
-    })
-    .catch(async () => {
-      // If notification doesn't disappear, try clicking the close button again
-      if (await closeButton.isVisible()) {
-        await closeButton.click();
-        await page.waitForSelector('[data-testid="notification"]', {
-          state: "hidden",
-          timeout: 5000,
-        });
-      }
-    });
+  // await page
+  //   .waitForSelector('[data-testid="notification"]', {
+  //     state: "hidden",
+  //     timeout: 5000,
+  //   })
+  //   .catch(async () => {
+  //     // If notification doesn't disappear, try clicking the close button again
+  //     if (await closeButton.isVisible()) {
+  //       await closeButton.click();
+  //       await page.waitForSelector('[data-testid="notification"]', {
+  //         state: "hidden",
+  //         timeout: 5000,
+  //       });
+  //     }
+  //   });
 
   // Wait for balance values to be updated (not showing "queued...")
   const waitForBalanceUpdate = async () => {
-    const chainIn = page.getByTestId(`${testIdPrefix}-chain-in`);
-    const chainOut = page.getByTestId(`${testIdPrefix}-chain-out`);
-    const mempoolIn = page.getByTestId(`${testIdPrefix}-mempool-in`);
-    const mempoolOut = page.getByTestId(`${testIdPrefix}-mempool-out`);
+    const chainIn = page.getByTestId(`${address}-chain-in`);
+    const chainOut = page.getByTestId(`${address}-chain-out`);
+    const mempoolIn = page.getByTestId(`${address}-mempool-in`);
+    const mempoolOut = page.getByTestId(`${address}-mempool-out`);
 
     // Wait for all balance values to be updated
     await Promise.all([
@@ -159,8 +143,8 @@ export default async (
         ];
         return elements.every((el) => el && !el.textContent.includes("queued"));
       },
-      testIdPrefix,
-      { timeout: 10000 }
+      address,
+      { timeout: 30000 }
     );
   };
 

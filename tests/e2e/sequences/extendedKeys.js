@@ -141,7 +141,7 @@ export default async (page) => {
           chain_out: "0.00000000 ₿",
           mempool_in: "0.00000000 ₿",
           mempool_out: "0.00000000 ₿"
-        }, firstAddressIndex, key.key);
+        }, key.key);
         console.log(`Verified initial zero balance for ${key.name} address ${firstAddressIndex}`);
 
         // Test mempool input state
@@ -150,7 +150,7 @@ export default async (page) => {
           chain_out: "0.00000000 ₿",
           mempool_in: "0.00010000 ₿",
           mempool_out: "0.00000000 ₿"
-        }, firstAddressIndex, key.key);
+        }, key.key);
         console.log(`Verified mempool input for ${key.name} address ${firstAddressIndex}`);
 
         // Then test full row refresh
@@ -200,7 +200,7 @@ export default async (page) => {
           chain_out: "0.00000000 ₿",
           mempool_in: "0.00010000 ₿",
           mempool_out: "0.00000000 ₿"
-        }, secondAddressIndex, key.key);
+        }, key.key);
         console.log(`trigger activity update for ${key.name} address ${secondAddressIndex}`);
         // wait for the new addresses to be visible
         await page.waitForTimeout(1000);
@@ -252,7 +252,7 @@ export default async (page) => {
           chain_out: "0.00000000 ₿",
           mempool_in: "0.00000000 ₿",
           mempool_out: "0.00000000 ₿"
-        }, 54, key.key);
+        }, key.key);
         console.log("Triggered activity on address 54");
         // Wait for the new address to be derived
         await page.waitForTimeout(1000);

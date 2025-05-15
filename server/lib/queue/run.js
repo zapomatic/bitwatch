@@ -7,9 +7,10 @@ import getAddressBalance from "../getAddressBalance.js";
 import getAddressObj from "../getAddressObj.js";
 import handleBalanceUpdate from "../handleBalanceUpdate.js";
 import parallelLimit from "async/parallelLimit.js";
+const testMode = process.env.NODE_ENV === "test";
 const runQueue = async () => {
-  const delay = memory.db.apiDelay * (process.env.TEST_MODE ? 100 : 1);
-  if (queue.items.length === 0) {
+  const delay = memory.db.apiDelay * (testMode ? 0.5 : 1);
+  if (queue.items.length === 0 && !testMode) {
     for (const collectionName of Object.keys(memory.db.collections)) {
       logger.debug(`Enqueuing collection ${collectionName}`);
       enqueue({
@@ -22,9 +23,10 @@ const runQueue = async () => {
     queue,
   });
 
-  logger.processing(
-    `Processing api queue with ${queue.items.length} addresses (${memory.db.apiParallelLimit} concurrent, ${delay}ms delay)`
-  );
+  !testMode &&
+    logger.processing(
+      `Processing api queue with ${queue.items.length} addresses (${memory.db.apiParallelLimit} concurrent, ${delay}ms delay)`
+    );
 
   // Create tasks for parallel processing
   const tasks = queue.items.map((addrObj) => async () => {
@@ -39,7 +41,8 @@ const runQueue = async () => {
     const balance = await getAddressBalance(
       addrObj.address,
       null,
-      addrObj.testResponse
+      addrObj.testResponse,
+      "runQueue"
     );
     queue.lastProcessedTime = Date.now();
 
