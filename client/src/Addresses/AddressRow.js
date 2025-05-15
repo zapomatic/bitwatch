@@ -82,7 +82,9 @@ const AddressRow = ({
     let testResponse = undefined;
     if (window.__TEST_RESPONSE__) {
       testResponse = window.__TEST_RESPONSE__;
-      delete window.__TEST_RESPONSE__; // Clear it after use
+      // Mark that we're using the test response
+      window.__TEST_RESPONSE_USED__ = true;
+      // Don't clear it yet - let the mock API use it first
     }
     socketIO.emit(
       "refreshBalance",
@@ -107,6 +109,10 @@ const AddressRow = ({
             message: "Balance refresh queued",
             severity: "success",
           });
+          // Only clear the test response after we get a success response
+          if (window.__TEST_RESPONSE__) {
+            delete window.__TEST_RESPONSE__;
+          }
         }
       }
     );

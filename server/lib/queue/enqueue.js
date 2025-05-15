@@ -18,6 +18,11 @@ export default ({
     testResponse,
   };
   const addresses = [];
+  logger.info(
+    `Enqueuing address ${collectionName}/${
+      extendedKeyName || descriptorName || "root"
+    }/${address} to queue: ${queue.items.length}`
+  );
   // construct the list of addresses to enqueue
   // if address is provided, add it to the list
   // if collectionName is provided, add all addresses in the collection to the list
@@ -62,31 +67,54 @@ export default ({
       );
     }
   }
-  logger.debug(`Enqueuing ${addresses.length} addresses`);
-  // Filter out addresses that are already in the queue
-  const newAddresses = addresses.filter(
-    (addr) => !queue.items.some((q) => q.address === addr.address)
+
+  // Mark addresses as queued in collections memory
+  addresses.forEach((addr) => {
+    const found = getAddressObj(addr);
+    if (found) {
+      found.address.queued = true;
+    } else {
+      logger.error(`Address ${addr.address} not found in collections memory`);
+    }
+  });
+
+  // Filter out duplicates before adding to queue
+  const uniqueAddresses = addresses.filter((newAddr) => {
+    // Check if there's already an identical item in the queue
+    const isDuplicate = queue.items.some((existingAddr) => {
+      // Compare all relevant fields
+      return (
+        existingAddr.address === newAddr.address &&
+        existingAddr.collectionName === newAddr.collectionName &&
+        existingAddr.extendedKeyName === newAddr.extendedKeyName &&
+        existingAddr.descriptorName === newAddr.descriptorName &&
+        // Compare testResponse objects if they exist
+        ((!existingAddr.testResponse && !newAddr.testResponse) ||
+          (existingAddr.testResponse &&
+            newAddr.testResponse &&
+            existingAddr.testResponse === newAddr.testResponse))
+      );
+    });
+
+    if (isDuplicate) {
+      logger.debug(
+        `Skipping duplicate address ${newAddr.address} in queue (${
+          newAddr.collectionName
+        }/${newAddr.extendedKeyName || newAddr.descriptorName || "root"})`
+      );
+    }
+    return !isDuplicate;
+  });
+
+  // Add only unique addresses to the queue
+  queue.items.push(...uniqueAddresses);
+
+  // Emit updated queue status
+  emitState({
+    collections: memory.db.collections,
+    queue,
+  });
+  logger.info(
+    `enqueue: Added ${uniqueAddresses.length} address(es) to queue. Queue size: ${queue.items.length}`
   );
-  logger.debug(`New addresses: ${newAddresses.length}`);
-
-  if (newAddresses.length > 0) {
-    queue.items.push(...newAddresses);
-    logger.debug(
-      `Added ${newAddresses.length} addresses to queue. Queue size: ${queue.items.length}`
-    );
-
-    // Mark addresses as queued in collections memory
-    newAddresses.forEach((addr) => {
-      const found = getAddressObj(addr);
-      if (found) {
-        found.address.queued = true;
-      }
-    });
-
-    // Emit updated queue status
-    emitState({
-      collections: memory.db.collections,
-      queue,
-    });
-  }
 };

@@ -77,9 +77,12 @@ export default async (page, address, expectedBalances, parentKey = null) => {
   const refreshButton = page.getByTestId(`${address}-refresh-button`);
   await expect(refreshButton).toBeVisible();
 
-  // Set test response in the page context
+  // Set test response in the page context and ensure it persists
   await page.evaluate((response) => {
+    // Store the response in a way that won't be cleared
     window.__TEST_RESPONSE__ = response;
+    // Add a property to track if it's been used
+    window.__TEST_RESPONSE_USED__ = false;
   }, JSON.stringify(testResponse));
 
   // Click the refresh button and wait for loading state
@@ -94,8 +97,8 @@ export default async (page, address, expectedBalances, parentKey = null) => {
   // Verify it's a success notification
   await expect(notification).toHaveClass(/MuiAlert-standardSuccess/);
 
-  // Wait for the test response to be cleared (indicating it was used)
-  await page.waitForFunction(() => !window.__TEST_RESPONSE__, {
+  // Wait for the test response to be marked as used
+  await page.waitForFunction(() => window.__TEST_RESPONSE_USED__, {
     timeout: 5000,
   });
 

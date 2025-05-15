@@ -8,7 +8,7 @@ export default async (page, address, expectedBalances) => {
     mempool_out: "0.00000000 ₿",
     ...(expectedBalances || {}),
   };
-  console.log(`Verifying balance for ${address} is `, expectation);
+  // console.log(`Verifying balance for ${address} is `, expectation);
   // Get selectors
   const selectors = {
     chain_in: page.getByTestId(`${address}-chain-in`),
