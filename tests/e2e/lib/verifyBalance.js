@@ -1,14 +1,14 @@
 import { expect } from "../test-environment.js";
 
-export default async (
-  page,
-  address,
-  expectedBalances,
-  index = 0,
-  parentKey = null
-) => {
-  console.log(`Verifying balance for ${address} at index ${index}`);
-  console.log(`Expected balances:`, expectedBalances);
+export default async (page, address, expectedBalances) => {
+  const expectation = {
+    chain_in: expectedBalances.chain_in || "0.00000000 ₿",
+    chain_out: expectedBalances.chain_out || "0.00000000 ₿",
+    mempool_in: expectedBalances.mempool_in || "0.00000000 ₿",
+    mempool_out: expectedBalances.mempool_out || "0.00000000 ₿",
+    ...(expectedBalances || {}),
+  };
+  console.log(`Verifying balance for ${address} is `, expectation);
 
   // For balance cells, we now use the address as the test ID prefix
   const testIdPrefix = address;
@@ -38,63 +38,55 @@ export default async (
   const errors = [];
 
   // Wait for and verify chain-in balance
-  if (expectedBalances.chain_in) {
-    console.log(`Verifying chain-in matches ${expectedBalances.chain_in}`);
-    try {
-      await expect(chainInSelector).toHaveText(expectedBalances.chain_in, {
-        // timeout: 10000,
-      });
-    } catch (error) {
-      errors.push(
-        `Chain-in balance mismatch. Expected: ${
-          expectedBalances.chain_in
-        }, Got: ${await chainInSelector.textContent()}`
-      );
-    }
+  console.log(`Verifying chain-in matches ${expectation.chain_in}`);
+  try {
+    await expect(chainInSelector).toHaveText(expectation.chain_in);
+  } catch (error) {
+    errors.push(
+      `Chain-in balance mismatch. Expected: ${
+        expectedBalances.chain_in
+      }, Got: ${await chainInSelector.textContent()}`
+    );
   }
 
   // Wait for and verify chain-out balance
-  if (expectedBalances.chain_out) {
-    console.log(`Verifying chain-out matches ${expectedBalances.chain_out}`);
+  if (expectation.chain_out) {
+    console.log(`Verifying chain-out matches ${expectation.chain_out}`);
     try {
-      await expect(chainOutSelector).toHaveText(expectedBalances.chain_out, {
-        // timeout: 10000,
-      });
+      await expect(chainOutSelector).toHaveText(expectation.chain_out);
     } catch (error) {
       errors.push(
         `Chain-out balance mismatch. Expected: ${
-          expectedBalances.chain_out
+          expectation.chain_out
         }, Got: ${await chainOutSelector.textContent()}`
       );
     }
   }
 
   // Wait for and verify mempool-in balance
-  if (expectedBalances.mempool_in) {
-    console.log(`Verifying mempool-in matches ${expectedBalances.mempool_in}`);
+  if (expectation.mempool_in) {
+    console.log(`Verifying mempool-in matches ${expectation.mempool_in}`);
     try {
       const actualMempoolIn = await mempoolInSelector.textContent();
       console.log("Actual mempool-in value from UI:", actualMempoolIn);
-      await expect(mempoolInSelector).toHaveText(expectedBalances.mempool_in, {
+      await expect(mempoolInSelector).toHaveText(expectation.mempool_in, {
         // timeout: 10000,
       });
     } catch (error) {
       errors.push(
         `Mempool-in balance mismatch. Expected: ${
-          expectedBalances.mempool_in
+          expectation.mempool_in
         }, Got: ${await mempoolInSelector.textContent()}`
       );
     }
   }
 
   // Wait for and verify mempool-out balance
-  if (expectedBalances.mempool_out) {
-    console.log(
-      `Verifying mempool-out matches ${expectedBalances.mempool_out}`
-    );
+  if (expectation.mempool_out) {
+    console.log(`Verifying mempool-out matches ${expectation.mempool_out}`);
     try {
       await expect(mempoolOutSelector).toHaveText(
-        expectedBalances.mempool_out
+        expectation.mempool_out
         // { timeout: 5000 }
       );
     } catch (error) {

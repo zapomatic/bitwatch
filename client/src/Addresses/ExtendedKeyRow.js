@@ -226,7 +226,8 @@ const ExtendedKeyRow = ({
             <Box sx={{ margin: 1 }}>
               <AddressTable
                 addresses={extendedKey.addresses || []}
-                collection={collection}
+                collectionName={collection.name}
+                extendedKeyName={extendedKey.name}
                 displayBtc={displayBtc}
                 setNotification={setNotification}
                 onDelete={onDelete}

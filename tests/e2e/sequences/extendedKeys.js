@@ -165,7 +165,7 @@ export default async (page) => {
             chain_out: "0.00000000 ₿",
             mempool_in: "0.00000000 ₿",
             mempool_out: "0.00000000 ₿"
-        }, firstAddressIndex, key.key);
+        });
 
         // Verify balances for all other addresses
         for (let i = 1; i < key.initialAddresses + key.skip; i++) {  // Start at 3 since our first address is at 2
@@ -175,7 +175,7 @@ export default async (page) => {
             chain_out: "0.00000000 ₿",
             mempool_in: "0.00000000 ₿",
             mempool_out: "0.00000000 ₿"
-          }, i, key.key);
+          });
         }
         // Edit the first derived address
         await findAndClick(page, `${firstExpectedAddress}-edit-button`);

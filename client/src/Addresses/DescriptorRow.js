@@ -213,7 +213,8 @@ const DescriptorRow = ({
             <Box sx={{ margin: 1 }}>
               <AddressTable
                 addresses={descriptor.addresses}
-                collection={collection}
+                collectionName={collection.name}
+                descriptorName={descriptor.name}
                 displayBtc={displayBtc}
                 setNotification={setNotification}
                 onDelete={onDelete}

@@ -62,9 +62,7 @@ export default async (
       parentKey.startsWith("wpkh(");
     console.log("Is descriptor:", isDescriptor);
 
-    const addressListSelector = isDescriptor
-      ? `[data-testid="${parentKey}-address-list"]`
-      : `[data-testid="${parentKey}-address-list"]`;
+    const addressListSelector = `[data-testid="${parentKey}-address-list"]`;
     console.log("Looking for address list with selector:", addressListSelector);
 
     // Wait for the address list to be visible with a longer timeout
@@ -170,5 +168,5 @@ export default async (
   await waitForBalanceUpdate();
 
   // Now verify the balances
-  await verifyBalance(page, address, expectedBalances, index, parentKey);
+  await verifyBalance(page, address, expectedBalances);
 };

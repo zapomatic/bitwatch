@@ -14,7 +14,9 @@ export default async ({ data }) => {
   if (address) {
     // just a single address
     logger.info(
-      `Adding ${address} to api queue in collection ${collectionName} with testResponse ${testResponse}`
+      `refreshBalance: ${collectionName}/${
+        descriptorName || extendedKeyName || "root"
+      }/${address}, testResponse ${testResponse}`
     );
     enqueue({
       address,
@@ -29,7 +31,7 @@ export default async ({ data }) => {
   if (descriptorName && collectionName) {
     const collection = memory.db.collections[collectionName];
     const descriptorObj = collection?.descriptors?.find(
-      (d) => d.descriptor === descriptorName
+      (d) => d.name === descriptorName
     );
     if (!descriptorObj) {
       logger.error(

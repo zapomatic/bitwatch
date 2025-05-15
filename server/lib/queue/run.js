@@ -8,6 +8,7 @@ import getAddressObj from "../getAddressObj.js";
 import handleBalanceUpdate from "../handleBalanceUpdate.js";
 import parallelLimit from "async/parallelLimit.js";
 const runQueue = async () => {
+  const delay = memory.db.apiDelay * (process.env.TEST_MODE ? 100 : 1);
   if (queue.items.length === 0) {
     for (const collectionName of Object.keys(memory.db.collections)) {
       logger.debug(`Enqueuing collection ${collectionName}`);
@@ -22,7 +23,7 @@ const runQueue = async () => {
   });
 
   logger.processing(
-    `Processing api queue with ${queue.items.length} addresses (${memory.db.apiParallelLimit} concurrent, ${memory.db.apiDelay}ms delay)`
+    `Processing api queue with ${queue.items.length} addresses (${memory.db.apiParallelLimit} concurrent, ${delay}ms delay)`
   );
 
   // Create tasks for parallel processing
@@ -113,7 +114,7 @@ const runQueue = async () => {
 
   setTimeout(() => {
     runQueue();
-  }, memory.db.apiDelay * (process.env.TEST_MODE ? 100 : 1));
+  }, delay);
 };
 
 export default runQueue;

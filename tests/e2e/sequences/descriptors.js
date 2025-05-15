@@ -4,7 +4,7 @@ import settings from "../lib/settings.js";
 import findAndClick from "../lib/findAndClick.js";
 import setMonitoring from "../lib/setMonitoring.js";
 import refreshBalance from "../lib/refreshBalance.js";
-
+import verifyBalance from "../lib/verifyBalance.js";
 const addDescriptor = async (
   page,
   collection,
@@ -143,42 +143,46 @@ export default async (page) => {
       // for the first descriptor, we will trigger a balance changes and edit to triggger more key derivation
       if (descriptor.name === "xpubSingle") {
 
-        // initial refresh to get 0 balance
-        const firstExpectedAddress = testData.descriptors[descriptor.name].addresses[firstAddressIndex].address;
-        await refreshBalance(page, firstExpectedAddress, {
-          chain_out: "0.00000000 ₿",
-          mempool_out: "0.00000000 ₿",
-          chain_in: "0.00000000 ₿",
-          mempool_in: "0.00000000 ₿"
-        }, firstAddressIndex, descriptor.descriptor);
-        console.log(`Verified initial zero balance for ${descriptor.name} address ${firstAddressIndex}`);
 
-        // Test mempool input state
+        const firstExpectedAddress = testData.descriptors[descriptor.name].addresses[firstAddressIndex].address;
+        const secondExpectedAddress = testData.descriptors[descriptor.name].addresses[firstAddressIndex + 1].address;
+        const thirdExpectedAddress = testData.descriptors[descriptor.name].addresses[firstAddressIndex + 2].address;
+        // refresh all addresses in the descriptor
+        await findAndClick(page, `${descriptor.descriptor}-refresh-all-button`);
+        console.log(`Clicked refresh button for ${descriptor.descriptor}`);
+        // verify that both derived addresses show the zero balance rather than queued
+        await verifyBalance(page, firstExpectedAddress);
+        await verifyBalance(page, secondExpectedAddress);
+        // now refresh balance with incremet
         await refreshBalance(page, firstExpectedAddress, {
           mempool_in: "0.00010000 ₿"
         }, firstAddressIndex, descriptor.descriptor);
-        console.log(`Verified mempool input for ${descriptor.name} address ${firstAddressIndex}`);
-
-        // Test chain input state
         await refreshBalance(page, firstExpectedAddress, {
           chain_in: "0.00010000 ₿"
         }, firstAddressIndex, descriptor.descriptor);
-        console.log(`Verified chain input for ${descriptor.name} address ${firstAddressIndex}`);
-
-        // Instead of expecting mempool_out, expect chain_out due to backend advancing state
         await refreshBalance(page, firstExpectedAddress, {
           chain_in: "0.00010000 ₿",
-          chain_out: "0.00001000 ₿",
-          mempool_in: "0.00000000 ₿",
-          mempool_out: "0.00000000 ₿"
+          mempool_out: "0.00001000 ₿"
         }, firstAddressIndex, descriptor.descriptor);
-        console.log(`Verified chain output for ${descriptor.name} address ${firstAddressIndex}`);
+        // console.log(`Verified chain input for ${descriptor.name}/${firstExpectedAddress}`);
+        await refreshBalance(page, firstExpectedAddress, {
+          chain_in: "0.00010000 ₿",
+          chain_out: "0.00001000 ₿"
+        }, firstAddressIndex, descriptor.descriptor);
+        console.log(`Verified balances for ${descriptor.name}/${firstExpectedAddress}`);
 
-        // Accept the chain-out change
-        const secondExpectedAddress = testData.descriptors[descriptor.name].addresses[firstAddressIndex + 1].address;
-        await findAndClick(page, `${secondExpectedAddress}-accept-button`);
-        await expect(page.getByTestId(`${secondExpectedAddress}-chain-out-diff`)).not.toBeVisible();
-        console.log(`Accepted balance changes for ${descriptor.name} address ${firstAddressIndex + 1}`);
+        // Accept the change
+        await expect(page.getByTestId(`${firstExpectedAddress}-chain-in-diff`)).toBeVisible();
+        await expect(page.getByTestId(`${firstExpectedAddress}-chain-out-diff`)).toBeVisible();
+        await findAndClick(page, `${firstExpectedAddress}-accept-button`);
+        await expect(page.getByTestId(`${firstExpectedAddress}-chain-in-diff`)).not.toBeVisible();
+        await expect(page.getByTestId(`${firstExpectedAddress}-chain-out-diff`)).not.toBeVisible();
+        console.log(`Accepted balance changes for ${descriptor.name}/${firstExpectedAddress}`);
+
+        // also incrememt the second address
+        await refreshBalance(page, secondExpectedAddress, {
+          chain_in: "0.00010000 ₿"
+        }, firstAddressIndex+1, descriptor.descriptor);
 
         // Wait up to 5 seconds for the new address to appear
         let newAddressList;
