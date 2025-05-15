@@ -124,7 +124,7 @@ const DescriptorRow = ({
       <TableRow
         className="crystal-table-row descriptor-row"
         sx={{ "& > *": { borderBottom: "unset" } }}
-        data-testid={`${descriptor.descriptor}-descriptor-row`}
+        data-testid={`${descriptor.descriptor}-row`}
       >
         <TableCell>
           <Box sx={{ display: "flex", alignItems: "center" }}>

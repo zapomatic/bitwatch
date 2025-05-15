@@ -107,14 +107,14 @@ test.describe("Bitwatch", () => {
       }
     }));
     // Verify extended key address monitor settings (using the first extended key from earlier)
-    // await findAndClick(page, `${extendedKeys[0].key}-expand-button`);
     const extendedKeyAddresses = await page.locator(`[data-testid="${extKeys[0].key}-address-list"] tr.address-row`).all();
     for (let i = 1; i < extendedKeyAddresses.length; i++) {
       const addressIndex = i + extKeys[0].skip; // Use the skip value from the extended key
-      await expect(page.locator(`[data-testid="${extKeys[0].key}-address-${addressIndex}-chain-in-auto-accept-icon"]`)).toBeVisible();
-      await expect(page.locator(`[data-testid="${extKeys[0].key}-address-${addressIndex}-chain-out-auto-accept-icon"]`)).toBeVisible();
-      await expect(page.locator(`[data-testid="${extKeys[0].key}-address-${addressIndex}-mempool-in-auto-accept-icon"]`)).toBeVisible();
-      await expect(page.locator(`[data-testid="${extKeys[0].key}-address-${addressIndex}-mempool-out-alert-icon"]`)).toBeVisible();
+      const address = testData.extendedKeys[extKeys[0].keyId].addresses[addressIndex].address;
+      await expect(page.locator(`[data-testid="${address}-chain-in-auto-accept-icon"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${address}-chain-out-auto-accept-icon"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${address}-mempool-in-auto-accept-icon"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${address}-mempool-out-alert-icon"]`)).toBeVisible();
     }
     await findAndClick(page, `${extKeys[0].key}-expand-button`);
     console.log("Extended key address monitor settings verified");
@@ -136,10 +136,11 @@ test.describe("Bitwatch", () => {
     await findAndClick(page, `${firstDescriptor.descriptor}-expand-button`);
     const descriptorAddresses = await page.locator(`[data-testid="${firstDescriptor.descriptor}-address-list"] tr.address-row`).all();
     for (let i = 1; i < descriptorAddresses.length; i++) {
-      await expect(page.locator(`[data-testid="${firstDescriptor.descriptor}-address-${i}-chain-in-auto-accept-icon"]`)).toBeVisible();
-      await expect(page.locator(`[data-testid="${firstDescriptor.descriptor}-address-${i}-chain-out-auto-accept-icon"]`)).toBeVisible();
-      await expect(page.locator(`[data-testid="${firstDescriptor.descriptor}-address-${i}-mempool-in-auto-accept-icon"]`)).toBeVisible();
-      await expect(page.locator(`[data-testid="${firstDescriptor.descriptor}-address-${i}-mempool-out-alert-icon"]`)).toBeVisible();
+      const address = testData.descriptors[firstDescriptor.name].addresses[i].address;
+      await expect(page.locator(`[data-testid="${address}-chain-in-auto-accept-icon"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${address}-chain-out-auto-accept-icon"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${address}-mempool-in-auto-accept-icon"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${address}-mempool-out-alert-icon"]`)).toBeVisible();
     }
     await findAndClick(page, `${firstDescriptor.descriptor}-expand-button`);
     console.log("Descriptor address monitor settings verified");

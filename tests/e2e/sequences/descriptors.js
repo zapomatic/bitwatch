@@ -84,10 +84,10 @@ export default async (page) => {
       console.log(`Added ${descriptor.name} with first address index ${firstAddressIndex}`);
 
       // Wait for the descriptor row to be visible
-      await expect(page.getByTestId(`${descriptor.descriptor}-descriptor-row`)).toBeVisible();
+      await expect(page.getByTestId(`${descriptor.descriptor}-row`)).toBeVisible();
 
       // Find the descriptor row
-      const descriptorRow = page.getByTestId(`${descriptor.descriptor}-descriptor-row`);
+      const descriptorRow = page.getByTestId(`${descriptor.descriptor}-row`);
       
       // Debug: Log all cells in the row
       const cells = await descriptorRow.locator('td').all();

@@ -94,28 +94,10 @@ export default async (page, address, expectedBalances, parentKey = null) => {
   // Verify it's a success notification
   await expect(notification).toHaveClass(/MuiAlert-standardSuccess/);
 
-  // Try to close the notification if it has a close button
-  const closeButton = notification.locator('button[aria-label="Close"]');
-  if (await closeButton.isVisible()) {
-    await closeButton.click();
-  }
-
-  // Wait for the notification to disappear
-  // await page
-  //   .waitForSelector('[data-testid="notification"]', {
-  //     state: "hidden",
-  //     timeout: 5000,
-  //   })
-  //   .catch(async () => {
-  //     // If notification doesn't disappear, try clicking the close button again
-  //     if (await closeButton.isVisible()) {
-  //       await closeButton.click();
-  //       await page.waitForSelector('[data-testid="notification"]', {
-  //         state: "hidden",
-  //         timeout: 5000,
-  //       });
-  //     }
-  //   });
+  // Wait for the test response to be cleared (indicating it was used)
+  await page.waitForFunction(() => !window.__TEST_RESPONSE__, {
+    timeout: 5000,
+  });
 
   // Wait for balance values to be updated (not showing "queued...")
   const waitForBalanceUpdate = async () => {
@@ -124,7 +106,7 @@ export default async (page, address, expectedBalances, parentKey = null) => {
     const mempoolIn = page.getByTestId(`${address}-mempool-in`);
     const mempoolOut = page.getByTestId(`${address}-mempool-out`);
 
-    // Wait for all balance values to be updated
+    // Wait for all balance values to be visible
     await Promise.all([
       chainIn.waitFor({ state: "visible", timeout: 10000 }),
       chainOut.waitFor({ state: "visible", timeout: 10000 }),
@@ -132,18 +114,37 @@ export default async (page, address, expectedBalances, parentKey = null) => {
       mempoolOut.waitFor({ state: "visible", timeout: 10000 }),
     ]);
 
-    // Wait for values to not be "queued..."
+    // Wait for values to not be "queued..." and match expected values
     await page.waitForFunction(
-      (prefix) => {
+      (prefix, expectedBalancesStr) => {
+        if (!expectedBalancesStr) {
+          console.log(
+            "No expected balances provided!",
+            prefix,
+            expectedBalancesStr
+          );
+          return true;
+        }
+        const expectedBalances = JSON.parse(expectedBalancesStr);
         const elements = [
           document.querySelector(`[data-testid="${prefix}-chain-in"]`),
           document.querySelector(`[data-testid="${prefix}-chain-out"]`),
           document.querySelector(`[data-testid="${prefix}-mempool-in"]`),
           document.querySelector(`[data-testid="${prefix}-mempool-out"]`),
         ];
-        return elements.every((el) => el && !el.textContent.includes("queued"));
+        return elements.every((el) => {
+          if (!el) return false;
+          const text = el.textContent;
+          if (text.includes("queued")) return false;
+          // If we have an expected value for this field, check it matches
+          const field = el.getAttribute("data-testid").split("-").pop();
+          const expectedValue = expectedBalances[field];
+          if (expectedValue && text !== expectedValue) return false;
+          return true;
+        });
       },
       address,
+      JSON.stringify(expectedBalances),
       { timeout: 30000 }
     );
   };
