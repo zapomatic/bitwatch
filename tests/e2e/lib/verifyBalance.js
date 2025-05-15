@@ -19,8 +19,8 @@ export default async (page, address, expectedBalances) => {
   // Wait for all balance values to be visible and match expected
   await Promise.all(
     Object.entries(selectors).map(async ([key, locator]) => {
-      await locator.waitFor({ state: "visible", timeout: 10000 });
-      await expect(locator).toHaveText(expectation[key], { timeout: 15000 });
+      await locator.waitFor({ state: "visible", timeout: 5000 });
+      await expect(locator).toHaveText(expectation[key], { timeout: 10000 });
     })
   );
 
