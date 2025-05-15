@@ -113,7 +113,7 @@ const runQueue = async () => {
 
   setTimeout(() => {
     runQueue();
-  }, memory.db.apiDelay);
+  }, memory.db.apiDelay * (process.env.TEST_MODE ? 100 : 1));
 };
 
 export default runQueue;

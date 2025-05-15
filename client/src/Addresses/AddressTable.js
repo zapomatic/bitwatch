@@ -61,8 +61,6 @@ const AddressTable = ({
             extendedKeyName={extendedKeyName}
             displayBtc={displayBtc}
             setNotification={setNotification}
-            parentKey={descriptorName || extendedKeyName}
-            index={address.index}
             onDelete={onDelete}
             onEditAddress={onEditAddress}
           />

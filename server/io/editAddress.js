@@ -71,7 +71,7 @@ export default async ({ data, io }) => {
   if (extendedKeyName) {
     // Try extended keys first
     const extendedKey = targetCollection.extendedKeys?.find(
-      (key) => key.key === extendedKeyName
+      (key) => key.name === extendedKeyName
     );
     if (extendedKey) {
       const addressIndex = extendedKey.addresses.findIndex(
@@ -89,7 +89,7 @@ export default async ({ data, io }) => {
     // Try descriptors if not found in extended keys
     if (!found && descriptorName) {
       const descriptor = targetCollection.descriptors?.find(
-        (desc) => desc.descriptor === descriptorName
+        (desc) => desc.name === descriptorName
       );
       if (descriptor) {
         const addressIndex = descriptor.addresses.findIndex(
@@ -108,7 +108,7 @@ export default async ({ data, io }) => {
   } else if (descriptorName) {
     // Try descriptors directly if descriptorName is provided
     const descriptor = targetCollection.descriptors?.find(
-      (desc) => desc.descriptor === descriptorName
+      (desc) => desc.name === descriptorName
     );
     if (descriptor) {
       const addressIndex = descriptor.addresses.findIndex(

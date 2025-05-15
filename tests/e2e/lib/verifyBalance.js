@@ -73,6 +73,8 @@ export default async (
   if (expectedBalances.mempool_in) {
     console.log(`Verifying mempool-in matches ${expectedBalances.mempool_in}`);
     try {
+      const actualMempoolIn = await mempoolInSelector.textContent();
+      console.log("Actual mempool-in value from UI:", actualMempoolIn);
       await expect(mempoolInSelector).toHaveText(expectedBalances.mempool_in, {
         // timeout: 10000,
       });

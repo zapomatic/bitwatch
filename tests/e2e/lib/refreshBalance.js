@@ -4,6 +4,8 @@ import verifyBalance from "./verifyBalance.js";
 
 // Helper to convert Bitcoin string to satoshis
 const btcToSats = (btcStr) => {
+  // Debug log
+  console.log("btcToSats input:", btcStr);
   // Remove ₿ symbol and trim
   const cleanStr = btcStr.replace("₿", "").trim();
   // Convert to number and multiply by 100M (satoshis)
@@ -17,6 +19,15 @@ export default async (
   index = 0,
   parentKey = null
 ) => {
+  // Default all missing fields to zero
+  expectedBalances = {
+    chain_in: "0.00000000 ₿",
+    chain_out: "0.00000000 ₿",
+    mempool_in: "0.00000000 ₿",
+    mempool_out: "0.00000000 ₿",
+    ...expectedBalances,
+  };
+
   // Create test response from expected balances
   const testResponse = {
     chain_stats: {

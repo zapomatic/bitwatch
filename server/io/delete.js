@@ -25,7 +25,7 @@ export default async ({ data, io }) => {
     // If it's an extended key address
     if (extendedKeyName) {
       const keyIndex = targetCollection.extendedKeys.findIndex(
-        (k) => k.key === extendedKeyName
+        (k) => k.name === extendedKeyName
       );
       if (keyIndex === -1) {
         logger.error("delete: Extended key not found");
@@ -49,7 +49,7 @@ export default async ({ data, io }) => {
       });
     } else if (descriptorName) {
       const descIndex = targetCollection.descriptors.findIndex(
-        (d) => d.descriptor === descriptorName
+        (d) => d.name === descriptorName
       );
       if (descIndex === -1) {
         logger.error("delete: Descriptor not found");
@@ -91,7 +91,7 @@ export default async ({ data, io }) => {
     }
   } else if (extendedKeyName) {
     const keyIndex = targetCollection.extendedKeys.findIndex(
-      (k) => k.key === extendedKeyName
+      (k) => k.name === extendedKeyName
     );
     if (keyIndex === -1) {
       logger.error("delete: Extended key not found");
@@ -110,7 +110,7 @@ export default async ({ data, io }) => {
     targetCollection.extendedKeys.splice(keyIndex, 1);
   } else if (descriptorName) {
     const descIndex = targetCollection.descriptors.findIndex(
-      (d) => d.descriptor === descriptorName
+      (d) => d.name === descriptorName
     );
     if (descIndex === -1) {
       logger.error("delete: Descriptor not found");
@@ -145,7 +145,7 @@ export default async ({ data, io }) => {
           addressesToRemove.push({
             address: addr.address,
             collectionName,
-            extendedKeyName: key.key,
+            extendedKeyName: key.name,
             descriptorName: undefined,
           });
         });
@@ -159,7 +159,7 @@ export default async ({ data, io }) => {
             address: addr.address,
             collectionName,
             extendedKeyName: undefined,
-            descriptorName: desc.descriptor,
+            descriptorName: desc.name,
           });
         });
       });

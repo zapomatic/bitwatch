@@ -85,7 +85,7 @@ export default ({
           return {
             collectionName,
             address: addrObj,
-            extendedKeyName: key.key,
+            extendedKeyName: key.name,
             descriptorName: undefined,
           };
         }
@@ -100,7 +100,7 @@ export default ({
             collectionName,
             address: addrObj,
             extendedKeyName: undefined,
-            descriptorName: desc.descriptor,
+            descriptorName: desc.name,
           };
         }
       }

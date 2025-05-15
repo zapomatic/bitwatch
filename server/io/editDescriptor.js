@@ -6,18 +6,18 @@ import enqueue from "../lib/queue/enqueue.js";
 
 export default async ({ data, io }) => {
   logger.info(
-    `editDescriptor: ${data.collection}/${data.descriptor}, gap ${
+    `editDescriptor: ${data.collectionName}/${data.name}, gap ${
       data.gapLimit
     }, initialAddresses ${data.initialAddresses}, skip ${
       data.skip
     } with ${getMonitorLog(data.monitor)}`
   );
-  if (!data.collection || !data.name || !data.descriptor) {
+  if (!data.collectionName || !data.name || !data.descriptor) {
     logger.error("editDescriptor: Missing required fields");
     return { error: "Missing required fields" };
   }
 
-  const collection = memory.db.collections[data.collection];
+  const collection = memory.db.collections[data.collectionName];
   if (!collection) {
     logger.error("editDescriptor: Collection not found");
     return { error: "Collection not found" };
@@ -94,8 +94,8 @@ export default async ({ data, io }) => {
 
   // Enqueue addresses for balance checking
   enqueue({
-    collectionName: data.collection,
-    descriptorName: data.descriptor,
+    collectionName: data.collectionName,
+    descriptorName: data.name,
   });
 
   memory.saveDb();

@@ -55,7 +55,7 @@ export default async ({ data }) => {
   if (extendedKeyName && collectionName) {
     const collection = memory.db.collections[collectionName];
     const extendedKeyObj = collection?.extendedKeys?.find(
-      (k) => k.key === extendedKeyName
+      (k) => k.name === extendedKeyName
     );
     if (!extendedKeyObj) {
       logger.error(

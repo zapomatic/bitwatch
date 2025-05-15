@@ -64,10 +64,8 @@ const AddressRow = ({
   extendedKeyName,
   displayBtc,
   setNotification,
-  index,
   onDelete,
   onEditAddress,
-  parentKey,
 }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -180,7 +178,7 @@ const AddressRow = ({
       address.actual.mempool_in !== address.expect.mempool_in ||
       address.actual.mempool_out !== address.expect.mempool_out);
 
-  const testId = parentKey ? `${parentKey}-address-${index}` : address.address;
+  const testId = address.address;
 
   return (
     <TableRow

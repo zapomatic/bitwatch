@@ -97,7 +97,7 @@ const DescriptorRow = ({
       "refreshBalance",
       {
         collectionName: collection.name,
-        descriptorName: descriptor.descriptor,
+        descriptorName: descriptor.name,
         testResponse,
       },
       (response) => {

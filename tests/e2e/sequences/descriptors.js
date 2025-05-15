@@ -125,48 +125,48 @@ export default async (page) => {
       // Verify each address has alert icons for all monitoring types and correct addresses
       for (let i = 0; i < addresses.length; i++) {
         const addressIndex = i + descriptor.skip; // Keep it 0-based with skip
-        await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-chain-in-${descriptor.monitor.chain_in}-icon"]`)).toBeVisible();
-        await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-chain-out-${descriptor.monitor.chain_out}-icon"]`)).toBeVisible();
-        await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-mempool-in-${descriptor.monitor.mempool_in}-icon"]`)).toBeVisible();
-        await expect(page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-mempool-out-${descriptor.monitor.mempool_out}-icon"]`)).toBeVisible();
+        const expectedAddress = testData.descriptors[descriptor.name].addresses[addressIndex].address;
+        await expect(page.locator(`[data-testid="${expectedAddress}-chain-in-${descriptor.monitor.chain_in}-icon"]`)).toBeVisible();
+        await expect(page.locator(`[data-testid="${expectedAddress}-chain-out-${descriptor.monitor.chain_out}-icon"]`)).toBeVisible();
+        await expect(page.locator(`[data-testid="${expectedAddress}-mempool-in-${descriptor.monitor.mempool_in}-icon"]`)).toBeVisible();
+        await expect(page.locator(`[data-testid="${expectedAddress}-mempool-out-${descriptor.monitor.mempool_out}-icon"]`)).toBeVisible();
 
         // Verify the address matches the expected address from test data
-        console.log(`Checking address at index ${i} (with skip ${descriptor.skip}), actual index ${i + descriptor.skip}`);
-        const expectedAddress = testData.descriptors[descriptor.name].addresses[i + descriptor.skip].address;
-        const addressCell = page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-row"] td:nth-child(2)`);
+        console.log(`Checking address at index ${i} (with skip ${descriptor.skip}), actual index ${addressIndex}`);
+        const addressCell = page.locator(`[data-testid="${expectedAddress}-row"] td:nth-child(2)`);
         await expect(addressCell).toContainText(expectedAddress.slice(0, 15));
 
         // Verify the name shows the correct index
-        const nameCell = page.locator(`[data-testid="${descriptor.descriptor}-address-${addressIndex}-name"]`);
+        const nameCell = page.locator(`[data-testid="${expectedAddress}-name"]`);
         await expect(nameCell).toContainText(`${descriptor.name} ${addressIndex}`);
       }
       // for the first descriptor, we will trigger a balance changes and edit to triggger more key derivation
       if (descriptor.name === "xpubSingle") {
 
         // initial refresh to get 0 balance
-        await refreshBalance(page, descriptor.descriptor, {}, firstAddressIndex, descriptor.descriptor);
+        const firstExpectedAddress = testData.descriptors[descriptor.name].addresses[firstAddressIndex].address;
+        await refreshBalance(page, firstExpectedAddress, {
+          chain_out: "0.00000000 ₿",
+          mempool_out: "0.00000000 ₿",
+          chain_in: "0.00000000 ₿",
+          mempool_in: "0.00000000 ₿"
+        }, firstAddressIndex, descriptor.descriptor);
         console.log(`Verified initial zero balance for ${descriptor.name} address ${firstAddressIndex}`);
 
         // Test mempool input state
-        await refreshBalance(page, descriptor.descriptor, {
+        await refreshBalance(page, firstExpectedAddress, {
           mempool_in: "0.00010000 ₿"
         }, firstAddressIndex, descriptor.descriptor);
         console.log(`Verified mempool input for ${descriptor.name} address ${firstAddressIndex}`);
 
         // Test chain input state
-        await refreshBalance(page, descriptor.descriptor, {
+        await refreshBalance(page, firstExpectedAddress, {
           chain_in: "0.00010000 ₿"
         }, firstAddressIndex, descriptor.descriptor);
         console.log(`Verified chain input for ${descriptor.name} address ${firstAddressIndex}`);
 
-        // Test mempool output state
-        // await refreshBalance(page, descriptor.descriptor, {
-        //   chain_in: "0.00010000 ₿",
-        //   mempool_out: "0.00001000 ₿"
-        // }, firstAddressIndex, descriptor.descriptor);
-        
         // Instead of expecting mempool_out, expect chain_out due to backend advancing state
-        await refreshBalance(page, descriptor.descriptor, {
+        await refreshBalance(page, firstExpectedAddress, {
           chain_in: "0.00010000 ₿",
           chain_out: "0.00001000 ₿",
           mempool_in: "0.00000000 ₿",
@@ -175,34 +175,18 @@ export default async (page) => {
         console.log(`Verified chain output for ${descriptor.name} address ${firstAddressIndex}`);
 
         // Accept the chain-out change
-        await findAndClick(page, `${descriptor.descriptor}-address-${firstAddressIndex+1}-accept-button`);
-        await expect(page.getByTestId(`${descriptor.descriptor}-address-${firstAddressIndex+1}-chain-out-diff`)).not.toBeVisible();
+        const secondExpectedAddress = testData.descriptors[descriptor.name].addresses[firstAddressIndex + 1].address;
+        await findAndClick(page, `${secondExpectedAddress}-accept-button`);
+        await expect(page.getByTestId(`${secondExpectedAddress}-chain-out-diff`)).not.toBeVisible();
         console.log(`Accepted balance changes for ${descriptor.name} address ${firstAddressIndex + 1}`);
 
-        // Trigger update on second address so we the backend has a reason
-        // to derive more addresses (to ensure the gap is respected)
-        // await refreshBalance(page, descriptor.descriptor, {}, firstAddressIndex + 1, descriptor.descriptor);
-        // console.log(`trigger zero update for ${descriptor.name} address ${firstAddressIndex + 1}`);
-        // await refreshBalance(page, descriptor.descriptor, {
-        //   chain_in: "0.00000000 ₿",
-        //   chain_out: "0.00000000 ₿",
-        //   mempool_in: "0.00010000 ₿",
-        //   mempool_out: "0.00000000 ₿"
-        // }, firstAddressIndex + 1, descriptor.descriptor);
-        // console.log(`trigger activity update for ${descriptor.name} address ${firstAddressIndex + 1}`);
-
         // Wait up to 5 seconds for the new address to appear
-        // let retries = 10;
         let newAddressList;
-        // while (retries-- > 0) {
-          newAddressList = await page.locator(`[data-testid="${descriptor.descriptor}-address-list"] tr.address-row`).all();
-        //   if (newAddressList.length === descriptor.initialAddresses + 1) break;
-        //   await page.waitForTimeout(500);
-        // }
+        newAddressList = await page.locator(`[data-testid="${descriptor.descriptor}-address-list"] tr.address-row`).all();
         expect(newAddressList.length).toBe(descriptor.initialAddresses + 2);
 
         // Edit the first derived address
-        await findAndClick(page, `${descriptor.descriptor}-address-${firstAddressIndex}-edit-button`);
+        await findAndClick(page, `${firstExpectedAddress}-edit-button`);
         
         // Wait for the dialog to be visible
         await expect(page.locator('[data-testid="address-dialog"]')).toBeVisible();
@@ -215,7 +199,7 @@ export default async (page) => {
         // Verify the dialog closed and name was updated
         await page.waitForSelector('[data-testid="address-dialog"]', { state: "hidden", timeout: 2000 });
         await expect(page.getByText("Address updated successfully")).toBeVisible();
-        await expect(page.getByTestId(`${descriptor.descriptor}-address-${firstAddressIndex}-name`)).toContainText(`${descriptor.name} 0 Edited`);
+        await expect(page.getByTestId(`${firstExpectedAddress}-name`)).toContainText(`${descriptor.name} 0 Edited`);
         console.log(`Edited address name in ${descriptor.name}`);
 
         // Click the edit button on the descriptor row
