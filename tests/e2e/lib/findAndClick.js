@@ -55,10 +55,11 @@ export default async (page, testId, options = {}) => {
   await element.scrollIntoViewIfNeeded();
 
   // Click with stability checks
-  console.log(`Clicking element with testId: ${testId}`);
   if (exact) {
+    console.log(`Clicking exact element with testId: ${testId}`);
     await element.first().click({ timeout, force });
   } else {
+    console.log(`Clicking element with testId: ${testId}`);
     await element.click({ timeout, force });
   }
   await page.waitForTimeout(350);

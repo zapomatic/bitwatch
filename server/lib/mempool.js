@@ -77,7 +77,7 @@ const untrackAddress = (address) => {
   }
 
   if (!trackedAddresses.has(address)) {
-    logger.info(`Address not tracked: ${address}`);
+    // logger.info(`Address not tracked: ${address}`);
     return true;
   }
 

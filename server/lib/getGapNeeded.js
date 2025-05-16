@@ -3,7 +3,7 @@ import getGap from "./getGap.js";
 
 export default (item) => {
   if (!item?.addresses) {
-    logger.warning(`No addresses found for item ${item?.name}`);
+    logger.debug(`No addresses found for item ${item?.name}`);
     return false;
   }
 
@@ -11,7 +11,7 @@ export default (item) => {
 
   // If we haven't found any activity yet, we don't need more addresses
   if (lastUsedIndex === -1) {
-    logger.warning(`No activity found yet for ${item.name}`);
+    logger.debug(`No activity found yet for ${item.name}`);
     return false;
   }
 

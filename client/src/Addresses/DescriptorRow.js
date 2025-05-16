@@ -53,8 +53,8 @@ const DescriptorRow = ({
     e.preventDefault();
     e.stopPropagation();
     onDelete({
-      collection: collection.name,
-      descriptor: descriptor.descriptor,
+      collectionName: collection.name,
+      descriptorName: descriptor.name,
       message: "Delete this descriptor and all its derived addresses?",
     });
   };
@@ -91,6 +91,7 @@ const DescriptorRow = ({
     let testResponse = undefined;
     if (window.__TEST_RESPONSE__) {
       testResponse = window.__TEST_RESPONSE__;
+      console.log("Using test response for descriptor refresh", testResponse);
       window.__TEST_RESPONSE_USED__ = true;
       window.__TEST_RESPONSE__ = undefined;
     }

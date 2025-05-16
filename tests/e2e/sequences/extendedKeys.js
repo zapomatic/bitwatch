@@ -5,7 +5,8 @@ import findAndClick from "../lib/findAndClick.js";
 import setMonitoring from "../lib/setMonitoring.js";
 import refreshBalance from "../lib/refreshBalance.js";
 import verifyBalance from "../lib/verifyBalance.js";
-
+import ensureExpanded from "../lib/ensureExpanded.js";
+import ensureCollapsed from "../lib/ensureCollapsed.js";
 const addExtendedKey = async (
   page,
   collection,
@@ -77,7 +78,7 @@ export default async (page) => {
     }));
 
     for (const key of extendedKeys) {
-      console.log(`Adding extended key ${key.name} with monitor settings:`, key.monitor);
+      console.log(`Adding extended key ${key.name} with monitor settings: chain: ${key.monitor.chain_in}/${key.monitor.chain_out}, mempool: ${key.monitor.mempool_in}/${key.monitor.mempool_out}`);
       await addExtendedKey(page, "Donations", key);
       console.log(`Added ${key.name}`);
 
@@ -116,7 +117,7 @@ export default async (page) => {
       for (let i = 0; i < addresses.length; i++) {
         const addressIndex = i + key.skip; // Keep it 0-based with skip
         const expectedAddress = testData.extendedKeys[key.keyId].addresses[addressIndex].address;
-        console.log(`Checking icons for ${key.name} address ${addressIndex} with monitor settings: chain_in: ${key.monitor.chain_in}, chain_out: ${key.monitor.chain_out}, mempool_in: ${key.monitor.mempool_in}, mempool_out: ${key.monitor.mempool_out}`);
+        console.log(`Checking icons for ${key.name} address ${addressIndex} with monitor settings: chain: ${key.monitor.chain_in}/${key.monitor.chain_out}, mempool: ${key.monitor.mempool_in}/${key.monitor.mempool_out}`);
 
         await expect(page.locator(`[data-testid="${expectedAddress}-chain-in-${key.monitor.chain_in}-icon"]`)).toBeVisible();
         await expect(page.locator(`[data-testid="${expectedAddress}-chain-out-${key.monitor.chain_out}-icon"]`)).toBeVisible();
@@ -226,9 +227,8 @@ export default async (page) => {
         // Wait for success notification
         await expect(page.getByText("Extended key updated successfully")).toBeVisible();
         // Expand the section if it's collapsed
-        if (!await page.locator(`[data-testid="${key.key}-address-list"]`).isVisible()) {
-          await findAndClick(page, `${key.key}-expand-button`);
-        }
+        await ensureExpanded(page, key.key);
+        // After setting skip=50, we should see addresses starting from index 50
         // After setting skip=50, we should see addresses starting from index 50
         const addr50 = testData.extendedKeys[key.keyId].addresses[50].address;
         const addr51 = testData.extendedKeys[key.keyId].addresses[51].address;
@@ -292,7 +292,7 @@ export default async (page) => {
         console.log("Verified extended key edit with skip=50");
       }
       // Collapse the extended key section after testing
-      await findAndClick(page, `${key.key}-expand-button`);
+      await ensureCollapsed(page, key.key);
       console.log(`Collapsed ${key.name} section`);
     }
 };

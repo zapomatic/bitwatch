@@ -1,6 +1,7 @@
 import { expect } from "@playwright/test";
 import findAndClick from "./findAndClick.js";
 import verifyBalance from "./verifyBalance.js";
+import ensureExpanded from "./ensureExpanded.js";
 
 // Helper to convert Bitcoin string to satoshis
 const btcToSats = (btcStr) => {
@@ -36,18 +37,10 @@ export default async (page, address, expectedBalances, parentKey = null) => {
 
   // If this is a child address, ensure the parent section is expanded
   if (parentKey) {
-    const expandButton = page.getByTestId(`${parentKey}-expand-button`);
-    const expandedState = await expandButton.getAttribute("aria-expanded");
-    console.log(`expandedState of ${parentKey}-expand-button`, expandedState);
-
-    // Only expand if explicitly collapsed (aria-expanded="false")
-    // If it's null or "true", we want to leave it as is
-    if (expandedState === "false") {
-      await findAndClick(page, `${parentKey}-expand-button`);
-    }
+    await ensureExpanded(page, parentKey);
 
     const addressListSelector = `[data-testid="${parentKey}-address-list"]`;
-    console.log("Looking for address list with selector:", addressListSelector);
+    // console.log("Looking for address list with selector:", addressListSelector);
 
     // Wait for the address list to be visible with a longer timeout
     await page.waitForSelector(addressListSelector, {
@@ -83,10 +76,12 @@ export default async (page, address, expectedBalances, parentKey = null) => {
   );
 
   if (isCustomBalance) {
+    const testResponseString = JSON.stringify(testResponse);
+    console.log("Setting test response for", address, testResponseString);
     await page.evaluate((response) => {
       window.__TEST_RESPONSE__ = response;
       window.__TEST_RESPONSE_USED__ = false;
-    }, JSON.stringify(testResponse));
+    }, testResponseString);
   }
 
   // Click the refresh button and wait for loading state
@@ -94,7 +89,10 @@ export default async (page, address, expectedBalances, parentKey = null) => {
     force: true,
   });
 
+  console.log("Refreshed balance for", address);
+
   if (isCustomBalance) {
+    console.log("Waiting for test response to be marked as used");
     // Wait for the test response to be marked as used
     await page.waitForFunction(() => window.__TEST_RESPONSE_USED__, {
       timeout: 5000,

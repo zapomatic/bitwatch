@@ -68,7 +68,7 @@ export default async (page) => {
   console.log("Verified back to descending sort order");
 
   // Delete Test 42 collection
-  await findAndClick(page, "Test 42-delete");
+  await findAndClick(page, "Test 42-delete-button");
   await expect(
     page.locator('[data-testid="delete-confirmation-dialog"]')
   ).toBeVisible();
@@ -79,7 +79,7 @@ export default async (page) => {
   console.log("Deleted Test 42 collection");
 
   // Delete Test 2 collection
-  await findAndClick(page, "Test 2-delete");
+  await findAndClick(page, "Test 2-delete-button");
   await expect(
     page.locator('[data-testid="delete-confirmation-dialog"]')
   ).toBeVisible();

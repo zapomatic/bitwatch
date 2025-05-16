@@ -252,7 +252,7 @@ const CollectionRow = ({
               size="small"
               variant="danger"
               title="Delete Collection"
-              data-testid={`${collection.name}-delete`}
+              data-testid={`${collection.name}-delete-button`}
               aria-label="Delete collection"
             />
           </Box>

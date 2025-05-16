@@ -5,6 +5,7 @@ import findAndClick from "../lib/findAndClick.js";
 import setMonitoring from "../lib/setMonitoring.js";
 import refreshBalance from "../lib/refreshBalance.js";
 import verifyBalance from "../lib/verifyBalance.js";
+import ensureCollapsed from "../lib/ensureCollapsed.js";
 const addDescriptor = async (
   page,
   collection,
@@ -146,7 +147,7 @@ export default async (page) => {
 
         const firstExpectedAddress = testData.descriptors[descriptor.name].addresses[firstAddressIndex].address;
         const secondExpectedAddress = testData.descriptors[descriptor.name].addresses[firstAddressIndex + 1].address;
-        const thirdExpectedAddress = testData.descriptors[descriptor.name].addresses[firstAddressIndex + 2].address;
+        // const thirdExpectedAddress = testData.descriptors[descriptor.name].addresses[firstAddressIndex + 2].address;
         // refresh all addresses in the descriptor
         await findAndClick(page, `${descriptor.descriptor}-refresh-all-button`);
         console.log(`Clicked refresh button for ${descriptor.descriptor}`);
@@ -260,7 +261,7 @@ export default async (page) => {
         expect(addresses.length).toBe(descriptor.initialAddresses + descriptor.skip);
       }
 
-      await findAndClick(page, `${descriptor.descriptor}-expand-button`);
+      await ensureCollapsed(page, descriptor.descriptor);
       console.log(`Collapsed ${descriptor.name} section`);
     }
 
