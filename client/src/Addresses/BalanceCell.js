@@ -92,35 +92,34 @@ const BalanceCell = ({
             : error
             ? "—"
             : formatSatoshis(actualValue, displayBtc)}
-          {queued && (
-            <Tooltip title="Balance update queued">
-              <RefreshIcon
-                className="crystal-text-secondary"
-                sx={{
-                  fontSize: "1rem",
-                  animation: "spin 1s linear infinite",
-                  "@keyframes spin": {
-                    "0%": { transform: "rotate(0deg)" },
-                    "100%": { transform: "rotate(360deg)" },
-                  },
-                }}
-              />
-            </Tooltip>
+          <Tooltip title={queued ? "Balance update queued" : ""}>
+            <RefreshIcon
+              className="crystal-text-secondary"
+              sx={{
+                fontSize: "1rem",
+                visibility: queued ? "visible" : "hidden",
+                animation: queued ? "spin 1s linear infinite" : "none",
+                "@keyframes spin": {
+                  "0%": { transform: "rotate(0deg)" },
+                  "100%": { transform: "rotate(360deg)" },
+                },
+              }}
+            />
+          </Tooltip>
+          {!pending && !error && diff !== 0 && (
+            <Typography
+              className={`crystal-text ${
+                diff > 0 ? "crystal-text-success" : "crystal-text-danger"
+              }`}
+              sx={{ fontSize: "0.9em", fontWeight: 500 }}
+              aria-label="Balance difference"
+              data-testid={`${dataTestId}-diff`}
+            >
+              ({diff > 0 ? "+" : ""}
+              {formatSatoshis(diff, displayBtc)})
+            </Typography>
           )}
         </Typography>
-        {!pending && !error && diff !== 0 && (
-          <Typography
-            className={`crystal-text ${
-              diff > 0 ? "crystal-text-success" : "crystal-text-danger"
-            }`}
-            sx={{ fontSize: "0.9em", fontWeight: 500, ml: 1 }}
-            aria-label="Balance difference"
-            data-testid={`${dataTestId}-diff`}
-          >
-            ({diff > 0 ? "+" : ""}
-            {formatSatoshis(diff, displayBtc)})
-          </Typography>
-        )}
         {error && (
           <Tooltip title="Failed to fetch balance">
             <WarningIcon
