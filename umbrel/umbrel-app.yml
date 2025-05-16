@@ -2,7 +2,7 @@ manifestVersion: 1
 id: bitwatch
 category: bitcoin
 name: Bitwatch
-version: "1.7.0-rc7"
+version: "1.7.0"
 tagline: Monitor Bitcoin addresses in real-time
 description: >-
   Monitor Bitcoin addresses in the mempool and on-chain using the mempool.space API and websocket.
@@ -29,7 +29,7 @@ gallery:
   - 2.jpg
   - 3.jpg
 releaseNotes: >-
-  This release adds .
+  This release completely rebuilds the websocket and API request queue logic and includes bug, performance, and UX fixes.
 
     - new method for mempool.space websocket subscription management
       - now managed per address to prevent hundreds of websocket subscriptions
