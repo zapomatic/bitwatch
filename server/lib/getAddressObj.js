@@ -27,6 +27,7 @@ export default ({
         address: addrObj,
         extendedKeyName: undefined,
         descriptorName,
+        parentItem: desc,
       };
     }
     return null;
@@ -42,6 +43,7 @@ export default ({
         address: addrObj,
         extendedKeyName,
         descriptorName: undefined,
+        parentItem: key,
       };
     }
     return null;
@@ -87,6 +89,7 @@ export default ({
             address: addrObj,
             extendedKeyName: key.name,
             descriptorName: undefined,
+            parentItem: key,
           };
         }
       }
@@ -101,6 +104,7 @@ export default ({
             address: addrObj,
             extendedKeyName: undefined,
             descriptorName: desc.name,
+            parentItem: desc,
           };
         }
       }

@@ -35,7 +35,7 @@ const init = async (sendTestMessage = false) => {
       on: (_event, _callback) =>
         logger.info(`Test bot: ${_event} handler registered`),
       sendMessage: (_chatId, _message, _options) => {
-        logger.info(`Test bot: sendMessage called`);
+        // logger.info(`Test bot: sendMessage called`);
         return Promise.resolve(true);
       },
     };
@@ -185,13 +185,13 @@ const notifyBalanceChange = async (address, changes, collection, name) => {
   }
 
   const changeMessages = [];
-  if (changes.chain_in)
+  if (typeof changes.chain_in === "number")
     changeMessages.push(`Chain In: ${formatSats(changes.chain_in)}`);
-  if (changes.chain_out)
+  if (typeof changes.chain_out === "number")
     changeMessages.push(`Chain Out: ${formatSats(changes.chain_out)}`);
-  if (changes.mempool_in)
+  if (typeof changes.mempool_in === "number")
     changeMessages.push(`Mempool In: ${formatSats(changes.mempool_in)}`);
-  if (changes.mempool_out)
+  if (typeof changes.mempool_out === "number")
     changeMessages.push(`Mempool Out: ${formatSats(changes.mempool_out)}`);
 
   if (changeMessages.length === 0) return true;

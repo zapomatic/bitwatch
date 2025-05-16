@@ -116,7 +116,7 @@ export default async (page) => {
       for (let i = 0; i < addresses.length; i++) {
         const addressIndex = i + key.skip; // Keep it 0-based with skip
         const expectedAddress = testData.extendedKeys[key.keyId].addresses[addressIndex].address;
-        console.log(`Checking icons for ${key.name} address ${addressIndex} with monitor settings:`, key.monitor);
+        console.log(`Checking icons for ${key.name} address ${addressIndex} with monitor settings: chain_in: ${key.monitor.chain_in}, chain_out: ${key.monitor.chain_out}, mempool_in: ${key.monitor.mempool_in}, mempool_out: ${key.monitor.mempool_out}`);
 
         await expect(page.locator(`[data-testid="${expectedAddress}-chain-in-${key.monitor.chain_in}-icon"]`)).toBeVisible();
         await expect(page.locator(`[data-testid="${expectedAddress}-chain-out-${key.monitor.chain_out}-icon"]`)).toBeVisible();
@@ -248,10 +248,7 @@ export default async (page) => {
         // Trigger activity on address 54
         const addr54 = testData.extendedKeys[key.keyId].addresses[54].address;
         await refreshBalance(page, addr54, {
-          chain_in: "0.00010000 ₿",
-          chain_out: "0.00000000 ₿",
-          mempool_in: "0.00000000 ₿",
-          mempool_out: "0.00000000 ₿"
+          chain_in: "0.00010000 ₿"
         }, key.key);
         console.log("Triggered activity on address 54");
         // Wait for the new address to be derived

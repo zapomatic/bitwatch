@@ -180,12 +180,14 @@ test.describe("Bitwatch", () => {
     await findAndClick(page, `${firstExtendedKey.key}-expand-button`);
     console.log(`Expanded ${firstExtendedKey.name} section for deletion`);
     // get the second address row and scroll it into view
-    await findAndClick(page, `${firstExtendedKey.key}-address-1-delete-button`);
+    const addressIndex = 1 + firstExtendedKey.skip;
+    const addressToDelete = testData.extendedKeys[firstExtendedKey.keyId].addresses[addressIndex].address;
+    await findAndClick(page, `${addressToDelete}-delete-button`);
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
     await expect(page.getByText("Remove this address from the extended key set?")).toBeVisible();
     await findAndClick(page, "delete-confirmation-confirm", { allowOverlay: true });
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
-    await expect(page.getByTestId(`${firstExtendedKey.key}-address-1-delete-button`)).not.toBeVisible();
+    await expect(page.getByTestId(`${addressToDelete}-delete-button`)).not.toBeVisible();
     console.log("Deleted single address from extended key");
     const expandButton = page.getByTestId(`${firstExtendedKey.key}-expand-button`);
     await expect(expandButton).toBeVisible();
@@ -193,7 +195,8 @@ test.describe("Bitwatch", () => {
     console.log(`Collapsed ${firstExtendedKey.name} section`);
     // delete all extended keys
     for (const key of extKeys) {
-      await findAndClick(page, `${key.key}-delete-button`);
+      const firstAddress = testData.extendedKeys[key.keyId].addresses[key.skip].address;
+      await findAndClick(page, `${firstAddress}-delete-button`);
       await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
       await expect(page.getByText("Delete this extended key and all its derived addresses?")).toBeVisible();
       await findAndClick(page, "delete-confirmation-confirm", { allowOverlay: true });
@@ -212,20 +215,20 @@ test.describe("Bitwatch", () => {
     // scroll first descriptor address row into view
     const descriptorRow = page.getByTestId(`${firstDescriptor.descriptor}-descriptor-row`);
     await descriptorRow.scrollIntoViewIfNeeded();
-    // await findAndClick(page, `[data-testid="${firstDescriptor.descriptor}-expand-button"]`);
-    // console.log(`Expanded ${firstDescriptor.name} section for deletion`);
-    await findAndClick(page, `${firstDescriptor.descriptor}-address-1-delete-button`);
+    const descriptorAddressToDelete = testData.descriptors[firstDescriptor.name].addresses[1].address;
+    await findAndClick(page, `${descriptorAddressToDelete}-delete-button`);
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
     await expect(page.getByText("Remove this address from the descriptor set?")).toBeVisible();
     await findAndClick(page, "delete-confirmation-confirm", { allowOverlay: true });
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).not.toBeVisible();
-    await expect(page.getByTestId(`${firstDescriptor.descriptor}-address-1-delete-button`)).not.toBeVisible();
+    await expect(page.getByTestId(`${descriptorAddressToDelete}-delete-button`)).not.toBeVisible();
     console.log("Deleted single address from descriptor");
     await findAndClick(page, `${firstDescriptor.descriptor}-expand-button`);
     console.log(`Collapsed ${firstDescriptor.name} section`);
     // delete all descriptors
     for (const descriptor of descKeys) {
-      await findAndClick(page, `${descriptor.descriptor}-delete-button`);
+      const firstDescAddress = testData.descriptors[descriptor.name].addresses[0].address;
+      await findAndClick(page, `${firstDescAddress}-delete-button`);
       await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
       await expect(page.getByText("Delete this descriptor and all its derived addresses?")).toBeVisible();
       await findAndClick(page, "delete-confirmation-confirm", { allowOverlay: true });
@@ -233,7 +236,8 @@ test.describe("Bitwatch", () => {
     }
 
     // 4. Delete the whole collection
-    await findAndClick(page, "Donations-delete");
+    const collectionAddress = testData.plain.zapomatic; // Using the first address as the collection identifier
+    await findAndClick(page, `${collectionAddress}-delete-button`);
     await expect(page.locator('[data-testid="delete-confirmation-dialog"]')).toBeVisible();
     await expect(page.getByText("Delete this collection and all its addresses?")).toBeVisible();
     await findAndClick(page, "delete-confirmation-confirm", { allowOverlay: true });

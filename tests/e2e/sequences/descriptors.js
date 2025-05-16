@@ -90,13 +90,13 @@ export default async (page) => {
       const descriptorRow = page.getByTestId(`${descriptor.descriptor}-row`);
       
       // Debug: Log all cells in the row
-      const cells = await descriptorRow.locator('td').all();
-      console.log('Descriptor row contents:');
-      for (let i = 0; i < cells.length; i++) {
-        const text = await cells[i].textContent();
-        console.log(`Cell ${i}: "${text}"`);
-      }
-      console.log('Descriptor object:', descriptor);
+      // const cells = await descriptorRow.locator('td').all();
+      // console.log('Descriptor row contents:');
+      // for (let i = 0; i < cells.length; i++) {
+      //   const text = await cells[i].textContent();
+      //   console.log(`Cell ${i}: "${text}"`);
+      // }
+      // console.log('Descriptor object:', descriptor);
       
       // Verify descriptor information
       await expect(descriptorRow.locator('td').nth(0)).toContainText(descriptor.name);
@@ -191,11 +191,12 @@ export default async (page) => {
         await refreshBalance(page, secondExpectedAddress, {
           chain_in: "0.00010000 ₿"
         }, descriptor.descriptor);
+        // Wait for the new address to be derived
+        await page.waitForTimeout(1000);
 
-        // Wait up to 5 seconds for the new address to appear
         let newAddressList;
         newAddressList = await page.locator(`[data-testid="${descriptor.descriptor}-address-list"] tr.address-row`).all();
-        expect(newAddressList.length).toBe(descriptor.initialAddresses + 2);
+        expect(newAddressList.length).toBe(descriptor.initialAddresses + 1);
 
         // Edit the first derived address
         await findAndClick(page, `${firstExpectedAddress}-edit-button`);

@@ -3,7 +3,7 @@ import getGap from "./getGap.js";
 
 export default (item) => {
   if (!item?.addresses) {
-    logger.debug(`No addresses found for item ${item?.name}`);
+    logger.warning(`No addresses found for item ${item?.name}`);
     return false;
   }
 
@@ -11,13 +11,13 @@ export default (item) => {
 
   // If we haven't found any activity yet, we don't need more addresses
   if (lastUsedIndex === -1) {
-    logger.debug(`No activity found yet for ${item.name}`);
+    logger.warning(`No activity found yet for ${item.name}`);
     return false;
   }
 
   // If we have enough empty addresses after the last used one, we're good
   if (emptyCount >= item.gapLimit) {
-    logger.debug(
+    logger.info(
       `Gap limit maintained for ${item.name}: ${emptyCount} empty addresses after index ${lastUsedIndex} (gap limit: ${item.gapLimit})`
     );
     return false;
