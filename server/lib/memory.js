@@ -61,7 +61,6 @@ const saveDb = () => {
             address: addr.address,
             name: addr.name,
             expect: addr.expect,
-            actual: addr.actual,
             alerted: addr.alerted,
             trackWebsocket: addr.trackWebsocket,
             monitor: addr.monitor
@@ -93,7 +92,6 @@ const saveDb = () => {
               name: addr.name,
               index: addr.index,
               expect: addr.expect,
-              actual: addr.actual,
               alerted: addr.alerted,
               trackWebsocket: addr.trackWebsocket,
               monitor: addr.monitor
@@ -136,7 +134,6 @@ const saveDb = () => {
               name: addr.name,
               index: addr.index,
               expect: addr.expect,
-              actual: addr.actual,
               alerted: addr.alerted,
               trackWebsocket: addr.trackWebsocket,
               monitor: addr.monitor
