@@ -57,7 +57,9 @@ export default (address, balance, collectionName, addressName) => {
       );
       addr.expect.chain_in = newBalance.chain_in;
       addr.alerted.chain_in = false;
-    } else {
+    } else if (newBalance.chain_in !== oldBalance.chain_in) {
+      // Reset alerted state if the actual balance has changed
+      addr.alerted.chain_in = false;
       logger.info(
         `alert chain_in (${newBalance.chain_in}) for ${address} (${collectionName}/${addressName})`
       );
@@ -72,7 +74,9 @@ export default (address, balance, collectionName, addressName) => {
       );
       addr.expect.chain_out = newBalance.chain_out;
       addr.alerted.chain_out = false;
-    } else {
+    } else if (newBalance.chain_out !== oldBalance.chain_out) {
+      // Reset alerted state if the actual balance has changed
+      addr.alerted.chain_out = false;
       logger.info(
         `alert chain_out (${newBalance.chain_out}) for ${address} (${collectionName}/${addressName})`
       );
@@ -87,7 +91,9 @@ export default (address, balance, collectionName, addressName) => {
       );
       addr.expect.mempool_in = newBalance.mempool_in;
       addr.alerted.mempool_in = false;
-    } else {
+    } else if (newBalance.mempool_in !== oldBalance.mempool_in) {
+      // Reset alerted state if the actual balance has changed
+      addr.alerted.mempool_in = false;
       logger.info(
         `alert mempool_in (${newBalance.mempool_in}) for ${address} (${collectionName}/${addressName})`
       );
@@ -102,7 +108,9 @@ export default (address, balance, collectionName, addressName) => {
       );
       addr.expect.mempool_out = newBalance.mempool_out;
       addr.alerted.mempool_out = false;
-    } else {
+    } else if (newBalance.mempool_out !== oldBalance.mempool_out) {
+      // Reset alerted state if the actual balance has changed
+      addr.alerted.mempool_out = false;
       logger.info(
         `alert mempool_out (${newBalance.mempool_out}) for ${address} (${collectionName}/${addressName})`
       );
@@ -124,10 +132,10 @@ Previous: chain_in=${oldBalance.chain_in}, chain_out=${oldBalance.chain_out}, me
     memory.saveDb();
   }
 
-  // Only return changes that need alerts
+  // Only return changes that need alerts and haven't been alerted yet
   const alertChanges = {};
   for (const [type, value] of Object.entries(changes)) {
-    if (!shouldAutoAccept(type)) {
+    if (!shouldAutoAccept(type) && !addr.alerted[type]) {
       alertChanges[type] = value;
     }
   }

@@ -44,6 +44,14 @@ export default async ({ data, io }) => {
     mempool_out: data.expect?.mempool_out ?? data.actual?.mempool_out ?? 0,
   };
 
+  // Clear alerted state since user has acknowledged the current state
+  record.alerted = {
+    chain_in: false,
+    chain_out: false,
+    mempool_in: false,
+    mempool_out: false,
+  };
+
   memory.saveDb();
   io.emit("updateState", { collections: memory.db.collections });
   return { success: true };
