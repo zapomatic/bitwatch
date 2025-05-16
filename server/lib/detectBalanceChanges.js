@@ -57,9 +57,11 @@ export default (address, balance, collectionName, addressName) => {
       );
       addr.expect.chain_in = newBalance.chain_in;
       addr.alerted.chain_in = false;
-    } else if (newBalance.chain_in !== oldBalance.chain_in) {
-      // Reset alerted state if the actual balance has changed
-      addr.alerted.chain_in = false;
+    } else if (
+      newBalance.chain_in !== oldBalance.chain_in &&
+      !addr.alerted.chain_in
+    ) {
+      // Only alert if the actual balance has changed and we haven't alerted yet
       logger.info(
         `alert chain_in (${newBalance.chain_in}) for ${address} (${collectionName}/${addressName})`
       );
@@ -74,9 +76,11 @@ export default (address, balance, collectionName, addressName) => {
       );
       addr.expect.chain_out = newBalance.chain_out;
       addr.alerted.chain_out = false;
-    } else if (newBalance.chain_out !== oldBalance.chain_out) {
-      // Reset alerted state if the actual balance has changed
-      addr.alerted.chain_out = false;
+    } else if (
+      newBalance.chain_out !== oldBalance.chain_out &&
+      !addr.alerted.chain_out
+    ) {
+      // Only alert if the actual balance has changed and we haven't alerted yet
       logger.info(
         `alert chain_out (${newBalance.chain_out}) for ${address} (${collectionName}/${addressName})`
       );
@@ -91,9 +95,11 @@ export default (address, balance, collectionName, addressName) => {
       );
       addr.expect.mempool_in = newBalance.mempool_in;
       addr.alerted.mempool_in = false;
-    } else if (newBalance.mempool_in !== oldBalance.mempool_in) {
-      // Reset alerted state if the actual balance has changed
-      addr.alerted.mempool_in = false;
+    } else if (
+      newBalance.mempool_in !== oldBalance.mempool_in &&
+      !addr.alerted.mempool_in
+    ) {
+      // Only alert if the actual balance has changed and we haven't alerted yet
       logger.info(
         `alert mempool_in (${newBalance.mempool_in}) for ${address} (${collectionName}/${addressName})`
       );
@@ -108,9 +114,11 @@ export default (address, balance, collectionName, addressName) => {
       );
       addr.expect.mempool_out = newBalance.mempool_out;
       addr.alerted.mempool_out = false;
-    } else if (newBalance.mempool_out !== oldBalance.mempool_out) {
-      // Reset alerted state if the actual balance has changed
-      addr.alerted.mempool_out = false;
+    } else if (
+      newBalance.mempool_out !== oldBalance.mempool_out &&
+      !addr.alerted.mempool_out
+    ) {
+      // Only alert if the actual balance has changed and we haven't alerted yet
       logger.info(
         `alert mempool_out (${newBalance.mempool_out}) for ${address} (${collectionName}/${addressName})`
       );
