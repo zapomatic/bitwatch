@@ -170,7 +170,7 @@ const memory = {
     websocketState: "DISCONNECTED",
     apiState: "UNKNOWN",
   },
-  dirUI: path.join(__dirname, "../client/build"),
+  dirUI: path.join(__dirname, "../../client/build"),
   dbFile,
   dataDir,
   db: loadDb(),

@@ -3,6 +3,8 @@ import logger from "./logger.js";
 import TelegramBot from "node-telegram-bot-api";
 
 let bot = null;
+// Keep track of alerts we've already sent
+const sentAlerts = new Map();
 
 const init = async (sendTestMessage = false) => {
   // Clear existing bot instance if it exists
@@ -174,6 +176,10 @@ const formatSats = (sats) => {
   return `${numericSats.toLocaleString()} sats`;
 };
 
+const getAlertKey = (collection, name, address, type, value) => {
+  return `${collection}/${name}/${address}/${type}:${value}`;
+};
+
 const notifyBalanceChange = async (address, changes, collection, name) => {
   if (!bot || !memory.db.telegram?.chatId) {
     logger.warning(
@@ -185,14 +191,65 @@ const notifyBalanceChange = async (address, changes, collection, name) => {
   }
 
   const changeMessages = [];
-  if (typeof changes.chain_in === "number")
-    changeMessages.push(`Chain In: ${formatSats(changes.chain_in)}`);
-  if (typeof changes.chain_out === "number")
-    changeMessages.push(`Chain Out: ${formatSats(changes.chain_out)}`);
-  if (typeof changes.mempool_in === "number")
-    changeMessages.push(`Mempool In: ${formatSats(changes.mempool_in)}`);
-  if (typeof changes.mempool_out === "number")
-    changeMessages.push(`Mempool Out: ${formatSats(changes.mempool_out)}`);
+  const newChanges = {};
+
+  // Check each change type and only alert if we haven't sent this exact alert before
+  if (typeof changes.chain_in === "number") {
+    const key = getAlertKey(
+      collection,
+      name,
+      address,
+      "chain_in",
+      changes.chain_in
+    );
+    if (!sentAlerts.has(key)) {
+      changeMessages.push(`Chain In: ${formatSats(changes.chain_in)}`);
+      newChanges.chain_in = changes.chain_in;
+      sentAlerts.set(key, true);
+    }
+  }
+  if (typeof changes.chain_out === "number") {
+    const key = getAlertKey(
+      collection,
+      name,
+      address,
+      "chain_out",
+      changes.chain_out
+    );
+    if (!sentAlerts.has(key)) {
+      changeMessages.push(`Chain Out: ${formatSats(changes.chain_out)}`);
+      newChanges.chain_out = changes.chain_out;
+      sentAlerts.set(key, true);
+    }
+  }
+  if (typeof changes.mempool_in === "number") {
+    const key = getAlertKey(
+      collection,
+      name,
+      address,
+      "mempool_in",
+      changes.mempool_in
+    );
+    if (!sentAlerts.has(key)) {
+      changeMessages.push(`Mempool In: ${formatSats(changes.mempool_in)}`);
+      newChanges.mempool_in = changes.mempool_in;
+      sentAlerts.set(key, true);
+    }
+  }
+  if (typeof changes.mempool_out === "number") {
+    const key = getAlertKey(
+      collection,
+      name,
+      address,
+      "mempool_out",
+      changes.mempool_out
+    );
+    if (!sentAlerts.has(key)) {
+      changeMessages.push(`Mempool Out: ${formatSats(changes.mempool_out)}`);
+      newChanges.chain_out = changes.mempool_out;
+      sentAlerts.set(key, true);
+    }
+  }
 
   if (changeMessages.length === 0) return true;
 
@@ -216,6 +273,8 @@ const cleanup = async () => {
     bot.stopPolling();
     bot = null;
   }
+  // Clear the sent alerts map
+  sentAlerts.clear();
   return true;
 };
 
