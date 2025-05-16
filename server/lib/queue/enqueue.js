@@ -58,13 +58,39 @@ export default ({
         );
       }
     } else if (collectionName) {
-      // Only add main collection addresses if no specific extended key or descriptor is specified
+      // Add main collection addresses
       addresses.push(
         ...collection.addresses.map((a) => ({
           ...baseData,
           address: a.address,
         }))
       );
+
+      // Add all addresses from extended keys
+      if (collection.extendedKeys) {
+        collection.extendedKeys.forEach((extKey) => {
+          addresses.push(
+            ...extKey.addresses.map((a) => ({
+              ...baseData,
+              extendedKeyName: extKey.name,
+              address: a.address,
+            }))
+          );
+        });
+      }
+
+      // Add all addresses from descriptors
+      if (collection.descriptors) {
+        collection.descriptors.forEach((desc) => {
+          addresses.push(
+            ...desc.addresses.map((a) => ({
+              ...baseData,
+              descriptorName: desc.name,
+              address: a.address,
+            }))
+          );
+        });
+      }
     }
   }
 
