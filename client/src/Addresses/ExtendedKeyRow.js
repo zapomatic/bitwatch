@@ -17,6 +17,42 @@ import IconButtonStyled from "../components/IconButtonStyled";
 import socketIO from "../io";
 import AddressTable from "./AddressTable";
 import { ADDRESS_DISPLAY_LENGTH } from "../config";
+import BalanceCell from "./BalanceCell";
+
+const calculateExtendedKeyTotals = (extendedKey) => {
+  const totals = {
+    chain_in: 0,
+    chain_out: 0,
+    mempool_in: 0,
+    mempool_out: 0,
+    expect_chain_in: 0,
+    expect_chain_out: 0,
+    expect_mempool_in: 0,
+    expect_mempool_out: 0,
+    hasError: false,
+    hasPending: false,
+  };
+
+  (extendedKey.addresses || []).forEach((address) => {
+    if (address.actual) {
+      totals.chain_in += parseFloat(address.actual.chain_in || 0);
+      totals.chain_out += parseFloat(address.actual.chain_out || 0);
+      totals.mempool_in += parseFloat(address.actual.mempool_in || 0);
+      totals.mempool_out += parseFloat(address.actual.mempool_out || 0);
+    }
+    if (address.expect) {
+      totals.expect_chain_in += parseFloat(address.expect.chain_in || 0);
+      totals.expect_chain_out += parseFloat(address.expect.chain_out || 0);
+      totals.expect_mempool_in += parseFloat(address.expect.mempool_in || 0);
+      totals.expect_mempool_out += parseFloat(address.expect.mempool_out || 0);
+    }
+    if (address.error) totals.hasError = true;
+    if (!address.actual && !address.error) totals.hasPending = true;
+  });
+
+  return totals;
+};
+
 const ExtendedKeyRow = ({
   extendedKey,
   onEdit,
@@ -126,6 +162,8 @@ const ExtendedKeyRow = ({
     );
   };
 
+  const totals = calculateExtendedKeyTotals(extendedKey);
+
   return (
     <>
       <TableRow
@@ -171,23 +209,31 @@ const ExtendedKeyRow = ({
           </Box>
         </TableCell>
         <TableCell>
-          <Typography variant="body2">{extendedKey.derivationPath}</Typography>
-        </TableCell>
-        <TableCell>
-          <Typography variant="body2">{extendedKey.gapLimit}</Typography>
-        </TableCell>
-        <TableCell>
-          <Typography variant="body2">{extendedKey.skip || 0}</Typography>
-        </TableCell>
-        <TableCell>
-          <Typography variant="body2">
-            {extendedKey.initialAddresses || 10}
-          </Typography>
-        </TableCell>
-        <TableCell>
           <Typography variant="body2">
             {(extendedKey.addresses || []).length}
           </Typography>
+        </TableCell>
+        <TableCell className="crystal-table-cell">
+          <Box className="crystal-flex crystal-flex-start">
+            <BalanceCell
+              value={totals.chain_in - totals.chain_out}
+              expect={totals.expect_chain_in - totals.expect_chain_out}
+              displayBtc={displayBtc}
+              error={totals.hasError}
+              pending={totals.hasPending}
+            />
+          </Box>
+        </TableCell>
+        <TableCell className="crystal-table-cell">
+          <Box className="crystal-flex crystal-flex-start">
+            <BalanceCell
+              value={totals.mempool_in - totals.mempool_out}
+              expect={totals.expect_mempool_in - totals.expect_mempool_out}
+              displayBtc={displayBtc}
+              error={totals.hasError}
+              pending={totals.hasPending}
+            />
+          </Box>
         </TableCell>
         <TableCell>
           <Box className="crystal-flex crystal-flex-right crystal-gap-1">
@@ -217,7 +263,7 @@ const ExtendedKeyRow = ({
         </TableCell>
       </TableRow>
       <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
           <Collapse
             in={isExpanded}
             timeout="auto"

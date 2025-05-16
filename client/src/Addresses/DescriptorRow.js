@@ -17,6 +17,42 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import socketIO from "../io";
 import AddressTable from "./AddressTable";
 import { ADDRESS_DISPLAY_LENGTH } from "../config";
+import BalanceCell from "./BalanceCell";
+
+const calculateDescriptorTotals = (descriptor) => {
+  const totals = {
+    chain_in: 0,
+    chain_out: 0,
+    mempool_in: 0,
+    mempool_out: 0,
+    expect_chain_in: 0,
+    expect_chain_out: 0,
+    expect_mempool_in: 0,
+    expect_mempool_out: 0,
+    hasError: false,
+    hasPending: false,
+  };
+
+  (descriptor.addresses || []).forEach((address) => {
+    if (address.actual) {
+      totals.chain_in += parseFloat(address.actual.chain_in || 0);
+      totals.chain_out += parseFloat(address.actual.chain_out || 0);
+      totals.mempool_in += parseFloat(address.actual.mempool_in || 0);
+      totals.mempool_out += parseFloat(address.actual.mempool_out || 0);
+    }
+    if (address.expect) {
+      totals.expect_chain_in += parseFloat(address.expect.chain_in || 0);
+      totals.expect_chain_out += parseFloat(address.expect.chain_out || 0);
+      totals.expect_mempool_in += parseFloat(address.expect.mempool_in || 0);
+      totals.expect_mempool_out += parseFloat(address.expect.mempool_out || 0);
+    }
+    if (address.error) totals.hasError = true;
+    if (!address.actual && !address.error) totals.hasPending = true;
+  });
+
+  return totals;
+};
+
 const DescriptorRow = ({
   descriptor,
   onEdit,
@@ -121,6 +157,8 @@ const DescriptorRow = ({
     );
   };
 
+  const totals = calculateDescriptorTotals(descriptor);
+
   return (
     <>
       <TableRow
@@ -163,19 +201,31 @@ const DescriptorRow = ({
           </Box>
         </TableCell>
         <TableCell>
-          <Typography variant="body2">{descriptor.derivationPath}</Typography>
+          <Typography variant="body2">
+            {(descriptor.addresses || []).length}
+          </Typography>
         </TableCell>
-        <TableCell>
-          <Typography variant="body2">{descriptor.gapLimit}</Typography>
+        <TableCell className="crystal-table-cell">
+          <Box className="crystal-flex crystal-flex-start">
+            <BalanceCell
+              value={totals.chain_in - totals.chain_out}
+              expect={totals.expect_chain_in - totals.expect_chain_out}
+              displayBtc={displayBtc}
+              error={totals.hasError}
+              pending={totals.hasPending}
+            />
+          </Box>
         </TableCell>
-        <TableCell>
-          <Typography variant="body2">{descriptor.skip}</Typography>
-        </TableCell>
-        <TableCell>
-          <Typography variant="body2">{descriptor.initialAddresses}</Typography>
-        </TableCell>
-        <TableCell>
-          <Typography variant="body2">{descriptor.addresses.length}</Typography>
+        <TableCell className="crystal-table-cell">
+          <Box className="crystal-flex crystal-flex-start">
+            <BalanceCell
+              value={totals.mempool_in - totals.mempool_out}
+              expect={totals.expect_mempool_in - totals.expect_mempool_out}
+              displayBtc={displayBtc}
+              error={totals.hasError}
+              pending={totals.hasPending}
+            />
+          </Box>
         </TableCell>
         <TableCell>
           <Box className="crystal-flex crystal-flex-right crystal-gap-1">
@@ -205,7 +255,7 @@ const DescriptorRow = ({
         </TableCell>
       </TableRow>
       <TableRow>
-        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
+        <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={6}>
           <Collapse
             in={isExpanded}
             timeout="auto"

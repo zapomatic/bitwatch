@@ -289,11 +289,9 @@ const CollectionRow = ({
                       <TableRow>
                         <TableCell>Name</TableCell>
                         <TableCell>Key/Descriptor</TableCell>
-                        <TableCell>Path</TableCell>
-                        <TableCell>Gap</TableCell>
-                        <TableCell>Skip</TableCell>
-                        <TableCell>Initial</TableCell>
-                        <TableCell>Count</TableCell>
+                        <TableCell>Addresses</TableCell>
+                        <TableCell>Chain Balance</TableCell>
+                        <TableCell>Mempool Balance</TableCell>
                         <TableCell></TableCell>
                       </TableRow>
                     </TableHead>

@@ -91,13 +91,12 @@ export default async (page) => {
       // Verify extended key information
       await expect(keyRow.locator('td').nth(0)).toContainText(key.name);
       await expect(keyRow.locator('td').nth(1)).toContainText(key.key.slice(0, 15));
-      await expect(keyRow.locator('td').nth(2)).toContainText(key.derivationPath);
-      await expect(keyRow.locator('td').nth(3)).toContainText(key.gapLimit.toString());
-      await expect(keyRow.locator('td').nth(4)).toContainText(key.skip.toString());
-      await expect(keyRow.locator('td').nth(5)).toContainText(key.initialAddresses.toString());
+      await expect(keyRow.locator('td').nth(2)).toContainText(`${key.initialAddresses}`);
+      // Verify balance cells exist
+      await expect(keyRow.locator('td').nth(3)).toHaveClass(/crystal-table-cell/);
+      await expect(keyRow.locator('td').nth(4)).toHaveClass(/crystal-table-cell/);
 
       // Initially we should see just the initial addresses
-      await expect(keyRow.locator('td').nth(6)).toContainText(key.initialAddresses.toString());
       const addressRows = page.locator(`[data-testid="${key.key}-address-list"] tr.address-row`);
       await expect(addressRows).toHaveCount(key.initialAddresses);
 

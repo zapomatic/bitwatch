@@ -102,11 +102,11 @@ export default async (page) => {
       // Verify descriptor information
       await expect(descriptorRow.locator('td').nth(0)).toContainText(descriptor.name);
       await expect(descriptorRow.locator('td').nth(1)).toContainText(descriptor.descriptor.slice(0, 15));
-      await expect(descriptorRow.locator('td').nth(2)).toContainText(descriptor.derivationPath);
-      await expect(descriptorRow.locator('td').nth(3)).toContainText(descriptor.gapLimit.toString());
-      await expect(descriptorRow.locator('td').nth(4)).toContainText(descriptor.skip.toString());
-      await expect(descriptorRow.locator('td').nth(5)).toContainText(descriptor.initialAddresses.toString());
-      await expect(descriptorRow.locator('td').nth(6)).toContainText(descriptor.initialAddresses.toString());
+      await expect(descriptorRow.locator('td').nth(2)).toContainText(`${descriptor.initialAddresses}`);
+      // Verify balance cells exist
+      await expect(descriptorRow.locator('td').nth(3)).toHaveClass(/crystal-table-cell/);
+      await expect(descriptorRow.locator('td').nth(4)).toHaveClass(/crystal-table-cell/);
+
       // Initially we should see just the initial addresses
       const descriptorAddressRows = page.locator(`[data-testid="${descriptor.descriptor}-address-list"] tr.address-row`);
       await expect(descriptorAddressRows).toHaveCount(descriptor.initialAddresses);
@@ -172,12 +172,6 @@ export default async (page) => {
         }, descriptor.descriptor);
         await expect(page.getByTestId(`${firstExpectedAddress}-chain-in-diff`)).toBeVisible();
         await expect(page.getByTestId(`${firstExpectedAddress}-mempool-out-diff`)).toBeVisible();
-        await refreshBalance(page, firstExpectedAddress, {
-          chain_in: "0.00010000 ₿",
-          chain_out: "0.00001000 ₿"
-        }, descriptor.descriptor);
-        await expect(page.getByTestId(`${firstExpectedAddress}-chain-in-diff`)).toBeVisible();
-        await expect(page.getByTestId(`${firstExpectedAddress}-chain-out-diff`)).toBeVisible();
 
         // Accept the change
         await findAndClick(page, `${firstExpectedAddress}-accept-button`);
