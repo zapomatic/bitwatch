@@ -6,7 +6,7 @@ export default async (page, testId, options = {}) => {
     force = false,
   } = options;
 
-  console.log(`Waiting for element with testId: ${testId}`);
+  // console.log(`Waiting for element with testId: ${testId}`);
 
   // Get the element using data-testid
   const element = page.getByTestId(testId);

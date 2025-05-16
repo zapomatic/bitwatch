@@ -31,6 +31,6 @@ export default async (page, address, expectedBalances) => {
       return [key, value];
     })
   );
-  console.log(`${address} final balances:`, Object.fromEntries(results));
+  // console.log(`${address} final balances:`, Object.fromEntries(results));
   return true;
 };

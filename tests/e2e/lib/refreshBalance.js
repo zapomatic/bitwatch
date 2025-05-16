@@ -60,10 +60,10 @@ export default async (page, address, expectedBalances, parentKey = null) => {
 
     // Log whether the element exists and its state
     const exists = (await addressList.count()) > 0;
-    console.log(`Address list exists: ${exists}`);
+    // console.log(`Address list exists: ${exists}`);
     if (exists) {
       const isVisible = await addressList.isVisible();
-      console.log(`Address list is visible: ${isVisible}`);
+      // console.log(`Address list is visible: ${isVisible}`);
     }
 
     await expect(addressList).toBeVisible();
@@ -77,27 +77,34 @@ export default async (page, address, expectedBalances, parentKey = null) => {
   const refreshButton = page.getByTestId(`${address}-refresh-button`);
   await expect(refreshButton).toBeVisible();
 
-  // Set test response in the page context and ensure it persists
-  await page.evaluate((response) => {
-    // Store the response in a way that won't be cleared
-    window.__TEST_RESPONSE__ = response;
-    // Add a property to track if it's been used
-    window.__TEST_RESPONSE_USED__ = false;
-  }, JSON.stringify(testResponse));
+  // Only set test response and wait if any expected balance is non-zero
+  const isCustomBalance = Object.values(expectedBalances).some(
+    (v) => v !== "0.00000000 ₿"
+  );
+
+  if (isCustomBalance) {
+    await page.evaluate((response) => {
+      window.__TEST_RESPONSE__ = response;
+      window.__TEST_RESPONSE_USED__ = false;
+    }, JSON.stringify(testResponse));
+  }
 
   // Click the refresh button and wait for loading state
   await findAndClick(page, `${address}-refresh-button`, {
     force: true,
   });
-  // Wait for the test response to be marked as used
-  await page.waitForFunction(() => window.__TEST_RESPONSE_USED__, {
-    timeout: 5000,
-  });
 
-  console.log(
-    "Debug - Calling verifyBalance with expectedBalances:",
-    expectedBalances
-  );
+  if (isCustomBalance) {
+    // Wait for the test response to be marked as used
+    await page.waitForFunction(() => window.__TEST_RESPONSE_USED__, {
+      timeout: 5000,
+    });
+  }
+
+  // console.log(
+  //   "Debug - Calling verifyBalance with expectedBalances:",
+  //   expectedBalances
+  // );
   // Now verify the balances
   await verifyBalance(page, address, expectedBalances);
 };

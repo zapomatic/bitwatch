@@ -91,7 +91,8 @@ const DescriptorRow = ({
     let testResponse = undefined;
     if (window.__TEST_RESPONSE__) {
       testResponse = window.__TEST_RESPONSE__;
-      delete window.__TEST_RESPONSE__; // Clear it after use
+      window.__TEST_RESPONSE_USED__ = true;
+      window.__TEST_RESPONSE__ = undefined;
     }
     socketIO.emit(
       "refreshBalance",

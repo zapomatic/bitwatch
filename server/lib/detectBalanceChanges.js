@@ -43,70 +43,70 @@ export default (address, balance, collectionName, addressName) => {
 
   // Check for changes that need alerts
   const changes = {};
-  const needsAlert = (type) => {
-    if (!addr.monitor) return true; // Default to alert if no monitor settings
-    return addr.monitor[type] === "alert" && !addr.alerted[type];
+  const shouldAutoAccept = (type) => {
+    if (!addr.monitor) return false; // Default to alert if no monitor settings
+    return addr.monitor[type] === "auto-accept";
   };
 
   // Check each balance type for changes
   if (newBalance.chain_in !== addr.expect.chain_in) {
     changes.chain_in = newBalance.chain_in;
-    if (needsAlert("chain_in")) {
-      logger.info(
-        `alert chain_in (${newBalance.chain_in}) for ${address} (${collectionName}/${addressName})`
-      );
-      addr.alerted.chain_in = true;
-    } else {
+    if (shouldAutoAccept("chain_in")) {
       logger.info(
         `auto-accept chain_in (${newBalance.chain_in}) for ${address} (${collectionName}/${addressName})`
       );
       addr.expect.chain_in = newBalance.chain_in;
       addr.alerted.chain_in = false;
+    } else {
+      logger.info(
+        `alert chain_in (${newBalance.chain_in}) for ${address} (${collectionName}/${addressName})`
+      );
+      addr.alerted.chain_in = true;
     }
   }
   if (newBalance.chain_out !== addr.expect.chain_out) {
     changes.chain_out = newBalance.chain_out;
-    if (needsAlert("chain_out")) {
-      logger.info(
-        `alert chain_out (${newBalance.chain_out}) for ${address} (${collectionName}/${addressName})`
-      );
-      addr.alerted.chain_out = true;
-    } else {
+    if (shouldAutoAccept("chain_out")) {
       logger.info(
         `auto-accept chain_out (${newBalance.chain_out}) for ${address} (${collectionName}/${addressName})`
       );
       addr.expect.chain_out = newBalance.chain_out;
       addr.alerted.chain_out = false;
+    } else {
+      logger.info(
+        `alert chain_out (${newBalance.chain_out}) for ${address} (${collectionName}/${addressName})`
+      );
+      addr.alerted.chain_out = true;
     }
   }
   if (newBalance.mempool_in !== addr.expect.mempool_in) {
     changes.mempool_in = newBalance.mempool_in;
-    if (needsAlert("mempool_in")) {
-      logger.info(
-        `alert mempool_in (${newBalance.mempool_in}) for ${address} (${collectionName}/${addressName})`
-      );
-      addr.alerted.mempool_in = true;
-    } else {
+    if (shouldAutoAccept("mempool_in")) {
       logger.info(
         `auto-accept mempool_in (${newBalance.mempool_in}) for ${address} (${collectionName}/${addressName})`
       );
       addr.expect.mempool_in = newBalance.mempool_in;
       addr.alerted.mempool_in = false;
+    } else {
+      logger.info(
+        `alert mempool_in (${newBalance.mempool_in}) for ${address} (${collectionName}/${addressName})`
+      );
+      addr.alerted.mempool_in = true;
     }
   }
   if (newBalance.mempool_out !== addr.expect.mempool_out) {
     changes.mempool_out = newBalance.mempool_out;
-    if (needsAlert("mempool_out")) {
-      logger.info(
-        `alert mempool_out (${newBalance.mempool_out}) for ${address} (${collectionName}/${addressName})`
-      );
-      addr.alerted.mempool_out = true;
-    } else {
+    if (shouldAutoAccept("mempool_out")) {
       logger.info(
         `auto-accept mempool_out (${newBalance.mempool_out}) for ${address} (${collectionName}/${addressName})`
       );
       addr.expect.mempool_out = newBalance.mempool_out;
       addr.alerted.mempool_out = false;
+    } else {
+      logger.info(
+        `alert mempool_out (${newBalance.mempool_out}) for ${address} (${collectionName}/${addressName})`
+      );
+      addr.alerted.mempool_out = true;
     }
   }
 
@@ -127,7 +127,7 @@ Previous: chain_in=${oldBalance.chain_in}, chain_out=${oldBalance.chain_out}, me
   // Only return changes that need alerts
   const alertChanges = {};
   for (const [type, value] of Object.entries(changes)) {
-    if (needsAlert(type)) {
+    if (!shouldAutoAccept(type)) {
       alertChanges[type] = value;
     }
   }

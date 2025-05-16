@@ -157,26 +157,34 @@ export default async (page) => {
         await refreshBalance(page, firstExpectedAddress, {
           mempool_in: "0.00010000 ₿"
         }, descriptor.descriptor);
+        await expect(page.getByTestId(`${firstExpectedAddress}-mempool-in-diff`)).toBeVisible();
+        await findAndClick(page, `${firstExpectedAddress}-accept-button`);
+        await expect(page.getByTestId(`${firstExpectedAddress}-mempool-in-diff`)).not.toBeVisible();
         await refreshBalance(page, firstExpectedAddress, {
           chain_in: "0.00010000 ₿"
         }, descriptor.descriptor);
+        await expect(page.getByTestId(`${firstExpectedAddress}-chain-in-diff`)).toBeVisible();
+        await expect(page.getByTestId(`${firstExpectedAddress}-mempool-in-diff`)).toBeVisible();
         await refreshBalance(page, firstExpectedAddress, {
           chain_in: "0.00010000 ₿",
           mempool_out: "0.00001000 ₿"
         }, descriptor.descriptor);
-        // console.log(`Verified chain input for ${descriptor.name}/${firstExpectedAddress}`);
+        await expect(page.getByTestId(`${firstExpectedAddress}-chain-in-diff`)).toBeVisible();
+        await expect(page.getByTestId(`${firstExpectedAddress}-mempool-out-diff`)).toBeVisible();
         await refreshBalance(page, firstExpectedAddress, {
           chain_in: "0.00010000 ₿",
           chain_out: "0.00001000 ₿"
         }, descriptor.descriptor);
-        console.log(`Verified balances for ${descriptor.name}/${firstExpectedAddress}`);
-
-        // Accept the change
         await expect(page.getByTestId(`${firstExpectedAddress}-chain-in-diff`)).toBeVisible();
         await expect(page.getByTestId(`${firstExpectedAddress}-chain-out-diff`)).toBeVisible();
+
+        // Accept the change
         await findAndClick(page, `${firstExpectedAddress}-accept-button`);
+
         await expect(page.getByTestId(`${firstExpectedAddress}-chain-in-diff`)).not.toBeVisible();
         await expect(page.getByTestId(`${firstExpectedAddress}-chain-out-diff`)).not.toBeVisible();
+        await expect(page.getByTestId(`${firstExpectedAddress}-mempool-in-diff`)).not.toBeVisible();
+        await expect(page.getByTestId(`${firstExpectedAddress}-mempool-out-diff`)).not.toBeVisible();
         console.log(`Accepted balance changes for ${descriptor.name}/${firstExpectedAddress}`);
 
         // also incrememt the second address

@@ -34,12 +34,8 @@ const init = async (sendTestMessage = false) => {
         logger.info("Test bot: onText handler registered"),
       on: (_event, _callback) =>
         logger.info(`Test bot: ${_event} handler registered`),
-      sendMessage: (chatId, message, options) => {
-        logger.info("Test bot: sendMessage called", {
-          chatId,
-          message,
-          options,
-        });
+      sendMessage: (_chatId, _message, _options) => {
+        logger.info(`Test bot: sendMessage called`);
         return Promise.resolve(true);
       },
     };
@@ -200,13 +196,17 @@ const notifyBalanceChange = async (address, changes, collection, name) => {
 
   if (changeMessages.length === 0) return true;
 
+  const msg = changeMessages.join("\n");
+
   const message = `
 🔔 <b>Balance Change Detected</b>
 ${collection}/${name} (<a href="https://mempool.space/address/${address}">${address}</a>)
-${changeMessages.join("\n")}
+${msg}
 `;
 
-  logger.telegram(`Telegram Alert Send: ${collection}/${name} (${address})`);
+  logger.telegram(
+    `Telegram Alert Send: ${collection}/${name} (${address}), msg: ${msg}`
+  );
   return await sendMessage(message);
 };
 
