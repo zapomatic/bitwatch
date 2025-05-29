@@ -148,21 +148,21 @@ function AppContent() {
       setServerState("DISCONNECTED");
     });
     socketIO.on("updateState", (state) => {
-      console.log("Received state update:", state);
+      // console.log("Received state update:", state);
       if (state.websocketState) {
-        console.log("Updating WebSocket state to:", state.websocketState);
+        // console.log("Updating WebSocket state to:", state.websocketState);
         setWebsocketState(state.websocketState);
       }
       if (state.apiState) {
-        console.log("Updating API state to:", state.apiState);
+        // console.log("Updating API state to:", state.apiState);
         setApiState(state.apiState);
       }
       if (state.queue) {
-        console.log("Updating queue to:", state.queue);
+        // console.log("Updating queue to:", state.queue);
         setQueue(state.queue);
       }
       if (state.monitor) {
-        console.log("Updating monitor settings to:", state.monitor);
+        // console.log("Updating monitor settings to:", state.monitor);
         Object.assign(defaultMonitorSettings, state.monitor);
       }
     });

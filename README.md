@@ -13,16 +13,15 @@
 ## Features
 
 - Real-time monitoring of Bitcoin addresses
+- Option to use your own local node for privacy
 - Supports collections of single addresses, or extended pub keys
 - Subscribes to mempool.space (or locally hosted) websocket for real-time mempool activity
-- Double checks data against mempool.space (or locally hosted) API on a configured interval
+- Double checks data against mempool.space (or locally hosted) API in a loop
 - Track both on-chain and mempool activity
-- Configure auto-acceptance or alert mode of balance changes (chain_in, chain_out, mempool_in, mempool_out)
-  - by default, incoming transactions are auto-accepted, outgoing transactions are alerted
-  - setting to alert will mark the UI and require manual acceptance of the transaction to save the expected state of the address
-- Set and manage balance expectations
 - Telegram notifications for balance changes
-- Option to use your own local node for privacy
+- Configure auto-acceptance or alert mode of balance changes (chain_in, chain_out, mempool_in, mempool_out)
+  - setting to alert will send a notifiction to telegram and mark the UI and require manual acceptance of the transaction to save the expected state of the address
+- Set and manage balance expectations
 - Support for descriptors such as the following:
   - `wsh(multi(k,[path]xpub1,[path]xpub2,...))`
 
@@ -76,7 +75,7 @@ Then go to the Umbrel app store and install/update the "Bitwatch" app.
 If the desire is to run a sovereign monitoring node (for privacy reasons), the following steps can be taken:
 
 1. Install the Umbrel app (or run docker container on desired hardware)
-2. Install Fulcrum (faster electrum server, using Electrs will return 502 errors looking up address data on an Umbrel Home or Raspberry Pi device)
+2. Install Fulcrum (faster electrum server, using Electrs will return 502 errors looking up address data on an Umbrel Home or Raspberry Pi device) -- NOTE: Fulcrum does not return the same API schema as electrs+esplora, which is what mempool.space public API uses so you will only see inputs with outputs subtracted from the balance
 3. Install Mempool app
 4. Configure Mempool to use Fulcrum as the server (right click on the Mempool app and under Settings, set the server to Fulcrum)
 5. Wait for Fulcum/Mempool to sync
