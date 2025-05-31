@@ -27,6 +27,23 @@ import { calculateCollectionTotals } from "../utils/collection";
 import CheckBoxIcon from "@mui/icons-material/CheckBox";
 import AddressTable from "./AddressTable";
 
+const STORAGE_KEY = "bitwatch_expanded_collections";
+
+const getStoredExpandedState = (collectionName) => {
+  if (typeof window === "undefined") return null;
+  const stored = window.localStorage.getItem(STORAGE_KEY);
+  const expandedCollections = stored ? JSON.parse(stored) : {};
+  return expandedCollections[collectionName];
+};
+
+const setStoredExpandedState = (collectionName, isExpanded) => {
+  if (typeof window === "undefined") return;
+  const stored = window.localStorage.getItem(STORAGE_KEY);
+  const expandedCollections = stored ? JSON.parse(stored) : {};
+  expandedCollections[collectionName] = isExpanded;
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(expandedCollections));
+};
+
 const CollectionRow = ({
   collection,
   onSaveExpected,
@@ -42,7 +59,9 @@ const CollectionRow = ({
   setNotification,
   autoShowAddForm,
 }) => {
-  const [isExpanded, setIsExpanded] = useState(autoShowAddForm);
+  const [isExpanded, setIsExpanded] = useState(() => {
+    return getStoredExpandedState(collection.name) ?? autoShowAddForm;
+  });
   const [newName, setNewName] = useState(collection.name);
   const [isEditing, setIsEditing] = useState(false);
   const [extendedKeyDialogOpen, setExtendedKeyDialogOpen] = useState(false);
@@ -51,13 +70,29 @@ const CollectionRow = ({
   const [editingDescriptor, setEditingDescriptor] = useState(null);
   const [editingExtendedKey, setEditingExtendedKey] = useState(null);
 
+  // Update expanded state when collection name changes
   useEffect(() => {
-    if (
+    if (collection.name !== newName) {
+      const oldExpandedState = getStoredExpandedState(collection.name);
+      if (oldExpandedState !== null) {
+        setStoredExpandedState(newName, oldExpandedState);
+        setStoredExpandedState(collection.name, null); // Clear old state
+      }
+    }
+  }, [collection.name, newName]);
+
+  useEffect(() => {
+    const hasContent =
       collection.addresses?.length > 0 ||
       collection.extendedKeys?.length > 0 ||
-      collection.descriptors?.length > 0
-    ) {
-      setIsExpanded(true);
+      collection.descriptors?.length > 0;
+
+    if (hasContent) {
+      const storedState = getStoredExpandedState(collection.name);
+      // Only auto-expand if there's no stored state
+      if (storedState === null) {
+        setIsExpanded(true);
+      }
     }
   }, [
     collection.addresses?.length,
@@ -68,7 +103,10 @@ const CollectionRow = ({
   const handleExpandClick = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    setIsExpanded(!isExpanded);
+    const newExpandedState = !isExpanded;
+    setIsExpanded(newExpandedState);
+    // Only set localStorage when user explicitly expands/collapses
+    setStoredExpandedState(collection.name, newExpandedState);
   };
 
   const handleAddClick = () => {

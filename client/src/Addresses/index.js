@@ -29,6 +29,15 @@ import CollectionRow from "./CollectionRow.js";
 import { calculateCollectionTotals } from "../utils/collection.js";
 import { defaultMonitorSettings } from "../config";
 
+const STORAGE_KEY = "bitwatch_display_unit";
+
+const getStoredDisplayUnit = () => {
+  if (typeof window === "undefined") return true;
+  const stored = window.localStorage.getItem(STORAGE_KEY);
+  console.log("Getting stored display unit:", stored);
+  return stored ? JSON.parse(stored) : true;
+};
+
 export default function Addresses() {
   const [collections, setCollections] = useState({});
   const [newCollection, setNewCollection] = useState(null);
@@ -41,7 +50,7 @@ export default function Addresses() {
     descriptor: null,
     message: "",
   });
-  const [displayBtc, setDisplayBtc] = useState(true);
+  const [displayBtc, setDisplayBtc] = useState(() => getStoredDisplayUnit());
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
   const [notification, setNotification] = useState({
@@ -114,7 +123,7 @@ export default function Addresses() {
 
     // Listen for state updates
     const handleStateUpdate = (updatedState) => {
-      console.log("State update received:", updatedState);
+      // console.log("State update received:", updatedState);
       if (updatedState?.collections) {
         // Replace the entire collections state instead of merging
         setCollections(updatedState.collections);
@@ -696,6 +705,18 @@ export default function Addresses() {
     );
   };
 
+  const handleToggleDisplayUnit = () => {
+    const newDisplayBtc = !displayBtc;
+    console.log("Setting display unit to:", newDisplayBtc);
+    setDisplayBtc(newDisplayBtc);
+    try {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(newDisplayBtc));
+      console.log("Successfully saved to localStorage");
+    } catch (error) {
+      console.error("Failed to save to localStorage:", error);
+    }
+  };
+
   // Add loading state to the UI
   if (loading) {
     return (
@@ -825,7 +846,7 @@ export default function Addresses() {
               </Button>
               <Button
                 className="crystal-button"
-                onClick={() => setDisplayBtc(!displayBtc)}
+                onClick={handleToggleDisplayUnit}
                 sx={{
                   background: "var(--theme-surface)",
                   color: "var(--theme-text)",
@@ -839,6 +860,7 @@ export default function Addresses() {
                     fontSize: "1.1em",
                   },
                 }}
+                data-testid="display-unit-toggle"
               >
                 {displayBtc ? (
                   <>
