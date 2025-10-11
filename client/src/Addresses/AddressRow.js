@@ -9,7 +9,7 @@ import RefreshIcon from "@mui/icons-material/Refresh";
 import BalanceCell from "./BalanceCell";
 import socketIO from "../io";
 import { ADDRESS_DISPLAY_LENGTH } from "../config";
-const AddressCell = ({ address }) => {
+const AddressCell = ({ address, apiEndpoint }) => {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = (e) => {
@@ -39,7 +39,7 @@ const AddressCell = ({ address }) => {
     >
       <Box
         component="a"
-        href={`https://mempool.space/address/${address}`}
+        href={`${apiEndpoint || 'https://mempool.space'}/address/${address}`}
         target="_blank"
         rel="noopener noreferrer"
         className="crystal-link"
@@ -66,6 +66,7 @@ const AddressRow = ({
   setNotification,
   onDelete,
   onEditAddress,
+  apiEndpoint,
 }) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -195,7 +196,7 @@ const AddressRow = ({
         </Box>
       </TableCell>
       <TableCell>
-        <AddressCell address={address.address} />
+        <AddressCell address={address.address} apiEndpoint={apiEndpoint} />
       </TableCell>
       <TableCell className="crystal-table-cell">
         <Box className="crystal-flex crystal-flex-start">

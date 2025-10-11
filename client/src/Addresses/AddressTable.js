@@ -21,6 +21,7 @@ const AddressTable = ({
   onDelete,
   onEditAddress,
   dataTestId,
+  apiEndpoint,
 }) => {
   return (
     <Table size="small" className="crystal-table address-subtable">
@@ -63,6 +64,7 @@ const AddressTable = ({
             setNotification={setNotification}
             onDelete={onDelete}
             onEditAddress={onEditAddress}
+            apiEndpoint={apiEndpoint}
           />
         ))}
       </TableBody>

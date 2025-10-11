@@ -61,6 +61,7 @@ const DescriptorRow = ({
   displayBtc,
   setNotification,
   onEditAddress,
+  apiEndpoint,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -273,6 +274,7 @@ const DescriptorRow = ({
                 onEditAddress={onEditAddress}
                 parentKey={descriptor.descriptor}
                 dataTestId={`${descriptor.descriptor}-address-list`}
+                apiEndpoint={apiEndpoint}
               />
             </Box>
           </Collapse>
