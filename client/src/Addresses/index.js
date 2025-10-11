@@ -41,6 +41,7 @@ const getStoredDisplayUnit = () => {
 export default function Addresses() {
   const [collections, setCollections] = useState({});
   const [apiEndpoint, setApiEndpoint] = useState(null);
+  const [mempoolUI, setMempoolUI] = useState(null);
   const [newCollection, setNewCollection] = useState(null);
   const [justCreatedCollection, setJustCreatedCollection] = useState(null);
   const [deleteDialog, setDeleteDialog] = useState({
@@ -134,6 +135,15 @@ export default function Addresses() {
       // Update API endpoint if provided
       if (updatedState?.api) {
         setApiEndpoint(updatedState.api);
+      }
+      
+      // Update Mempool UI URL if provided, or use window.location for local
+      if (updatedState?.mempoolUI !== undefined) {
+        const mempoolURL = updatedState.mempoolUI || 
+          (updatedState.api?.includes('10.21.21.26') ? 
+            `http://${window.location.hostname}:3006` : 
+            'https://mempool.space');
+        setMempoolUI(mempoolURL);
       }
 
       // Update monitor settings if provided
@@ -1080,7 +1090,7 @@ export default function Addresses() {
                   displayBtc={displayBtc}
                   setNotification={setNotification}
                   autoShowAddForm={justCreatedCollection === name}
-                  apiEndpoint={apiEndpoint}
+                  apiEndpoint={mempoolUI || apiEndpoint}
                 />
               ))}
             </TableBody>

@@ -10,6 +10,7 @@ export default async ({ socketID, io }) => {
     collections: memory.db.collections,
     monitor: memory.db.monitor,
     api: memory.db.api,
+    mempoolUI: memory.db.mempoolUI,
     queue,
   });
 

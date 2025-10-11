@@ -4,6 +4,7 @@ export const DEFAULT_SKIP_ADDRESSES = 0;
 
 export const DEFAULT_CONFIG = {
   api: "https://mempool.space",
+  mempoolUI: "https://mempool.space",
   apiParallelLimit: 1,
   apiDelay: 2000,
   debugLogging: false,
@@ -11,6 +12,7 @@ export const DEFAULT_CONFIG = {
 
 export const PRIVATE_CONFIG = {
   api: "http://10.21.21.26:3006",
+  mempoolUI: "", // Will default to window.location.hostname
   apiParallelLimit: 10,
   apiDelay: 5000,
   debugLogging: false,

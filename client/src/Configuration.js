@@ -18,6 +18,11 @@ const Configs = {
     help: "Most users should use https://mempool.space (default) or http://10.21.21.26:3006 (umbrel)",
     default: DEFAULT_CONFIG.api,
   },
+  mempoolUI: {
+    label: "Mempool UI",
+    help: "URL for linking to mempool explorer. Leave blank for local installs to use current hostname. Defaults to https://mempool.space",
+    default: DEFAULT_CONFIG.mempoolUI,
+  },
   apiParallelLimit: {
     label: "API Parallel Requests",
     help: "If you are using your own local mempool instance, you can increase this number to speed up address monitoring. If you are only watching a few addresses, you can also increase this when using public mempool.space API, but with a lot of addresses, you will hit rate limits and it will slow things down more.",
@@ -65,6 +70,7 @@ function Config() {
       "saveConfig",
       {
         api: config.api,
+        mempoolUI: config.mempoolUI,
         apiDelay: config.apiDelay,
         apiParallelLimit: config.apiParallelLimit,
         debugLogging: config.debugLogging,

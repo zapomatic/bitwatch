@@ -5,6 +5,7 @@ export default async () => {
   logger.info("Getting config");
   return {
     api: memory.db.api,
+    mempoolUI: memory.db.mempoolUI,
     apiDelay: memory.db.apiDelay,
     apiParallelLimit: memory.db.apiParallelLimit,
     debugLogging: memory.db.debugLogging,
