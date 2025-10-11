@@ -2,7 +2,7 @@ manifestVersion: 1
 id: bitwatch
 category: bitcoin
 name: Bitwatch
-version: "1.7.2b"
+version: "1.7.2"
 tagline: Monitor Bitcoin addresses in real-time
 description: >-
   Monitor Bitcoin addresses in the mempool and on-chain using the mempool.space API and websocket.
@@ -29,9 +29,9 @@ gallery:
   - 2.jpg
   - 3.jpg
 releaseNotes: >-
-  This release adds some bug fixes to telegram persistence.
+  This release addresses privacy concerns:
 
-    - heartbeat healthcheck on telegram connection to keep it from going stale
+    - when a local mempool instance is configured, address links open to that service url
 
 website: https://github.com/zapomatic/bitwatch
 repo: https://github.com/zapomatic/bitwatch
