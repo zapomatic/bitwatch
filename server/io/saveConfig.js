@@ -8,10 +8,11 @@ export default async ({ data }) => {
   }
 
   logger.info(
-    `Saving config ${data.api} at delay ${data.apiDelay}ms, parallel ${data.apiParallelLimit}, debug=${data.debugLogging}`
+    `Saving config ${data.api} at delay ${data.apiDelay}ms, parallel ${data.apiParallelLimit}, debug=${data.debugLogging}, mempoolUI=${data.mempoolUI || 'auto'}`
   );
 
   memory.db.api = data.api;
+  memory.db.mempoolUI = data.mempoolUI;
   memory.db.apiDelay = data.apiDelay;
   memory.db.apiParallelLimit = data.apiParallelLimit;
   memory.db.debugLogging = data.debugLogging;
