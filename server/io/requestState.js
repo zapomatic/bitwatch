@@ -9,6 +9,7 @@ export default async ({ socketID, io }) => {
   io.to(socketID).emit("updateState", {
     collections: memory.db.collections,
     monitor: memory.db.monitor,
+    api: memory.db.api,
     queue,
   });
 

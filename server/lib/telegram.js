@@ -234,7 +234,8 @@ const notifyBalanceChange = async (address, changes, collection, name) => {
   if (changeMessages.length === 0) return true;
 
   const msg = changeMessages.join("\n");
-  const message = `\n🔔 <b>Balance Change Detected</b>\n${collection}/${name} (<a href="https://mempool.space/address/${address}">${address}</a>)\n${msg}\n`;
+  const apiEndpoint = memory.db.api || 'https://mempool.space';
+  const message = `\n🔔 <b>Balance Change Detected</b>\n${collection}/${name} (<a href="${apiEndpoint}/address/${address}">${address}</a>)\n${msg}\n`;
 
   logger.telegram(
     `Telegram Alert Send: ${collection}/${name} (${address}), msg: ${msg}`

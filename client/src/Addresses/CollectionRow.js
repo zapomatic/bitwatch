@@ -58,6 +58,7 @@ const CollectionRow = ({
   displayBtc,
   setNotification,
   autoShowAddForm,
+  apiEndpoint,
 }) => {
   const [isExpanded, setIsExpanded] = useState(() => {
     return getStoredExpandedState(collection.name) ?? autoShowAddForm;
@@ -98,6 +99,7 @@ const CollectionRow = ({
     collection.addresses?.length,
     collection.extendedKeys?.length,
     collection.descriptors?.length,
+    collection.name,
   ]);
 
   const handleExpandClick = (e) => {
@@ -311,6 +313,7 @@ const CollectionRow = ({
                     onDelete={onDelete}
                     onEditAddress={onEditAddress}
                     dataTestId={`${collection.name}-address-list`}
+                    apiEndpoint={apiEndpoint}
                   />
                 </Box>
               )}
@@ -344,6 +347,7 @@ const CollectionRow = ({
                           displayBtc={displayBtc}
                           setNotification={setNotification}
                           onEditAddress={onEditAddress}
+                          apiEndpoint={apiEndpoint}
                         />
                       ))}
                       {(collection.descriptors || []).map((descriptor) => (
@@ -357,6 +361,7 @@ const CollectionRow = ({
                           onSaveExpected={onSaveExpected}
                           displayBtc={displayBtc}
                           setNotification={setNotification}
+                          apiEndpoint={apiEndpoint}
                         />
                       ))}
                     </TableBody>

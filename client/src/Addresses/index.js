@@ -40,6 +40,7 @@ const getStoredDisplayUnit = () => {
 
 export default function Addresses() {
   const [collections, setCollections] = useState({});
+  const [apiEndpoint, setApiEndpoint] = useState(null);
   const [newCollection, setNewCollection] = useState(null);
   const [justCreatedCollection, setJustCreatedCollection] = useState(null);
   const [deleteDialog, setDeleteDialog] = useState({
@@ -128,6 +129,11 @@ export default function Addresses() {
         // Replace the entire collections state instead of merging
         setCollections(updatedState.collections);
         setLoading(false);
+      }
+
+      // Update API endpoint if provided
+      if (updatedState?.api) {
+        setApiEndpoint(updatedState.api);
       }
 
       // Update monitor settings if provided
@@ -1074,6 +1080,7 @@ export default function Addresses() {
                   displayBtc={displayBtc}
                   setNotification={setNotification}
                   autoShowAddForm={justCreatedCollection === name}
+                  apiEndpoint={apiEndpoint}
                 />
               ))}
             </TableBody>

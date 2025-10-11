@@ -61,6 +61,7 @@ const ExtendedKeyRow = ({
   displayBtc,
   setNotification,
   onEditAddress,
+  apiEndpoint,
 }) => {
   const [isExpanded, setIsExpanded] = useState(true);
 
@@ -281,6 +282,7 @@ const ExtendedKeyRow = ({
                 onEditAddress={onEditAddress}
                 parentKey={extendedKey.key}
                 dataTestId={`${extendedKey.key}-address-list`}
+                apiEndpoint={apiEndpoint}
               />
             </Box>
           </Collapse>
