@@ -1,6 +1,14 @@
 import memory from "./memory.js";
 import logger from "./logger.js";
 import TelegramBot from "node-telegram-bot-api";
+import {
+  acceptChanges,
+  addAddressFromCommand,
+  getAddressMessage,
+  getStatusMessage,
+  getTelegramHelp,
+  refreshAddress,
+} from "./telegramActions.js";
 
 let bot = null;
 let isConnected = false;
@@ -12,6 +20,13 @@ const RECONNECT_BACKOFF = 5000;
 
 // Keep track of alerts we've already sent
 const sentAlerts = new Map();
+
+const escapeHtml = (value) =>
+  `${value ?? ""}`
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 
 const cleanup = async () => {
   if (bot) {
@@ -83,6 +98,7 @@ const init = async (sendTestMessage = false) => {
       on: (_event, _callback) =>
         logger.info(`Test bot: ${_event} handler registered`),
       sendMessage: (_chatId, _message, _options) => Promise.resolve(true),
+      sendDocument: (_chatId, _document, _options) => Promise.resolve(true),
       getMe: () => Promise.resolve(true),
     };
     isConnected = true;
@@ -120,7 +136,7 @@ const init = async (sendTestMessage = false) => {
     return { success: false, error: "Invalid Telegram token" };
   }
 
-  bot.onText(/\/start/, async (msg) => {
+  bot.onText(/\/start(?:@\w+)?$/, async (msg) => {
     const chatId = msg.chat.id;
     const message = `👋 Welcome to Bitwatch!\n\nYour chat ID is: <code>${chatId}</code>\n\nTo receive notifications:\n1. Copy this chat ID\n2. Paste it in the Bitwatch Telegram configuration\n3. Click Save to test the connection\n\nCurrent status: ${
       chatId === memory.db.telegram.chatId
@@ -130,8 +146,90 @@ const init = async (sendTestMessage = false) => {
     await bot.sendMessage(chatId, message, { parse_mode: "HTML" });
   });
 
+  const sendConfiguredMessage = async (msg, message, options = {}) => {
+    const chatId = msg.chat.id;
+    if (chatId !== memory.db.telegram.chatId) {
+      await bot.sendMessage(
+        chatId,
+        "❌ This chat is not configured to receive notifications.\nUse /start to get your chat ID and configure it in Bitwatch.",
+        { parse_mode: "HTML" }
+      );
+      return false;
+    }
+
+    await bot.sendMessage(chatId, message, {
+      parse_mode: "HTML",
+      disable_web_page_preview: true,
+      ...options,
+    });
+    return true;
+  };
+
+  const sendCommandResult = async (msg, result) => {
+    await sendConfiguredMessage(
+      msg,
+      result.error ? `❌ ${escapeHtml(result.error)}` : result.message
+    );
+  };
+
+  bot.onText(/\/help(?:@\w+)?$/, async (msg) => {
+    await sendConfiguredMessage(msg, getTelegramHelp());
+  });
+
+  bot.onText(/\/status(?:@\w+)?$/, async (msg) => {
+    await sendConfiguredMessage(msg, getStatusMessage());
+  });
+
+  bot.onText(/\/address(?:@\w+)?(?:\s+(.+))?$/, async (msg, match) => {
+    const query = match?.[1]?.trim();
+    if (!query) {
+      await sendConfiguredMessage(
+        msg,
+        "❌ Usage: /address &lt;name|address|path&gt;"
+      );
+      return;
+    }
+    await sendCommandResult(msg, getAddressMessage(query));
+  });
+
+  bot.onText(/\/accept(?:@\w+)?(?:\s+(.+))?$/, async (msg, match) => {
+    await sendCommandResult(msg, acceptChanges(match?.[1]));
+  });
+
+  bot.onText(/\/addaddress(?:@\w+)?(?:\s+(.+))?$/, async (msg, match) => {
+    await sendCommandResult(msg, addAddressFromCommand(match?.[1]));
+  });
+
+  bot.onText(/\/refresh(?:@\w+)?(?:\s+(.+))?$/, async (msg, match) => {
+    const query = match?.[1]?.trim();
+    if (!query) {
+      await sendConfiguredMessage(
+        msg,
+        "❌ Usage: /refresh &lt;name|address|path&gt;"
+      );
+      return;
+    }
+    await sendCommandResult(msg, refreshAddress(query));
+  });
+
+  bot.onText(/\/backup(?:@\w+)?$/, async (msg) => {
+    const chatId = msg.chat.id;
+    if (chatId !== memory.db.telegram.chatId) {
+      await bot.sendMessage(
+        chatId,
+        "❌ This chat is not configured to receive notifications.\nUse /start to get your chat ID and configure it in Bitwatch.",
+        { parse_mode: "HTML" }
+      );
+      return;
+    }
+
+    await bot.sendDocument(chatId, memory.dbFile, {
+      caption: "Bitwatch database backup",
+    });
+  });
+
   bot.on("message", async (msg) => {
-    if (msg.text.startsWith("/start")) return;
+    if (!msg.text || msg.text.startsWith("/")) return;
     const chatId = msg.chat.id;
     if (chatId !== memory.db.telegram.chatId) {
       await bot.sendMessage(

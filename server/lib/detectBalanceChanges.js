@@ -43,6 +43,7 @@ export default (address, balance, collectionName, addressName) => {
 
   // Check for changes that need alerts
   const changes = {};
+  const alertChanges = {};
   const shouldAutoAccept = (type) => {
     if (!addr.monitor) return false; // Default to alert if no monitor settings
     return addr.monitor[type] === "auto-accept";
@@ -65,6 +66,7 @@ export default (address, balance, collectionName, addressName) => {
       logger.info(
         `alert chain_in (${newBalance.chain_in}) for ${address} (${collectionName}/${addressName})`
       );
+      alertChanges.chain_in = newBalance.chain_in;
       addr.alerted.chain_in = true;
     }
   }
@@ -84,6 +86,7 @@ export default (address, balance, collectionName, addressName) => {
       logger.info(
         `alert chain_out (${newBalance.chain_out}) for ${address} (${collectionName}/${addressName})`
       );
+      alertChanges.chain_out = newBalance.chain_out;
       addr.alerted.chain_out = true;
     }
   }
@@ -103,6 +106,7 @@ export default (address, balance, collectionName, addressName) => {
       logger.info(
         `alert mempool_in (${newBalance.mempool_in}) for ${address} (${collectionName}/${addressName})`
       );
+      alertChanges.mempool_in = newBalance.mempool_in;
       addr.alerted.mempool_in = true;
     }
   }
@@ -122,6 +126,7 @@ export default (address, balance, collectionName, addressName) => {
       logger.info(
         `alert mempool_out (${newBalance.mempool_out}) for ${address} (${collectionName}/${addressName})`
       );
+      alertChanges.mempool_out = newBalance.mempool_out;
       addr.alerted.mempool_out = true;
     }
   }
@@ -138,14 +143,6 @@ Previous: chain_in=${oldBalance.chain_in}, chain_out=${oldBalance.chain_out}, me
 
     // Save the database if changes were detected
     memory.saveDb();
-  }
-
-  // Only return changes that need alerts and haven't been alerted yet
-  const alertChanges = {};
-  for (const [type, value] of Object.entries(changes)) {
-    if (!shouldAutoAccept(type) && !addr.alerted[type]) {
-      alertChanges[type] = value;
-    }
   }
 
   return Object.keys(alertChanges).length > 0 ? alertChanges : null;
