@@ -221,15 +221,16 @@ export const deriveAddresses = (descriptor, startIndex, count, skip = 0) => {
   const addresses = [];
   for (let i = 0; i < count; i++) {
     const index = startIndex + skip + i;
-    const address = deriveAddress(descriptor, index);
-    if (!address) {
-      logger.error(`Failed to derive address at index ${index}`);
+    try {
+      const address = deriveAddress(descriptor, index);
+      addresses.push(address);
+    } catch (error) {
+      logger.error(`Failed to derive address at index ${index}: ${error.message}`);
       return {
         success: false,
-        error: `Failed to derive address at index ${index}`,
+        error: `Failed to derive address at index ${index}: ${error.message}`,
       };
     }
-    addresses.push(address);
   }
   return {
     success: true,
@@ -330,8 +331,7 @@ export const deriveAddress = (descriptor, index) => {
   }
 
   if (!payment?.address) {
-    logger.error("Failed to generate address");
-    return null;
+    throw new Error("Failed to generate address");
   }
 
   return {

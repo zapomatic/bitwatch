@@ -43,10 +43,11 @@ export default async ({ data, io }) => {
   }
 
   // Validate by trying to derive the first address
-  const testAddress = deriveAddress(data.descriptor, 0);
-  if (!testAddress) {
-    logger.error(`Invalid descriptor: Could not derive address`);
-    return { error: "Invalid descriptor: Could not derive address" };
+  try {
+    deriveAddress(data.descriptor, 0);
+  } catch (error) {
+    logger.error(`Invalid descriptor: ${error.message}`);
+    return { error: `Invalid descriptor: ${error.message}` };
   }
 
   // If the descriptor is just an extended key, wrap it in the appropriate format
