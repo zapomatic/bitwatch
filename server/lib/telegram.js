@@ -13,6 +13,30 @@ const RECONNECT_BACKOFF = 5000;
 // Keep track of alerts we've already sent
 const sentAlerts = new Map();
 
+// Collect every chat ID that is allowed to receive notifications: the global
+// default plus any per-collection / per-key / per-descriptor / per-address
+// override. Used to recognize partners who DM the bot from their own chat.
+const getConfiguredChatIds = () => {
+  const ids = new Set();
+  const add = (chatId) => {
+    if (chatId) ids.add(String(chatId));
+  };
+  add(memory.db.telegram?.chatId);
+  for (const collection of Object.values(memory.db.collections || {})) {
+    add(collection.notify?.chatId);
+    for (const addr of collection.addresses || []) add(addr.notify?.chatId);
+    for (const key of collection.extendedKeys || []) {
+      add(key.notify?.chatId);
+      for (const addr of key.addresses || []) add(addr.notify?.chatId);
+    }
+    for (const desc of collection.descriptors || []) {
+      add(desc.notify?.chatId);
+      for (const addr of desc.addresses || []) add(addr.notify?.chatId);
+    }
+  }
+  return ids;
+};
+
 const cleanup = async () => {
   if (bot) {
     logger.info("Cleaning up Telegram bot instance");
@@ -122,8 +146,8 @@ const init = async (sendTestMessage = false) => {
 
   bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
-    const message = `👋 Welcome to Bitwatch!\n\nYour chat ID is: <code>${chatId}</code>\n\nTo receive notifications:\n1. Copy this chat ID\n2. Paste it in the Bitwatch Telegram configuration\n3. Click Save to test the connection\n\nCurrent status: ${
-      chatId === memory.db.telegram.chatId
+    const message = `👋 Welcome to Bitwatch!\n\nYour chat ID is: <code>${chatId}</code>\n\nTo receive notifications:\n1. Copy this chat ID\n2. Paste it in the Bitwatch Telegram configuration (globally, or on a specific collection/address)\n3. Click Save to test the connection\n\nCurrent status: ${
+      getConfiguredChatIds().has(String(chatId))
         ? "✅ Configured"
         : "❌ Not configured"
     }`;
@@ -133,7 +157,7 @@ const init = async (sendTestMessage = false) => {
   bot.on("message", async (msg) => {
     if (msg.text.startsWith("/start")) return;
     const chatId = msg.chat.id;
-    if (chatId !== memory.db.telegram.chatId) {
+    if (!getConfiguredChatIds().has(String(chatId))) {
       await bot.sendMessage(
         chatId,
         "❌ This chat is not configured to receive notifications.\nUse /start to get your chat ID and configure it in Bitwatch.",
@@ -166,14 +190,15 @@ const init = async (sendTestMessage = false) => {
   }
 };
 
-const sendMessage = async (message) => {
-  if (!bot || !isConnected || !memory.db.telegram?.chatId) {
+const sendMessage = async (message, chatId) => {
+  const targetChatId = chatId || memory.db.telegram?.chatId;
+  if (!bot || !isConnected || !targetChatId) {
     logger.warning("sendMessage called but bot not ready.");
     return false;
   }
 
   try {
-    const result = await bot.sendMessage(memory.db.telegram.chatId, message, {
+    const result = await bot.sendMessage(targetChatId, message, {
       parse_mode: "HTML",
     });
     return !!result;
@@ -199,8 +224,15 @@ const getAlertKey = (collection, name, address, type, value) => {
   return `${collection}/${name}/${address}/${type}:${value}`;
 };
 
-const notifyBalanceChange = async (address, changes, collection, name) => {
-  if (!bot || !isConnected || !memory.db.telegram?.chatId) {
+const notifyBalanceChange = async (
+  address,
+  changes,
+  collection,
+  name,
+  chatId
+) => {
+  const targetChatId = chatId || memory.db.telegram?.chatId;
+  if (!bot || !isConnected || !targetChatId) {
     logger.warning(
       `Balance changed on ${collection}/${name} (${address}) but Telegram not configured - ${
         !bot ? "bot not initialized" : "not connected or missing chat ID"
@@ -238,9 +270,9 @@ const notifyBalanceChange = async (address, changes, collection, name) => {
   const message = `\n🔔 <b>Balance Change Detected</b>\n${collection}/${name} (<a href="${apiEndpoint}/address/${address}">${address}</a>)\n${msg}\n`;
 
   logger.telegram(
-    `Telegram Alert Send: ${collection}/${name} (${address}), msg: ${msg}`
+    `Telegram Alert Send: ${collection}/${name} (${address}) -> chat ${targetChatId}, msg: ${msg}`
   );
-  return await sendMessage(message);
+  return await sendMessage(message, targetChatId);
 };
 
 export default {

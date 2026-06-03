@@ -93,6 +93,7 @@ export default async ({ data, io }) => {
     skip: data.skip || 0,
     initialAddresses: data.initialAddresses || 5,
     monitor: { ...data.monitor },
+    notify: data.notify?.chatId ? { chatId: data.notify.chatId } : undefined,
     addresses: allAddressesResult.data.map((addr) => ({
       address: addr.address,
       name: `${data.name} ${addr.index}`,

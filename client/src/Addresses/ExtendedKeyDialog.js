@@ -56,6 +56,7 @@ const ExtendedKeyDialog = ({
         monitor: extendedKey.monitor || {
           ...DEFAULT_EXTENDED_KEY_FORM.monitor,
         },
+        notify: extendedKey.notify || { chatId: "" },
       });
     } else {
       // Reset form to empty state
@@ -67,6 +68,7 @@ const ExtendedKeyDialog = ({
         initialAddresses: DEFAULT_EXTENDED_KEY_FORM.initialAddresses,
         skip: DEFAULT_EXTENDED_KEY_FORM.skip,
         monitor: { ...DEFAULT_EXTENDED_KEY_FORM.monitor },
+        notify: { chatId: "" },
       });
     }
   }, [extendedKey]);
@@ -279,6 +281,19 @@ const ExtendedKeyDialog = ({
               })
             }
             title="Default Monitoring Settings"
+          />
+          <TextField
+            label="Notification Chat ID (optional)"
+            value={formData.notify?.chatId || ""}
+            onChange={(e) =>
+              setFormData({ ...formData, notify: { chatId: e.target.value } })
+            }
+            helperText="Telegram chat ID to alert for addresses derived from this key. Leave blank to use the collection or global default."
+            fullWidth
+            inputProps={{
+              "data-testid": "extended-key-notify-chatid-input",
+              "aria-label": "Extended key notification chat ID",
+            }}
           />
         </Box>
       </DialogContent>

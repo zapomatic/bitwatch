@@ -6,6 +6,7 @@ import { deriveExtendedKeyAddresses } from "./deriveExtendedKeyAddresses.js";
 import { deriveAddresses } from "./descriptors.js";
 import telegram from "./telegram.js";
 import getAddressObj from "./getAddressObj.js";
+import resolveNotifyChatId from "./resolveNotifyChatId.js";
 
 export default async ({
   address,
@@ -94,8 +95,20 @@ export default async ({
     addr.name
   );
   if (changes) {
-    // Notify via telegram if needed
-    telegram.notifyBalanceChange(address, changes, collectionName, addr.name);
+    // Resolve which Telegram chat should receive this alert (per-address >
+    // per-key/descriptor > per-collection > global default) and notify.
+    const chatId = resolveNotifyChatId({
+      addr,
+      parentItem,
+      collectionName,
+    });
+    telegram.notifyBalanceChange(
+      address,
+      changes,
+      collectionName,
+      addr.name,
+      chatId
+    );
   }
 
   // Check if we need to derive more addresses after any balance update

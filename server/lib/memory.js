@@ -48,6 +48,11 @@ const loadDb = () => {
   return db;
 };
 
+// Persist a notification override as just `{ chatId }`, or drop it entirely
+// when no chat ID is set (undefined values are omitted by JSON.stringify).
+const normalizeNotify = (notify) =>
+  notify?.chatId ? { chatId: notify.chatId } : undefined;
+
 const saveDb = () => {
   // Create a clean copy of the database without ephemeral data
   const cleanDb = {
@@ -57,12 +62,14 @@ const saveDb = () => {
         name,
         {
           ...collection,
+          notify: normalizeNotify(collection.notify),
           addresses: collection.addresses.map((addr) => ({
             address: addr.address,
             name: addr.name,
             expect: addr.expect,
             alerted: addr.alerted,
             trackWebsocket: addr.trackWebsocket,
+            notify: normalizeNotify(addr.notify),
             monitor: addr.monitor
               ? {
                   chain_in: addr.monitor.chain_in,
@@ -79,6 +86,7 @@ const saveDb = () => {
             gapLimit: extKey.gapLimit,
             skip: extKey.skip,
             initialAddresses: extKey.initialAddresses,
+            notify: normalizeNotify(extKey.notify),
             monitor: extKey.monitor
               ? {
                   chain_in: extKey.monitor.chain_in,
@@ -94,6 +102,7 @@ const saveDb = () => {
               expect: addr.expect,
               alerted: addr.alerted,
               trackWebsocket: addr.trackWebsocket,
+              notify: normalizeNotify(addr.notify),
               monitor: addr.monitor
                 ? {
                     chain_in: addr.monitor.chain_in,
@@ -121,6 +130,7 @@ const saveDb = () => {
             scriptType: desc.scriptType,
             requiredSignatures: desc.requiredSignatures,
             totalSignatures: desc.totalSignatures,
+            notify: normalizeNotify(desc.notify),
             monitor: desc.monitor
               ? {
                   chain_in: desc.monitor.chain_in,
@@ -136,6 +146,7 @@ const saveDb = () => {
               expect: addr.expect,
               alerted: addr.alerted,
               trackWebsocket: addr.trackWebsocket,
+              notify: normalizeNotify(addr.notify),
               monitor: addr.monitor
                 ? {
                     chain_in: addr.monitor.chain_in,

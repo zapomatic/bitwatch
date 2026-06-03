@@ -249,7 +249,8 @@ export default function Addresses() {
     address,
     monitor,
     trackWebsocket,
-    setNewAddress
+    setNewAddress,
+    notify
   ) => {
     console.log("addAddress", {
       collectionName,
@@ -266,6 +267,7 @@ export default function Addresses() {
         address,
         monitor,
         trackWebsocket,
+        notify,
       },
       (response) => {
         console.log("add", response);
@@ -442,6 +444,30 @@ export default function Addresses() {
     });
   }, []);
 
+  const handleSetCollectionNotify = useCallback((collectionName, chatId) => {
+    socketIO.emit(
+      "editCollection",
+      { oldName: collectionName, notify: { chatId } },
+      (response) => {
+        if (response.error) {
+          setNotification({
+            open: true,
+            message: response.error,
+            severity: "error",
+          });
+        } else {
+          setNotification({
+            open: true,
+            message: chatId
+              ? "Collection notification chat ID saved"
+              : "Collection notification chat ID cleared",
+            severity: "success",
+          });
+        }
+      }
+    );
+  }, []);
+
   // refresh all collections
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
@@ -595,6 +621,7 @@ export default function Addresses() {
         name: updatedAddress.name,
         monitor: updatedAddress.monitor,
         trackWebsocket: updatedAddress.trackWebsocket,
+        notify: updatedAddress.notify,
         parentKey: editDialog.address.parentKey,
       },
       (response) => {
@@ -1086,6 +1113,7 @@ export default function Addresses() {
                   onEditDescriptor={handleEditDescriptor}
                   onEditExtendedKey={handleEditExtendedKey}
                   onRenameCollection={handleRenameCollection}
+                  onSetCollectionNotify={handleSetCollectionNotify}
                   onEditAddress={handleEditAddress}
                   displayBtc={displayBtc}
                   setNotification={setNotification}
