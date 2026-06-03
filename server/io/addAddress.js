@@ -1,6 +1,7 @@
 import memory from "../lib/memory.js";
 import logger, { getMonitorLog } from "../lib/logger.js";
 import enqueue from "../lib/queue/enqueue.js";
+import mempool from "../lib/mempool.js";
 
 export default async ({ data, io }) => {
   logger.info(
@@ -56,6 +57,10 @@ export default async ({ data, io }) => {
   if (!saveResult) {
     logger.error("addAddress: Failed to save address");
     return { error: "Failed to save address" };
+  }
+
+  if (data.trackWebsocket) {
+    mempool.updateTrackedAddresses();
   }
 
   io.emit("updateState", { collections: memory.db.collections });
