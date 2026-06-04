@@ -87,7 +87,9 @@ const CollectionRow = ({
   useEffect(() => {
     if (collection.name !== newName) {
       const oldExpandedState = getStoredExpandedState(collection.name);
-      if (oldExpandedState !== null) {
+      // Only migrate a real saved preference (true/false); skip when there is
+      // none so we don't pollute the renamed collection with an empty value.
+      if (oldExpandedState !== null && oldExpandedState !== undefined) {
         setStoredExpandedState(newName, oldExpandedState);
         setStoredExpandedState(collection.name, null); // Clear old state
       }
@@ -102,8 +104,12 @@ const CollectionRow = ({
 
     if (hasContent) {
       const storedState = getStoredExpandedState(collection.name);
-      // Only auto-expand if there's no stored state
-      if (storedState === null) {
+      // Auto-expand only when the user has no saved preference for this
+      // collection. getStoredExpandedState returns undefined for a collection
+      // that was never toggled and null after a rename clears the old key, so
+      // treat both as "no preference" — otherwise a freshly added address
+      // stays hidden under a collapsed row.
+      if (storedState === null || storedState === undefined) {
         setIsExpanded(true);
       }
     }
