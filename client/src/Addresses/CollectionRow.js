@@ -9,6 +9,12 @@ import {
   Table,
   TableHead,
   TableBody,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
+  TextField,
 } from "@mui/material";
 import { ExpandLess, ExpandMore } from "@mui/icons-material";
 import EditIcon from "@mui/icons-material/Edit";
@@ -16,6 +22,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import VpnKeyIcon from "@mui/icons-material/VpnKey";
 import KeyIcon from "@mui/icons-material/Key";
 import GroupsIcon from "@mui/icons-material/Groups";
+import NotificationsIcon from "@mui/icons-material/Notifications";
 import IconButtonStyled from "../components/IconButtonStyled";
 import ExtendedKeyRow from "./ExtendedKeyRow";
 import DescriptorRow from "./DescriptorRow";
@@ -54,6 +61,7 @@ const CollectionRow = ({
   onEditDescriptor,
   onEditExtendedKey,
   onRenameCollection,
+  onSetCollectionNotify,
   onEditAddress,
   displayBtc,
   setNotification,
@@ -70,12 +78,18 @@ const CollectionRow = ({
   const [addressDialogOpen, setAddressDialogOpen] = useState(false);
   const [editingDescriptor, setEditingDescriptor] = useState(null);
   const [editingExtendedKey, setEditingExtendedKey] = useState(null);
+  const [notifyDialogOpen, setNotifyDialogOpen] = useState(false);
+  const [notifyChatId, setNotifyChatId] = useState(
+    collection.notify?.chatId || ""
+  );
 
   // Update expanded state when collection name changes
   useEffect(() => {
     if (collection.name !== newName) {
       const oldExpandedState = getStoredExpandedState(collection.name);
-      if (oldExpandedState !== null) {
+      // Only migrate a real saved preference (true/false); skip when there is
+      // none so we don't pollute the renamed collection with an empty value.
+      if (oldExpandedState !== null && oldExpandedState !== undefined) {
         setStoredExpandedState(newName, oldExpandedState);
         setStoredExpandedState(collection.name, null); // Clear old state
       }
@@ -90,8 +104,12 @@ const CollectionRow = ({
 
     if (hasContent) {
       const storedState = getStoredExpandedState(collection.name);
-      // Only auto-expand if there's no stored state
-      if (storedState === null) {
+      // Auto-expand only when the user has no saved preference for this
+      // collection. getStoredExpandedState returns undefined for a collection
+      // that was never toggled and null after a rename clears the old key, so
+      // treat both as "no preference" — otherwise a freshly added address
+      // stays hidden under a collapsed row.
+      if (storedState === null || storedState === undefined) {
         setIsExpanded(true);
       }
     }
@@ -101,6 +119,16 @@ const CollectionRow = ({
     collection.descriptors?.length,
     collection.name,
   ]);
+
+  // Keep the local notify field in sync with server-pushed state
+  useEffect(() => {
+    setNotifyChatId(collection.notify?.chatId || "");
+  }, [collection.notify?.chatId]);
+
+  const handleSaveNotify = () => {
+    onSetCollectionNotify(collection.name, notifyChatId.trim());
+    setNotifyDialogOpen(false);
+  };
 
   const handleExpandClick = (e) => {
     e.preventDefault();
@@ -287,6 +315,19 @@ const CollectionRow = ({
               aria-label="Add descriptor to collection"
             />
             <IconButtonStyled
+              onClick={() => setNotifyDialogOpen(true)}
+              icon={<NotificationsIcon />}
+              size="small"
+              title={
+                collection.notify?.chatId
+                  ? `Notifications: chat ${collection.notify.chatId}`
+                  : "Set notification chat ID"
+              }
+              variant={collection.notify?.chatId ? "success" : "default"}
+              data-testid={`${collection.name}-notify-button`}
+              aria-label="Set collection notification chat ID"
+            />
+            <IconButtonStyled
               onClick={() => onDelete({ collectionName: collection.name })}
               icon={<DeleteIcon />}
               size="small"
@@ -402,10 +443,49 @@ const CollectionRow = ({
             data.address,
             data.monitor,
             data.trackWebsocket,
-            () => setAddressDialogOpen(false)
+            () => setAddressDialogOpen(false),
+            data.notify
           )
         }
       />
+      <Dialog
+        open={notifyDialogOpen}
+        onClose={() => setNotifyDialogOpen(false)}
+        data-testid={`${collection.name}-notify-dialog`}
+      >
+        <DialogTitle>Collection Notification Chat ID</DialogTitle>
+        <DialogContent>
+          <Box sx={{ pt: 2, minWidth: 320 }}>
+            <TextField
+              autoFocus
+              label="Notification Chat ID (optional)"
+              value={notifyChatId}
+              onChange={(e) => setNotifyChatId(e.target.value)}
+              helperText="Telegram chat ID to alert for this collection. Leave blank to use the global default. Individual addresses can override this."
+              fullWidth
+              inputProps={{
+                "data-testid": `${collection.name}-notify-chatid-input`,
+                "aria-label": "Collection notification chat ID",
+              }}
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            onClick={() => setNotifyDialogOpen(false)}
+            data-testid={`${collection.name}-notify-cancel`}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSaveNotify}
+            variant="contained"
+            data-testid={`${collection.name}-notify-save`}
+          >
+            Save
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };

@@ -1,5 +1,8 @@
 import { expect } from "../test-environment.js";
 
+// Escape a literal balance string so it can anchor a RegExp prefix match.
+const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
 export default async (page, address, expectedBalances) => {
   const expectation = {
     chain_in: "0.00000000 ₿",
@@ -20,7 +23,15 @@ export default async (page, address, expectedBalances) => {
   await Promise.all(
     Object.entries(selectors).map(async ([key, locator]) => {
       await locator.waitFor({ state: "visible", timeout: 5000 });
-      await expect(locator).toHaveText(expectation[key], { timeout: 10000 });
+      // Alert-monitored balances whose actual value differs from the accepted
+      // baseline render a pending-diff annotation inside the same cell, e.g.
+      // "0.00001000 ₿(+0.00001000 ₿)". Assert the value appears at the start of
+      // the cell and tolerate a trailing diff (asserted separately where it
+      // matters) so this doesn't depend on a transient single-frame render.
+      await expect(locator).toHaveText(
+        new RegExp(`^${escapeRegExp(expectation[key])}`),
+        { timeout: 10000 }
+      );
     })
   );
 

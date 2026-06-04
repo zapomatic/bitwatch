@@ -141,4 +141,27 @@ export default async (page) => {
   await expect(page.getByTestId("Donations Clicked-name")).not.toBeVisible();
   await expect(page.getByTestId("Donations-name")).toBeVisible();
   console.log("Verified collection was renamed to: Donations");
+
+  // Set a per-collection Telegram notification chat ID (issue #20)
+  await findAndClick(page, "Donations-notify-button");
+  await expect(
+    page.locator('[data-testid="Donations-notify-dialog"]')
+  ).toBeVisible();
+  await page.getByTestId("Donations-notify-chatid-input").fill("collection-chat-1");
+  await findAndClick(page, "Donations-notify-save", { allowOverlay: true });
+  notification = page.getByTestId("notification");
+  await expect(notification).toBeVisible();
+  await expect(notification).toHaveClass(/MuiAlert-standardSuccess/);
+  console.log("Set collection notification chat ID");
+
+  // Reopen the dialog and verify the saved chat ID round-tripped from the server
+  await findAndClick(page, "Donations-notify-button");
+  await expect(
+    page.getByTestId("Donations-notify-chatid-input")
+  ).toHaveValue("collection-chat-1");
+  // Clear it again to leave the collection on the global default
+  await page.getByTestId("Donations-notify-chatid-input").fill("");
+  await findAndClick(page, "Donations-notify-save", { allowOverlay: true });
+  await expect(page.getByTestId("notification")).toBeVisible();
+  console.log("Verified collection notification chat ID round-trip and clear");
 };

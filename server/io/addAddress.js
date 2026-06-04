@@ -42,6 +42,7 @@ export default async ({ data, io }) => {
     },
     monitor: { ...(data.monitor || memory.db.monitor) },
     trackWebsocket: data.trackWebsocket || false,
+    notify: data.notify?.chatId ? { chatId: data.notify.chatId } : undefined,
     actual: null,
     error: false,
     errorMessage: null,

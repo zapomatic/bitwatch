@@ -32,11 +32,13 @@ const DescriptorDialog = ({
         initialAddresses: descriptor.initialAddresses,
         skip: descriptor.skip,
         monitor: descriptor.monitor || { ...DEFAULT_DESCRIPTOR_FORM.monitor },
+        notify: descriptor.notify || { chatId: "" },
       });
     } else {
       setFormData({
         ...DEFAULT_DESCRIPTOR_FORM,
         monitor: { ...DEFAULT_DESCRIPTOR_FORM.monitor },
+        notify: { chatId: "" },
       });
     }
   }, [descriptor]);
@@ -174,6 +176,19 @@ const DescriptorDialog = ({
               })
             }
             title="Default Monitoring Settings"
+          />
+          <TextField
+            label="Notification Chat ID (optional)"
+            value={formData.notify?.chatId || ""}
+            onChange={(e) =>
+              setFormData({ ...formData, notify: { chatId: e.target.value } })
+            }
+            helperText="Telegram chat ID to alert for addresses derived from this descriptor. Leave blank to use the collection or global default."
+            fullWidth
+            inputProps={{
+              "data-testid": "descriptor-notify-chatid-input",
+              "aria-label": "Descriptor notification chat ID",
+            }}
           />
         </Box>
       </DialogContent>

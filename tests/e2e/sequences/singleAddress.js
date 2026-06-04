@@ -204,8 +204,11 @@ export default async (page) => {
     testData.plain.zapomatic
   );
 
-  // Change the name
+  // Change the name and set a per-address notification chat ID (issue #20)
   await page.getByTestId("address-name-input").fill("test rename");
+  await page
+    .getByTestId("address-notify-chatid-input")
+    .fill("address-chat-override");
   await findAndClick(page, "address-dialog-save", {
     allowOverlay: true,
   });
@@ -218,4 +221,17 @@ export default async (page) => {
   await expect(page.getByText("Address updated successfully")).toBeVisible();
   await expect(page.getByText("test rename")).toBeVisible();
   console.log("Address rename verified");
+
+  // Reopen the address and verify the chat ID override persisted server-side
+  await findAndClick(page, `${testData.plain.zapomatic}-edit-button`);
+  await expect(page.locator('[data-testid="address-dialog"]')).toBeVisible();
+  await expect(page.getByTestId("address-notify-chatid-input")).toHaveValue(
+    "address-chat-override"
+  );
+  await findAndClick(page, "address-dialog-cancel", { allowOverlay: true });
+  await page.waitForSelector('[data-testid="address-dialog"]', {
+    state: "hidden",
+    timeout: 2000,
+  });
+  console.log("Per-address notification chat ID round-trip verified");
 };

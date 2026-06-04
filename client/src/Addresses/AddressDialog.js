@@ -130,6 +130,19 @@ const AddressDialog = ({ open, onClose, address, onSave }) => {
               })
             }
           />
+          <TextField
+            label="Notification Chat ID (optional)"
+            value={formData.notify?.chatId || ""}
+            onChange={(e) =>
+              handleFormChange("notify", { chatId: e.target.value })
+            }
+            helperText="Telegram chat ID to alert for this address. Leave blank to use the collection or global default."
+            fullWidth
+            inputProps={{
+              "data-testid": "address-notify-chatid-input",
+              "aria-label": "Address notification chat ID",
+            }}
+          />
         </Box>
       </DialogContent>
       <DialogActions>

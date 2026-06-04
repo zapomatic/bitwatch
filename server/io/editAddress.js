@@ -8,7 +8,8 @@ function updateAddressInParent(
   address,
   name,
   monitor,
-  trackWebsocket
+  trackWebsocket,
+  notify
 ) {
   if (addressIndex === -1) return false;
   const oldAddress = addresses[addressIndex];
@@ -21,6 +22,7 @@ function updateAddressInParent(
     name,
     trackWebsocket,
     monitor,
+    notify: notify?.chatId ? { chatId: notify.chatId } : undefined,
   };
   if (oldAddress.trackWebsocket !== trackWebsocket) {
     logger.info(
@@ -43,6 +45,7 @@ export default async ({ data, io }) => {
     name,
     monitor,
     trackWebsocket,
+    notify,
     extendedKeyName,
     descriptorName,
   } = data;
@@ -83,7 +86,8 @@ export default async ({ data, io }) => {
         address,
         name,
         monitor,
-        trackWebsocket
+        trackWebsocket,
+        notify
       );
     }
     // Try descriptors if not found in extended keys
@@ -101,7 +105,8 @@ export default async ({ data, io }) => {
           address,
           name,
           monitor,
-          trackWebsocket
+          trackWebsocket,
+          notify
         );
       }
     }
@@ -120,7 +125,8 @@ export default async ({ data, io }) => {
         address,
         name,
         monitor,
-        trackWebsocket
+        trackWebsocket,
+        notify
       );
     }
   } else {
@@ -134,7 +140,8 @@ export default async ({ data, io }) => {
       address,
       name,
       monitor,
-      trackWebsocket
+      trackWebsocket,
+      notify
     );
     if (!found) {
       // Try to find the address in extended keys (legacy fallback)
@@ -151,7 +158,8 @@ export default async ({ data, io }) => {
           address,
           name,
           monitor,
-          trackWebsocket
+          trackWebsocket,
+          notify
         );
       } else {
         // Try to find the address in descriptors (legacy fallback)
@@ -168,7 +176,8 @@ export default async ({ data, io }) => {
             address,
             name,
             monitor,
-            trackWebsocket
+            trackWebsocket,
+            notify
           );
         }
       }
