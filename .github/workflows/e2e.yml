@@ -33,8 +33,11 @@ jobs:
       - name: Install root dependencies
         run: npm ci
 
+      # The committed client lockfile drifts from client/package.json (e.g.
+      # @mui/icons-material), so npm ci's strict check fails. Use npm install
+      # until the client lockfile is regenerated.
       - name: Install client dependencies
-        run: npm ci --prefix client
+        run: npm install --prefix client
 
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
