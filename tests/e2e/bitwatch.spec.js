@@ -6,6 +6,7 @@ import configurationPage from "./sequences/configurationPage.js";
 import integrationsPage from "./sequences/integrationsPage.js";
 import manageCollections from "./sequences/manageCollections.js";
 import singleAddress from "./sequences/singleAddress.js";
+import mempoolWebsocket from "./sequences/mempoolWebsocket.js";
 import extendedKeys from "./sequences/extendedKeys.js";
 import settings from "./lib/settings.js";
 import descriptors from "./sequences/descriptors.js";
@@ -21,6 +22,7 @@ test.describe("Bitwatch", () => {
     await integrationsPage(page);
     await manageCollections(page);
     await singleAddress(page);
+    await mempoolWebsocket(page);
     await extendedKeys(page);
     await descriptors(page);
     // Now that we've verified all balances, let's verify monitor settings update

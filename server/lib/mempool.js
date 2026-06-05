@@ -1,7 +1,7 @@
 import memory from "./memory.js";
 import logger from "./logger.js";
 import handleBalanceUpdate from "./handleBalanceUpdate.js";
-import telegram from "./telegram.js";
+import getAddressObj from "./getAddressObj.js";
 import mempoolJS from "@mempool/mempool.js";
 import { URL } from "url";
 
@@ -191,32 +191,50 @@ const calculateAddressBalance = (transactions, address) => {
 };
 
 const updateAddressBalance = async (address, balance, io) => {
-  // Find the collection and address name
-  let collectionName = null;
-  for (const [name, collection] of Object.entries(memory.db.collections)) {
-    const addr = collection.addresses.find((a) => a.address === address);
-    if (addr) {
-      collectionName = name;
-      break;
-    }
+  const found = getAddressObj({ address });
+  if (!found) {
+    logger.error(`Failed to update balance for ${address}: Address not found`);
+    return false;
   }
 
+  const previousBalance = found.address.actual || {
+    chain_in: 0,
+    chain_out: 0,
+    mempool_in: 0,
+    mempool_out: 0,
+  };
+  const nextBalance = {
+    ...previousBalance,
+    ...balance,
+  };
+
   // Use centralized balance update handler
-  const result = await handleBalanceUpdate(address, balance, collectionName);
+  const result = await handleBalanceUpdate({
+    address,
+    balance: { actual: nextBalance },
+    collectionName: found.collectionName,
+    extendedKeyName: found.extendedKeyName,
+    descriptorName: found.descriptorName,
+  });
   if (result.error) {
     logger.error(`Failed to update balance for ${address}: ${result.error}`);
     return false;
   }
 
-  // If balance changed, emit update for this address
-  if (result.balanceChanged) {
+  const balanceChanged =
+    previousBalance.chain_in !== nextBalance.chain_in ||
+    previousBalance.chain_out !== nextBalance.chain_out ||
+    previousBalance.mempool_in !== nextBalance.mempool_in ||
+    previousBalance.mempool_out !== nextBalance.mempool_out;
+
+  if (balanceChanged) {
     io.emit("updateState", { collections: memory.db.collections });
   }
 
   return true;
 };
 
-const processTransaction = (tx, io) => {
+const processTransaction = async (tx, io) => {
   if (!tx || typeof tx !== "object") return;
 
   // Check inputs and outputs for tracked addresses
@@ -255,7 +273,7 @@ const processTransaction = (tx, io) => {
     // Update each affected address
     for (const address of relevantAddresses) {
       const mempoolBalance = calculateAddressBalance([tx], address);
-      const changes = updateAddressBalance(
+      await updateAddressBalance(
         address,
         {
           mempool_in: mempoolBalance.in,
@@ -263,25 +281,6 @@ const processTransaction = (tx, io) => {
         },
         io
       );
-
-      // If changes were detected and require alerting, notify via Telegram
-      if (changes) {
-        // Find the address in our collections to get its name and collection
-        for (const [collectionName, collection] of Object.entries(
-          memory.db.collections
-        )) {
-          const addr = collection.addresses.find((a) => a.address === address);
-          if (addr) {
-            telegram.notifyBalanceChange(
-              address,
-              changes,
-              collectionName,
-              addr.name
-            );
-            break;
-          }
-        }
-      }
     }
   }
 };
@@ -359,7 +358,7 @@ const setupWebSocket = (io) => {
     updateWebSocketState(io, "CONNECTED");
   });
 
-  ws.addEventListener("message", (event) => {
+  ws.addEventListener("message", async (event) => {
     const data = JSON.parse(event.data);
     if (!data) {
       logger.error("Failed to parse websocket message");
@@ -423,7 +422,7 @@ const setupWebSocket = (io) => {
         );
 
         // Update the address with both chain and mempool values
-        updateAddressBalance(
+        await updateAddressBalance(
           address,
           {
             chain_in: chainBalance.in,
@@ -447,7 +446,9 @@ const setupWebSocket = (io) => {
     // Handle mempool updates
     if (data.transactions) {
       logger.mempool(`Processing ${data.transactions.length} new transactions`);
-      data.transactions.forEach((tx) => processTransaction(tx, io));
+      await Promise.all(
+        data.transactions.map((tx) => processTransaction(tx, io))
+      );
       return;
     }
 

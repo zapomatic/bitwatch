@@ -7,7 +7,7 @@ import testData from "../../../test-data/keys.json" with { type: "json" };
 const addAddress = async (
   page,
   collection,
-  { name, address, monitor }
+  { name, address, monitor, trackWebsocket = false }
 ) => {
   await findAndClick(page, `${collection}-add-address`);
 
@@ -20,6 +20,10 @@ const addAddress = async (
   // Fill in the form fields
   await page.getByTestId("address-name-input").fill(name);
   await page.getByTestId("address-input").fill(address);
+
+  if (trackWebsocket) {
+    await page.getByTestId("track-websocket-switch").click();
+  }
 
   // Set monitoring options if provided
   if (monitor) {
@@ -72,6 +76,7 @@ export default async (page) => {
   await addAddress(page, "Donations", {
     name: "zapomatic",
     address: testData.plain.zapomatic,
+    trackWebsocket: true,
     monitor: {
       chain_in: "auto-accept",
       chain_out: "alert",

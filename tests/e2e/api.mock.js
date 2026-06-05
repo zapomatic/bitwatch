@@ -13,6 +13,26 @@ let testResponses = new Map(); // Store test responses per address
 
 const responseHeaders = { "Content-Type": "application/json" };
 
+const readJsonBody = (req) =>
+  new Promise((resolve, reject) => {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk;
+    });
+    req.on("end", () => {
+      if (!body) {
+        resolve({});
+        return;
+      }
+      try {
+        resolve(JSON.parse(body));
+      } catch (error) {
+        reject(error);
+      }
+    });
+    req.on("error", reject);
+  });
+
 const log = (level, message) => {
   const timestamp = new Date().toISOString();
   console.log(`[mockAPI] [${timestamp}] [${level}] ${message}`);
@@ -57,6 +77,30 @@ const handleWebSocketConnection = (ws) => {
 };
 
 const handleWebSocketMessage = (ws, message) => {
+  // Handle track-address message used by wsTrackAddress
+  if (message["track-address"]) {
+    const address = message["track-address"];
+    if (address === "stop") {
+      trackedAddresses.clear();
+      log("info", "Stopped tracking addresses");
+      return;
+    }
+
+    trackedAddresses.add(address);
+    log("info", `Tracking address: ${address}`);
+
+    ws.send(
+      JSON.stringify({
+        "multi-address-transactions": {
+          [address]: {
+            confirmed: [],
+            mempool: [],
+          },
+        },
+      })
+    );
+  }
+
   // Handle track-addresses message
   if (message["track-addresses"]) {
     const addresses = message["track-addresses"];
@@ -87,9 +131,29 @@ const handleWebSocketMessage = (ws, message) => {
 };
 
 // HTTP handlers
-const handleHttpRequest = (req, res) => {
+const handleHttpRequest = async (req, res) => {
   try {
     const url = new URL(req.url, `http://${req.headers.host}`);
+
+    if (url.pathname === "/test/tracked-addresses") {
+      res.writeHead(200, responseHeaders);
+      res.end(JSON.stringify({ addresses: [...trackedAddresses] }));
+      return;
+    }
+
+    if (url.pathname === "/test/simulate-transaction") {
+      const { tx } = await readJsonBody(req);
+      if (!tx) {
+        res.writeHead(400, responseHeaders);
+        res.end(JSON.stringify({ error: "Missing tx" }));
+        return;
+      }
+
+      const delivered = simulateTransaction(tx);
+      res.writeHead(200, responseHeaders);
+      res.end(JSON.stringify({ delivered }));
+      return;
+    }
 
     // Handle /api/address/:address endpoint
     if (url.pathname.startsWith("/api/address/")) {
@@ -240,6 +304,7 @@ const simulateTransaction = (tx) => {
         }
       });
     }
+    return relevantAddresses.size;
   } catch (error) {
     log("error", `Error simulating transaction: ${error}`);
     throw error;
