@@ -62,7 +62,9 @@ export default async (page) => {
     mempool_out: "0.00001000 ₿",
   });
 
-  await expect(page.getByTestId(`${address}-mempool-out-diff`)).toBeVisible();
+  await expect(page.getByTestId(`${address}-mempool-out-diff`)).toHaveText(
+    "(+0.00001000 ₿)"
+  );
   await expect(page.getByTestId(`${address}-accept-button`)).toBeVisible();
   console.log("Mempool websocket activity verified");
 };
