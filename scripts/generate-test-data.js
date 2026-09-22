@@ -8,8 +8,8 @@ import path from "path";
 import { fileURLToPath } from "url";
 import bs58 from "bs58";
 
-import logger from "../server/logger.js";
-import { descriptorExtractPaths } from "../server/descriptorExtractPaths.js";
+import logger from "../server/lib/logger.js";
+import { descriptorExtractPaths } from "../server/lib/descriptorExtractPaths.js";
 
 bitcoin.initEccLib(ecc);
 
@@ -315,6 +315,10 @@ function generateTestKeys() {
     .derivePath(derivationPaths.vpub.receive)
     .neutered()
     .toBase58();
+  const hardenedAccountXpub = roots.xpub
+    .derivePath("m/84'/0'/0'")
+    .neutered()
+    .toBase58();
   const desc_x = roots.desc_xpub
     .derivePath(derivationPaths.xpub.receive)
     .neutered()
@@ -351,6 +355,7 @@ function generateTestKeys() {
     zpub1,
     Zpub1,
     vpub1,
+    hardenedAccountXpub,
     desc_xpub: desc_x,
     desc_xpub2: desc_x2,
     desc_ypub: desc_y,
@@ -395,7 +400,12 @@ function generateTestData() {
 
   // extended
   for (const [name, val] of Object.entries(keys)) {
-    if (name === "derivationPaths" || name.startsWith("desc_")) continue;
+    if (
+      name === "derivationPaths" ||
+      name === "hardenedAccountXpub" ||
+      name.startsWith("desc_")
+    )
+      continue;
 
     const keyType = name.startsWith("Ypub")
       ? "Ypub"
@@ -433,6 +443,14 @@ function generateTestData() {
       addresses: deriveAddresses(fauxDesc, 0, 6),
     };
   }
+
+  const hardenedOriginPath = "m/84'/0'/0'";
+  out.extendedKeys.hardenedAccountXpub = {
+    key: keys.hardenedAccountXpub,
+    type: "HARDENED XPUB",
+    derivationPath: hardenedOriginPath,
+    addresses: deriveAddresses(`wpkh(${keys.hardenedAccountXpub}/*)`, 0, 6),
+  };
 
   // descriptors
   out.descriptors = generateTestDescriptors(keys);

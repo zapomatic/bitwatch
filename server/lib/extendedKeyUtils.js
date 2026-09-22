@@ -100,12 +100,28 @@ export const getKeyNetwork = (key) => {
 };
 
 // Get address type for a key
-export const getAddressType = (key) => {
+export const getAddressType = (key, derivationPath = "") => {
   if (key.startsWith("Ypub")) return "p2sh-p2wsh";
   if (key.startsWith("Zpub")) return "p2wsh";
   const lk = key.toLowerCase();
   if (lk.startsWith("zpub")) return "p2wpkh";
   if (lk.startsWith("ypub")) return "p2sh-p2wpkh";
   if (lk.startsWith("vpub")) return "p2tr";
+
+  // xpub does not carry script-type metadata. When the user supplies a BIP
+  // purpose path, use that path to preserve the address type it describes.
+  const purposeMatch = derivationPath
+    .trim()
+    .match(/^m\/(44|49|84|86)(?:['h])?(?:\/|$)/i);
+  if (purposeMatch) {
+    const addressTypes = {
+      44: "p2pkh",
+      49: "p2sh-p2wpkh",
+      84: "p2wpkh",
+      86: "p2tr",
+    };
+    return addressTypes[purposeMatch[1]];
+  }
+
   return "p2pkh";
 };
