@@ -185,6 +185,37 @@
           "address": "bc1p5wynz64l2vv04n3vcs60llnpujwaruya4k97ag3pps9uqan0y9esajfa0k"
         }
       ]
+    },
+    "hardenedAccountXpub": {
+      "key": "xpub6DEHh42YXj7gdKbP1zxehEzQt47iW2AuUHYsqGaRxtkEGrK3bCYh2bsw1H6WUW26k9TBdQoe6gZ8ydoAP5eGAC2fDJGmFkwXcgv5feY9N7p",
+      "type": "HARDENED XPUB",
+      "derivationPath": "m/84'/0'/0'",
+      "addresses": [
+        {
+          "index": 0,
+          "address": "bc1qap22prhlpzkfrvsnmdfgj0h800ep7ya06ll4zh"
+        },
+        {
+          "index": 1,
+          "address": "bc1q3uu43strw0qhu6kuzm554th364c4n9nh7zy6yh"
+        },
+        {
+          "index": 2,
+          "address": "bc1qdzr8fd5p6s6xwvdhr2ujem6h9nf2h8t95fctz6"
+        },
+        {
+          "index": 3,
+          "address": "bc1qyeusae2d2ll4fqa5d8szs337efdns2rwwtq3fy"
+        },
+        {
+          "index": 4,
+          "address": "bc1qzadgq45hytwy8976q6937ckhvqr5x4vm83fgkz"
+        },
+        {
+          "index": 5,
+          "address": "bc1q9khxp9apad3m23q75m3ekaz757ecz5qyh5lfmj"
+        }
+      ]
     }
   },
   "descriptors": {

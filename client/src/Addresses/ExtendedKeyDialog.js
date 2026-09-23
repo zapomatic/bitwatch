@@ -20,6 +20,22 @@ const DERIVATION_PATH_OPTIONS = [
   { path: "m/0", label: "Relative path: external (m/0/*)" },
   { path: "m/1", label: "Relative path: internal/change (m/1/*)" },
 
+  // HARDENED origin paths – for xpubs already derived to a BIP account
+  { path: "m/44'/0'/0'", label: "BIP44 account origin (legacy external)" },
+  {
+    path: "m/49'/0'/0'",
+    label: "BIP49 account origin (wrapped SegWit external)",
+  },
+  {
+    path: "m/84'/0'/0'",
+    label: "BIP84 account origin (native SegWit external)",
+  },
+  {
+    path: "m/84'/0'/0'/0",
+    label: "BIP84 external branch (account-level xpub)",
+  },
+  { path: "m/86'/0'/0'", label: "BIP86 account origin (Taproot external)" },
+
   // ABSOLUTE BIP paths – for xprv or root keys, or to document intent
   { path: "m/84/0/0", label: 'BIP84 P2WPKH (native SegWit "bc1q…" external)' },
   { path: "m/84/0/1", label: 'BIP84 P2WPKH (native SegWit "bc1q…" change)' },
@@ -153,7 +169,7 @@ const ExtendedKeyDialog = ({
                 name="key"
                 value={formData.key}
                 onChange={(e) => handleChange("key", e.target.value)}
-                helperText="The extended public key (xpub, ypub, zpub)"
+                helperText="The extended public key (xpub, ypub, zpub). For hardened BIP paths, use the xpub already derived to that account."
                 fullWidth
                 inputProps={{
                   "data-testid": "extended-key-key-input",
@@ -213,7 +229,7 @@ const ExtendedKeyDialog = ({
                   <TextField
                     {...params}
                     label="Derivation Path"
-                    helperText="Enter any valid derivation path (e.g. m/0, m/84/0/0)"
+                    helperText="Use m/0 or m/1 for account-level keys, or a full hardened account origin such as m/84'/0'/0'"
                     fullWidth
                     inputProps={{
                       ...params.inputProps,
