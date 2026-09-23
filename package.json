@@ -7,8 +7,9 @@
   "type": "module",
   "scripts": {
     "setup": "npm i -g nodemon concurrently && npm i && cd client && npm i",
-    "test": "eslint . --max-warnings=0 && npm run test:e2e",
-    "test:generate": "node server/scripts/generate-test-data.js",
+    "test": "eslint . --max-warnings=0 && npm run test:unit && npm run test:e2e",
+    "test:generate": "node scripts/generate-test-data.js",
+    "test:unit": "node --test tests/unit/*.test.js",
     "test:prepare": "npm run test:generate && npm test",
     "test:e2e": "NODE_NO_WARNINGS=1 node node_modules/@playwright/test/cli.js test && npm run test:cleanup",
     "test:e2e:debug": "NODE_NO_WARNINGS=1 node node_modules/@playwright/test/cli.js test --debug && npm run test:cleanup",

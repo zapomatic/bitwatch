@@ -25,6 +25,10 @@
 - Set and manage balance expectations
 - Support for descriptors such as the following:
   - `wsh(multi(k,[path]xpub1,[path]xpub2,...))`
+- Support for account-level extended public keys with hardened origin paths. For example, an xpub already derived at `m/84'/0'/0'` can be entered with that full path; Bitwatch derives the remaining relative suffix and index, producing native SegWit addresses. Add `/0` when the key should explicitly use the standard external branch.
+
+Public keys cannot derive new hardened children. A root xpub must therefore use an unhardened path, while an account-level xpub should use its full hardened origin path or a relative path such as `m/0`. The equivalent standard receive descriptor is `wpkh([fingerprint/84'/0'/0']xpub/0/*)`.
+
 
 ## Why?
 

@@ -9,6 +9,74 @@ bitcoin.initEccLib(ecc);
 
 const bip32 = BIP32Factory(ecc);
 
+const MAX_DERIVATION_INDEX = 0x7fffffff;
+
+const parseDerivationPath = (derivationPath) => {
+  const path = (derivationPath || "m/0").trim();
+  const segments = path.split("/");
+
+  if (segments[0].toLowerCase() !== "m" || segments.some((segment) => !segment)) {
+    return null;
+  }
+
+  const pathParts = segments.slice(1).map((segment) => {
+    const match = segment.match(/^(\d+)(['h])?$/i);
+    if (!match) return null;
+
+    const index = Number(match[1]);
+    if (!Number.isSafeInteger(index) || index > MAX_DERIVATION_INDEX) {
+      return null;
+    }
+
+    return {
+      index,
+      hardened: Boolean(match[2]),
+    };
+  });
+
+  return pathParts.some((part) => part === null) ? null : pathParts;
+};
+
+const deriveBaseNode = (node, pathParts) => {
+  let pathToDerive = pathParts;
+
+  // A public extended key cannot derive a hardened child. A full hardened
+  // path is still useful as the origin path of an account-level xpub, though:
+  // the key already represents that path, so only derive the suffix after the
+  // key's encoded depth. This keeps hardened origin metadata usable without
+  // pretending that an xpub can derive private-only branches.
+  if (node.isNeutered() && pathParts.some(({ hardened }) => hardened)) {
+    const keyDepth = Number(node.depth);
+    const suffix = pathParts.slice(keyDepth);
+
+    if (
+      keyDepth === 0 ||
+      pathParts.length < keyDepth ||
+      suffix.some(({ hardened }) => hardened)
+    ) {
+      logger.error(
+        "Cannot derive hardened path components from this extended public key; use an account-level xpub with its full origin path or a relative path such as m/0"
+      );
+      return null;
+    }
+
+    pathToDerive = suffix;
+  }
+
+  let baseNode = node;
+  for (const { index, hardened } of pathToDerive) {
+    baseNode = hardened
+      ? baseNode.deriveHardened(index)
+      : baseNode.derive(index);
+    if (!baseNode) {
+      logger.error("Failed to derive path");
+      return null;
+    }
+  }
+
+  return baseNode;
+};
+
 export const deriveExtendedKeyAddresses = ({
   key,
   skip = 0,
@@ -39,31 +107,19 @@ export const deriveExtendedKeyAddresses = ({
   }
 
   // Parse derivation path and get the base node
-  const pathParts = (derivationPath || "m/0").split("/").slice(1); // Remove 'm' and provide default
-  let baseNode = node;
-  for (const part of pathParts) {
-    const isHardened = part.endsWith("'") || part.endsWith("h");
-    if (isHardened) {
-      logger.error("Cannot derive hardened keys from extended public keys");
-      return null;
-    }
-    const index = parseInt(part.replace(/['h]/g, ""));
-    if (isNaN(index)) {
-      logger.error("Invalid derivation path index");
-      return null;
-    }
-    baseNode = baseNode.derive(index);
-    if (!baseNode) {
-      logger.error("Failed to derive path");
-      return null;
-    }
+  const pathParts = parseDerivationPath(derivationPath);
+  if (!pathParts) {
+    logger.error("Invalid derivation path");
+    return null;
   }
+  const baseNode = deriveBaseNode(node, pathParts);
+  if (!baseNode) return null;
 
   // Calculate the actual start index including skip
   const actualStartIndex = startIndex + skip;
 
   // Get address type for the key
-  const addressType = getAddressType(key);
+  const addressType = getAddressType(key, derivationPath);
 
   // Derive addresses starting from the actual start index
   for (let i = 0; i < count; i++) {
