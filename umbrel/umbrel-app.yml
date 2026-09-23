@@ -1,5 +1,7 @@
 manifestVersion: 1
 id: bitwatch
+storage:
+  dataRoot: data
 category: bitcoin
 name: Bitwatch
 version: "1.8.0"
