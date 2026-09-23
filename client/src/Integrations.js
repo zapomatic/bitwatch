@@ -6,6 +6,7 @@ import socketIO from "./io";
 import CrystalNotification from "./components/CrystalNotification";
 import "./theme.css";
 import Box from "@mui/material/Box";
+import { FormControlLabel, Switch } from "@mui/material";
 
 function Integrations() {
   const [config, setConfig] = useState({});
@@ -149,6 +150,45 @@ function Integrations() {
                   </Button>
                 </div>
               </div>
+
+              <div>
+                <Typography
+                  component="label"
+                  htmlFor="telegram-link-target"
+                  className="crystal-label"
+                >
+                  Address links in alerts
+                </Typography>
+                <select
+                  id="telegram-link-target"
+                  className="crystal-input"
+                  data-testid="telegram-link-target"
+                  value={config.telegram?.linkTarget || "api"}
+                  onChange={(e) =>
+                    handleChange("telegram", "linkTarget", e.target.value)
+                  }
+                >
+                  <option value="api">Configured mempool instance</option>
+                  <option value="public">Public mempool.space</option>
+                  <option value="none">No link (plain text)</option>
+                </select>
+              </div>
+
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={config.telegram?.linkPreview !== false}
+                    onChange={(e) =>
+                      handleChange("telegram", "linkPreview", e.target.checked)
+                    }
+                    inputProps={{
+                      "aria-label": "Show link previews",
+                      "data-testid": "telegram-link-preview",
+                    }}
+                  />
+                }
+                label="Show link previews (unfurl address links in Telegram)"
+              />
             </div>
           </div>
 
