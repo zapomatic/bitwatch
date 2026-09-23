@@ -10,7 +10,11 @@ import CrystalNotification from "./components/CrystalNotification";
 import { Box } from "@mui/material";
 import MonitorSettings from "./components/MonitorSettings";
 
-import { DEFAULT_CONFIG, PRIVATE_CONFIG } from "./config";
+import {
+  DEFAULT_CONFIG,
+  PRIVATE_CONFIG,
+  defaultMonitorSettings,
+} from "./config";
 
 const Configs = {
   api: {
@@ -147,12 +151,7 @@ function Config() {
             {Configs[key].label}
           </Typography>
           <MonitorSettings
-            value={{
-              chain_in: config.monitor?.chain_in || "auto-accept",
-              chain_out: config.monitor?.chain_out || "alert",
-              mempool_in: config.monitor?.mempool_in || "auto-accept",
-              mempool_out: config.monitor?.mempool_out || "alert",
-            }}
+            value={{ ...defaultMonitorSettings, ...config.monitor }}
             onChange={(newMonitor) =>
               setConfig({
                 ...config,

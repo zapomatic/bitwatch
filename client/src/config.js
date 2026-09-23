@@ -28,11 +28,13 @@ export const DEFAULT_EXPECTED_BALANCES = {
 export const ADDRESS_DISPLAY_LENGTH = 15; // Number of characters to show before truncating
 export const ADDRESS_COPY_TIMEOUT = 1500; // Time in ms to show "Copied!" message
 
-// System monitor settings
+// System monitor settings. Alert on every direction by default: self-hosted
+// mempool backed by Fulcrum/electrum reports spends as a reduced chain_in
+// rather than a chain_out, so ignoring inputs would miss outgoing funds.
 export const defaultMonitorSettings = {
-  chain_in: "auto-accept",
+  chain_in: "alert",
   chain_out: "alert",
-  mempool_in: "auto-accept",
+  mempool_in: "alert",
   mempool_out: "alert",
 };
 
