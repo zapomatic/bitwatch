@@ -147,9 +147,9 @@
     "token": ""
   },
   "monitor": {
-    "chain_in": "auto-accept",
+    "chain_in": "alert",
     "chain_out": "alert",
-    "mempool_in": "auto-accept",
+    "mempool_in": "alert",
     "mempool_out": "alert"
   }
 }
