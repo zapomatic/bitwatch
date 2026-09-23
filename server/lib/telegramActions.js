@@ -26,6 +26,27 @@ export const escapeHtml = (value) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 
+const PUBLIC_MEMPOOL = "https://mempool.space";
+
+// Render an address for a Telegram message per the integration settings:
+// linkTarget "api" (default) links to the configured mempool instance,
+// "public" links to mempool.space, and "none" leaves plain text.
+export const formatAddressLink = (address) => {
+  const target = memory.db.telegram?.linkTarget || "api";
+  if (target === "none") return escapeHtml(address);
+  const base =
+    target === "public" ? PUBLIC_MEMPOOL : memory.db.api || PUBLIC_MEMPOOL;
+  return `<a href="${escapeHtml(base)}/address/${escapeHtml(
+    address
+  )}">${escapeHtml(address)}</a>`;
+};
+
+// linkPreview defaults on; set false to stop Telegram unfurling address links.
+export const getMessageOptions = () => ({
+  parse_mode: "HTML",
+  disable_web_page_preview: memory.db.telegram?.linkPreview === false,
+});
+
 export const formatSats = (sats) => {
   const numericSats = Number(sats) || 0;
   return `${numericSats.toLocaleString()} sats`;
@@ -196,13 +217,10 @@ export const getAddressMessage = (query) => {
   const actual = { ...emptyBalance, ...item.address.actual };
   const expected = { ...emptyBalance, ...item.address.expect };
   const changes = getBalanceChanges(item.address);
-  const apiEndpoint = memory.db.api || "https://mempool.space";
 
   const lines = [
     `<b>${escapeHtml(getItemPath(item))}</b>`,
-    `<a href="${escapeHtml(apiEndpoint)}/address/${escapeHtml(
-      item.address.address
-    )}">${escapeHtml(item.address.address)}</a>`,
+    formatAddressLink(item.address.address),
     "",
     "<b>Actual</b>",
     ...BALANCE_TYPES.map(
