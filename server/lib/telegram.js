@@ -5,7 +5,9 @@ import {
   acceptChanges,
   addAddressFromCommand,
   escapeHtml,
+  formatAddressLink,
   formatSats,
+  getMessageOptions,
   getAddressMessage,
   getStatusMessage,
   getTelegramHelp,
@@ -202,7 +204,7 @@ const init = async (sendTestMessage = false) => {
     await bot.sendMessage(
       chatId,
       result.error ? `❌ ${escapeHtml(result.error)}` : result.message,
-      { parse_mode: "HTML", disable_web_page_preview: true }
+      getMessageOptions()
     );
   };
 
@@ -270,9 +272,11 @@ const sendMessage = async (message, chatId) => {
   }
 
   try {
-    const result = await bot.sendMessage(targetChatId, message, {
-      parse_mode: "HTML",
-    });
+    const result = await bot.sendMessage(
+      targetChatId,
+      message,
+      getMessageOptions()
+    );
     return !!result;
   } catch (error) {
     logger.error(`Failed to send Telegram message: ${error.message}`);
@@ -343,8 +347,9 @@ const notifyBalanceChange = async (
   if (changeMessages.length === 0) return true;
 
   const msg = changeMessages.join("\n");
-  const apiEndpoint = memory.db.api || "https://mempool.space";
-  const message = `\n🔔 <b>Balance Change Detected</b>\n${collection}/${name} (<a href="${apiEndpoint}/address/${address}">${address}</a>)\n${msg}\n`;
+  const message = `\n🔔 <b>Balance Change Detected</b>\n${escapeHtml(collection)}/${escapeHtml(name)} (${formatAddressLink(
+    address
+  )})\n${msg}\n`;
 
   logger.telegram(
     `Telegram Alert Send: ${collection}/${name} (${address}) -> chat ${targetChatId}, msg: ${msg}`
