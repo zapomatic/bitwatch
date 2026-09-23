@@ -20,6 +20,7 @@
 - Track both on-chain and mempool activity
 - Telegram notifications for balance changes
   - Route alerts to different Telegram chats per collection or per address (e.g. for shared setups with multiple miners or partners). A single bot serves everyone; each recipient sends `/start` to the bot to get their chat ID. Overrides cascade most-specific-first: address → extended key/descriptor → collection → global default.
+  - Manage Bitwatch from the global chat with bot commands: `/status`, `/address <name|address|path>`, `/accept <name|address|path>` (or `/accept all`), `/addaddress <collection> | <name> | <address>`, `/refresh <name|address|path>`, `/backup` (sends the database file), and `/help`. Per-collection/address override chats only receive alerts.
 - Configure auto-acceptance or alert mode of balance changes (chain_in, chain_out, mempool_in, mempool_out)
   - setting to alert will send a notifiction to telegram and mark the UI and require manual acceptance of the transaction to save the expected state of the address
 - Set and manage balance expectations
