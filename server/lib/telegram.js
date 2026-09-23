@@ -1,6 +1,16 @@
 import memory from "./memory.js";
 import logger from "./logger.js";
 import TelegramBot from "node-telegram-bot-api";
+import {
+  acceptChanges,
+  addAddressFromCommand,
+  escapeHtml,
+  formatSats,
+  getAddressMessage,
+  getStatusMessage,
+  getTelegramHelp,
+  refreshAddress,
+} from "./telegramActions.js";
 
 let bot = null;
 let isConnected = false;
@@ -67,7 +77,9 @@ const reconnect = () => {
 
 const healthCheck = async () => {
   if (!bot || !isConnected) {
-    logger.warning("Health check failed: bot not connected. Attempting to reconnect.");
+    logger.warning(
+      "Health check failed: bot not connected. Attempting to reconnect."
+    );
     reconnect();
     return;
   }
@@ -107,6 +119,7 @@ const init = async (sendTestMessage = false) => {
       on: (_event, _callback) =>
         logger.info(`Test bot: ${_event} handler registered`),
       sendMessage: (_chatId, _message, _options) => Promise.resolve(true),
+      sendDocument: (_chatId, _document, _options) => Promise.resolve(true),
       getMe: () => Promise.resolve(true),
     };
     isConnected = true;
@@ -144,7 +157,7 @@ const init = async (sendTestMessage = false) => {
     return { success: false, error: "Invalid Telegram token" };
   }
 
-  bot.onText(/\/start/, async (msg) => {
+  bot.onText(/^\/start(?:@\w+)?$/, async (msg) => {
     const chatId = msg.chat.id;
     const message = `👋 Welcome to Bitwatch!\n\nYour chat ID is: <code>${chatId}</code>\n\nTo receive notifications:\n1. Copy this chat ID\n2. Paste it in the Bitwatch Telegram configuration (globally, or on a specific collection/address)\n3. Click Save to test the connection\n\nCurrent status: ${
       getConfiguredChatIds().has(String(chatId))
@@ -154,8 +167,67 @@ const init = async (sendTestMessage = false) => {
     await bot.sendMessage(chatId, message, { parse_mode: "HTML" });
   });
 
+  // Management commands (accept, add, backup...) act on the whole database, so
+  // they are limited to the global chat ID. Per-collection/address override
+  // chats only receive alerts.
+  const isAdminChat = (msg) =>
+    !!memory.db.telegram?.chatId &&
+    String(msg.chat.id) === String(memory.db.telegram.chatId);
+
+  const onAdminCommand = (name, handler) =>
+    bot.onText(
+      new RegExp(`^\\/${name}(?:@\\w+)?(?:\\s+(.+))?$`),
+      (msg, match) =>
+        // Listener rejections are not handled by the bot library; catch so a
+        // failed send cannot crash the process.
+        runAdminCommand(name, handler, msg, match).catch((error) =>
+          logger.error(`Telegram /${name} failed: ${error.message}`)
+        )
+    );
+
+  const runAdminCommand = async (name, handler, msg, match) => {
+    const chatId = msg.chat.id;
+    if (!isAdminChat(msg)) {
+      logger.warning(`🚫 Telegram /${name} rejected from chat ${chatId}`);
+      await bot.sendMessage(
+        chatId,
+        "❌ Commands are only available from the main Bitwatch chat ID.",
+        { parse_mode: "HTML" }
+      );
+      return;
+    }
+    logger.telegram(`Telegram /${name} from chat ${chatId}`);
+    const result = await handler(match?.[1]?.trim(), chatId);
+    if (!result) return;
+    await bot.sendMessage(
+      chatId,
+      result.error ? `❌ ${escapeHtml(result.error)}` : result.message,
+      { parse_mode: "HTML", disable_web_page_preview: true }
+    );
+  };
+
+  onAdminCommand("help", () => ({ message: getTelegramHelp() }));
+  onAdminCommand("status", () => ({ message: getStatusMessage() }));
+  onAdminCommand("address", (query) =>
+    query
+      ? getAddressMessage(query)
+      : { error: "Usage: /address <name|address|path>" }
+  );
+  onAdminCommand("accept", acceptChanges);
+  onAdminCommand("addaddress", addAddressFromCommand);
+  onAdminCommand("refresh", (query) =>
+    query
+      ? refreshAddress(query)
+      : { error: "Usage: /refresh <name|address|path>" }
+  );
+  onAdminCommand("backup", async (_query, chatId) => {
+    await bot.sendDocument(chatId, memory.dbFile, {
+      caption: "Bitwatch database backup",
+    });
+  });
+
   bot.on("message", async (msg) => {
-    if (msg.text.startsWith("/start")) return;
+    if (!msg.text || msg.text.startsWith("/")) return;
     const chatId = msg.chat.id;
     if (!getConfiguredChatIds().has(String(chatId))) {
       await bot.sendMessage(
@@ -204,20 +276,13 @@ const sendMessage = async (message, chatId) => {
     return !!result;
   } catch (error) {
     logger.error(`Failed to send Telegram message: ${error.message}`);
-    if (error.code === 'ETELEGRAM' && error.response && error.response.body) {
+    if (error.code === "ETELEGRAM" && error.response && error.response.body) {
       logger.error(`Telegram API error: ${error.response.body.description}`);
     }
     isConnected = false;
     reconnect();
     return false;
   }
-};
-
-const formatSats = (sats) => {
-  if (!sats) return "0 sats";
-  const numericSats = parseInt(sats.toString().replace(/[^0-9]/g, ""));
-  if (isNaN(numericSats)) return "0 sats";
-  return `${numericSats.toLocaleString()} sats`;
 };
 
 const getAlertKey = (collection, name, address, type, value) => {
@@ -242,31 +307,43 @@ const notifyBalanceChange = async (
   }
 
   const changeMessages = [];
-  
+
   const processChange = (type, value) => {
     const key = getAlertKey(collection, name, address, type, value);
     if (!sentAlerts.has(key)) {
-      let label = '';
-      switch(type) {
-        case 'chain_in': label = 'Chain In'; break;
-        case 'chain_out': label = 'Chain Out'; break;
-        case 'mempool_in': label = 'Mempool In'; break;
-        case 'mempool_out': label = 'Mempool Out'; break;
+      let label = "";
+      switch (type) {
+        case "chain_in":
+          label = "Chain In";
+          break;
+        case "chain_out":
+          label = "Chain Out";
+          break;
+        case "mempool_in":
+          label = "Mempool In";
+          break;
+        case "mempool_out":
+          label = "Mempool Out";
+          break;
       }
       changeMessages.push(`${label}: ${formatSats(value)}`);
       sentAlerts.set(key, true);
     }
   };
 
-  if (typeof changes.chain_in === "number") processChange('chain_in', changes.chain_in);
-  if (typeof changes.chain_out === "number") processChange('chain_out', changes.chain_out);
-  if (typeof changes.mempool_in === "number") processChange('mempool_in', changes.mempool_in);
-  if (typeof changes.mempool_out === "number") processChange('mempool_out', changes.mempool_out);
+  if (typeof changes.chain_in === "number")
+    processChange("chain_in", changes.chain_in);
+  if (typeof changes.chain_out === "number")
+    processChange("chain_out", changes.chain_out);
+  if (typeof changes.mempool_in === "number")
+    processChange("mempool_in", changes.mempool_in);
+  if (typeof changes.mempool_out === "number")
+    processChange("mempool_out", changes.mempool_out);
 
   if (changeMessages.length === 0) return true;
 
   const msg = changeMessages.join("\n");
-  const apiEndpoint = memory.db.api || 'https://mempool.space';
+  const apiEndpoint = memory.db.api || "https://mempool.space";
   const message = `\n🔔 <b>Balance Change Detected</b>\n${collection}/${name} (<a href="${apiEndpoint}/address/${address}">${address}</a>)\n${msg}\n`;
 
   logger.telegram(
